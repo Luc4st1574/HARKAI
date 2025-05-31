@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 // Services
 import '../../../core/services/location_service.dart';
 import '../../../core/services/phone_service.dart';
+import '../../../core/services/speech_service.dart';
 
 // Utils (Models and Map Utilities)
 import '../utils/incidences.dart';
@@ -36,6 +37,7 @@ class _HomeState extends State<Home> {
   final FirestoreService _firestoreService = FirestoreService();
   final PhoneService _phoneService = PhoneService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final SpeechPermissionService _speechPermissionService = SpeechPermissionService(); // Add new service instance
 
   // Managers (Instances of the renamed classes)
   late final MarkerManager _dataEventManager;
@@ -80,6 +82,14 @@ class _HomeState extends State<Home> {
     _userSessionManager.initialize();
     await _mapLocationManager.initializeManager();
     await _dataEventManager.initialize();
+
+    // Initialize speech permissions and service at startup
+    bool speechReady = await _speechPermissionService.ensurePermissionsAndInitializeService(openSettingsOnError: true);
+    if (speechReady) {
+      debugPrint("Home: Speech permissions granted and STT service seems available/initialized at startup.");
+    } else {
+      debugPrint("Home: Failed to grant speech permissions or initialize STT service at startup. Voice input may not work as expected.");
+    }
   }
 
   @override
@@ -134,7 +144,6 @@ class _HomeState extends State<Home> {
   }
 
   Set<Circle> _getCirclesForBigMapModal() {
-    // We only want circles for actual incidents, not the temporary target pin.
     return _dataEventManager.incidentCircles;
   }
 
@@ -218,7 +227,7 @@ class _HomeState extends State<Home> {
                             initialLatitude: initialMapCenter?.latitude,
                             initialLongitude: initialMapCenter?.longitude,
                             markers: _getDisplayMarkers(),
-                            circles: _dataEventManager.incidentCircles, // New: Pass circles
+                            circles: _dataEventManager.incidentCircles,
                             selectedMarker: _dataEventManager.selectedIncident,
                             onMapTappedWithMarker: _mapLocationManager.handleMapTapped,
                             onMapLongPressed: (cameraPosition) =>
@@ -226,7 +235,7 @@ class _HomeState extends State<Home> {
                                   context: context,
                                   currentCameraPosition: cameraPosition,
                                   markersForBigMap: _getMarkersForBigMapModal(),
-                                  circlesForBigMap: _getCirclesForBigMapModal(), // New: Pass circles for big map
+                                  circlesForBigMap: _getCirclesForBigMapModal(),
                                 ),
                             onMapCreated: _mapLocationManager.onMapCreated,
                             onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),

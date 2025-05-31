@@ -96,8 +96,8 @@ class MarkerManager {
 
     if (context.mounted) {
       final markerInfo = getMarkerInfo(makerType);
-      final String markerTitle = markerInfo?.title ?? makerType.name.capitalize();
-
+      final String markerTitle = markerInfo?.title ?? makerType.name.toString().split('.').last.capitalizeAllWords();
+      // Show a snackbar notification with the result
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
@@ -123,7 +123,7 @@ class MarkerManager {
 
     if (!wasSelected && newInternalSelectedMarker != MakerType.none) {
       if (targetLatitude != null && targetLongitude != null) {
-        final description = await showDescriptionInputDialog(
+        final description = await showIncidentVoiceDescriptionDialog(
           context: context,
           markerType: newInternalSelectedMarker,
         );
@@ -156,7 +156,7 @@ class MarkerManager {
     required double? targetLongitude,
   }) async {
     if (targetLatitude != null && targetLongitude != null) {
-      final description = await showDescriptionInputDialog(
+      final description = await showIncidentVoiceDescriptionDialog(
         context: context,
         markerType: MakerType.emergency,
       );
