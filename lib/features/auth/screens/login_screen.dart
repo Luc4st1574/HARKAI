@@ -9,7 +9,7 @@ import 'register_screen.dart';
 import '../../home/screens/home.dart';
 
 // Import the generated localizations file
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});

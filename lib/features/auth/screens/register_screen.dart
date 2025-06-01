@@ -8,7 +8,7 @@ import '../services/auth_service.dart';
 import '../../home/screens/home.dart';
 
 // Import the generated localizations file
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});

@@ -8,7 +8,7 @@ import 'features/splash/screens/splash_screen.dart';
 
 // Import for localization
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Generated file
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

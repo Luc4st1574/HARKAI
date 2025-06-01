@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:harkai/features/auth/services/auth_service.dart';
 
 // Import the generated localizations file
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

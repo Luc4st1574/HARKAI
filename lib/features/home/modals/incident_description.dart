@@ -1,3 +1,5 @@
+// lib/features/home/modals/incident_description.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -42,7 +44,7 @@ class _IncidentVoiceDescriptionModalState
   GenerativeModel? _generativeModel;
   ChatSession? _chatSession;
 
-  String _statusText = 'Initializing...'; // Initial status
+  String _statusText = 'Initializing...';
   String _confirmationPrompt = '';
 
   late AnimationController _micAnimationController;
@@ -53,22 +55,23 @@ class _IncidentVoiceDescriptionModalState
     super.initState();
     _micAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 150), // Faster animation for press/release
     );
-    _micScaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    _micScaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate( // Slightly smaller scale
       CurvedAnimation(parent: _micAnimationController, curve: Curves.easeInOut),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPermissionsAndInitializeRecognizers();
-      if (mounted && _currentInputState != VoiceInputState.error) { // Avoid overwriting error status
+      if (mounted && _currentInputState != VoiceInputState.error) {
         _updateStatusAndConfirmationText();
       }
-      if(mounted) setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
   Future<void> _checkPermissionsAndInitializeRecognizers() async {
+    // ... (keep existing permission check logic)
     PermissionStatus micStatus = await Permission.microphone.status;
     _hasMicPermission = micStatus.isGranted;
 
@@ -78,12 +81,12 @@ class _IncidentVoiceDescriptionModalState
       return;
     }
     
-    // If mic permission is granted, proceed.
-    await _initializeSpeechRecognizer(); // This will set _speechEnabled
+    await _initializeSpeechRecognizer();
     await _initializeGemini();
   }
 
   Future<void> _initializeSpeechRecognizer() async {
+    // ... (keep existing speech recognizer init logic)
     if (!_hasMicPermission) {
       _handleSpeechError("Cannot initialize speech recognizer: Microphone permission denied.");
       return;
@@ -97,7 +100,6 @@ class _IncidentVoiceDescriptionModalState
       if (_speechEnabled) {
         debugPrint("IncidentModal: Local SpeechToText instance initialized successfully.");
       } else {
-        // Check mic permission again as STT init can fail due to it.
         PermissionStatus currentMicStatus = await Permission.microphone.status;
         _hasMicPermission = currentMicStatus.isGranted;
         if (!_hasMicPermission) {
@@ -109,12 +111,13 @@ class _IncidentVoiceDescriptionModalState
     } catch (e) {
       _handleSpeechError("Exception initializing local speech recognizer: $e");
     }
-    if(mounted) _updateStatusAndConfirmationText(); // Update text based on init result
+    if(mounted) _updateStatusAndConfirmationText();
   }
 
   void _handleSpeechError(String errorMessage) {
+    // ... (keep existing speech error handling)
     if (mounted) {
-      _micAnimationController.reset();
+      _micAnimationController.reverse(); // Ensure animation is reset
       setState(() {
         _currentInputState = VoiceInputState.error;
         _statusText = errorMessage; 
@@ -131,22 +134,19 @@ class _IncidentVoiceDescriptionModalState
 
       if (status == 'listening') {
         nextState = VoiceInputState.listening;
-        if (!_micAnimationController.isAnimating) {
-          _micAnimationController.repeat(reverse: true);
-        }
+        // Animation is handled by onTapDown/Up now
       } else if (status == 'notListening' || status == 'done') {
-        if (_micAnimationController.isAnimating) {
-          _micAnimationController.forward().then((_) {
-              if(mounted) _micAnimationController.reverse();
-          });
+        // Ensure animation resets if it was somehow active
+        if (_micAnimationController.value > 0.0) {
+            _micAnimationController.reverse();
         }
         if (_currentInputState == VoiceInputState.listening) {
-          if (_rawSpeechText.isNotEmpty) {
+          if (_rawSpeechText.trim().isNotEmpty) {
             nextState = VoiceInputState.processing;
-            shouldProcess = true; // Flag to process after state update
+            shouldProcess = true;
           } else {
             nextState = VoiceInputState.idle;
-            _statusText = "No speech detected. Tap mic to try again.";
+            _statusText = "No speech detected. Hold mic to try again.";
           }
         }
       }
@@ -160,13 +160,13 @@ class _IncidentVoiceDescriptionModalState
           _processTextWithGemini();
         }
       } else {
-        // If only status text changed for idle state without actual state change
-        setState(() { _updateStatusAndConfirmationText();});
+          setState(() { _updateStatusAndConfirmationText();});
       }
     }
   }
 
   Future<void> _initializeGemini() async {
+    // ... (keep existing Gemini init logic)
     final apiKey = dotenv.env['HARKI_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       _handleGeminiError("Gemini API Key not found.");
@@ -196,11 +196,12 @@ class _IncidentVoiceDescriptionModalState
     } catch (e) {
       _handleGeminiError("Failed to initialize Gemini: ${e.toString()}");
     }
-      if(mounted) _updateStatusAndConfirmationText();
+    if(mounted) _updateStatusAndConfirmationText();
   }
 
   void _handleGeminiError(String errorMessage) {
-    if (mounted) {
+    // ... (keep existing Gemini error handling)
+      if (mounted) {
       setState(() {
         _currentInputState = VoiceInputState.error;
         _statusText = "Gemini Error: $errorMessage";
@@ -209,93 +210,126 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-  void _startListening() async {
+  // New method to initiate listening
+  Future<void> _initiateListening() async {
     PermissionStatus currentMicStatus = await Permission.microphone.status;
     _hasMicPermission = currentMicStatus.isGranted;
 
     if (!_hasMicPermission) {
       if (mounted) {
-        debugPrint("IncidentModal: Mic permission not granted. Attempting to request again via SpeechPermissionService.");
         bool permissionGrantedViaService = await SpeechPermissionService().requestMicrophonePermission(openSettingsOnError: true);
-        
         if (mounted) {
           _hasMicPermission = permissionGrantedViaService;
           if (!permissionGrantedViaService) {
-            currentMicStatus = await Permission.microphone.status; // Re-check for accurate message
-            String errMsg = "Microphone permission not granted. Current status: ${currentMicStatus.name}.";
-            if (currentMicStatus.isPermanentlyDenied) {
-              errMsg += " Please enable it in app settings.";
-            }
+            currentMicStatus = await Permission.microphone.status;
+            String errMsg = "Microphone permission not granted. Status: ${currentMicStatus.name}.";
+            if (currentMicStatus.isPermanentlyDenied) errMsg += " Enable in app settings.";
             _handleSpeechError(errMsg);
-            setState(() {}); // Update UI based on this attempt
+            setState(() {});
             return;
           }
-          debugPrint("IncidentModal: Mic permission granted after re-request via service.");
-          setState(() {}); // Update UI to reflect permission change
+          setState(() {});
         } else { return; }
       } else { return; }
     }
     
     if (!_speechEnabled) {
-      _handleSpeechError("Speech recognizer instance not ready. Trying to re-initialize...");
+      _handleSpeechError("Speech recognizer not ready. Re-initializing...");
       await _initializeSpeechRecognizer(); 
-      if (!_speechEnabled || !mounted) { // Add mounted check after await
+      if (!_speechEnabled || !mounted) {
         if(mounted) _handleSpeechError("Speech recognizer could not be enabled.");
-        if (mounted) setState((){_updateStatusAndConfirmationText();}); // Update text if still mounted
-          return;
+        if (mounted) setState((){_updateStatusAndConfirmationText();});
+        return;
       }
     }
 
-    if (_speechToText.isListening) {
+    if (_speechToText.isListening) { // Should not happen with hold-to-record if logic is correct
       await _speechToText.stop();
-    } else {
-      _rawSpeechText = '';
-      _geminiProcessedText = '';
-      if (mounted) {
-        setState(() {
-          _currentInputState = VoiceInputState.listening;
-          _updateStatusAndConfirmationText();
-        });
-      }
+    }
+    
+    _rawSpeechText = '';
+    _geminiProcessedText = '';
+    if (mounted) {
+      setState(() {
+        _currentInputState = VoiceInputState.listening;
+        _updateStatusAndConfirmationText();
+      });
+    }
       
-      if (!_speechToText.isAvailable && mounted) {
-        _handleSpeechError("Speech recognition service is currently not available.");
-        return;
-      }
+    if (!_speechToText.isAvailable && mounted) {
+      _handleSpeechError("Speech recognition service currently not available.");
+      if (mounted) _micAnimationController.reverse(); // Reset animation if listen fails early
+      return;
+    }
       
-      String currentLocaleId = 'en_US'; 
-      if (mounted) {
-        try {
-          currentLocaleId = Localizations.localeOf(context).toString();
-        } catch (e) {
-          debugPrint("IncidentModal: Could not get locale from context for STT, using default 'en_US'. Error: $e");
-        }
+    String currentLocaleId = 'en_US'; 
+    if (mounted) {
+      try {
+        currentLocaleId = Localizations.localeOf(context).toString();
+      } catch (e) {
+        debugPrint("IncidentModal: Could not get locale for STT, using 'en_US'. Error: $e");
       }
+    }
 
-      bool available = await _speechToText.listen(
+    bool successStarting = false;
+    try {
+      successStarting = await _speechToText.listen(
         onResult: (result) {
           if (mounted) {
             setState(() { _rawSpeechText = result.recognizedWords; });
           }
         },
-        listenFor: const Duration(seconds: 15),
-        pauseFor: const Duration(seconds: 3),
+        partialResults: true, // Good for responsive UI
         localeId: currentLocaleId,
+        // No listenFor or pauseFor, rely on explicit stop
       );
+    } catch (e) {
+      if (mounted) {
+        _micAnimationController.reverse(); // Reset animation
+        _handleSpeechError("Exception during speech listen: ${e.toString()}");
+      }
+      return;
+    }
 
-      if (available) {
-        if (mounted && _currentInputState == VoiceInputState.listening) {
-          if (!_micAnimationController.isAnimating) {
-              _micAnimationController.repeat(reverse: true);
+    if (!successStarting && mounted) {
+        _micAnimationController.reverse(); // Reset animation
+        _handleSpeechError("Speech listener failed to start.");
+    }
+    // If successful, animation controller is already handled by onTapDown
+  }
+
+  // New method to stop listening
+  Future<void> _stopListeningAndProcess() async {
+    if (_speechToText.isListening) {
+      await _speechToText.stop();
+      // _handleSpeechStatus will be triggered with 'notListening' or 'done',
+      // which will then call _processTextWithGemini if _rawSpeechText is not empty.
+    } else {
+      // If somehow stop is called when not listening, but we were in listening state UI-wise
+      if (_currentInputState == VoiceInputState.listening) {
+          if (_rawSpeechText.trim().isNotEmpty) {
+            if(mounted) {
+              setState(() {
+                _currentInputState = VoiceInputState.processing;
+                _updateStatusAndConfirmationText();
+              });
+              _processTextWithGemini();
+            }
+          } else {
+            if(mounted) {
+              setState(() {
+                _currentInputState = VoiceInputState.idle;
+                _statusText = "No speech detected. Hold mic to try again.";
+                _updateStatusAndConfirmationText();
+              });
+            }
           }
-        }
-      } else {
-        _handleSpeechError("Speech listener failed to start or is not available.");
       }
     }
   }
 
   Future<void> _processTextWithGemini() async {
+    // ... (keep existing Gemini processing logic)
     if (!mounted || _currentInputState != VoiceInputState.processing) return;
 
     if (_generativeModel == null || _chatSession == null) {
@@ -324,7 +358,7 @@ class _IncidentVoiceDescriptionModalState
       }
     } catch (e) {
       _handleGeminiError("Gemini processing failed: ${e.toString()}");
-      if (mounted) { // Fallback to raw text on Gemini error
+      if (mounted) { 
         setState(() {
           _geminiProcessedText = _rawSpeechText; 
           _currentInputState = VoiceInputState.confirming;
@@ -335,18 +369,19 @@ class _IncidentVoiceDescriptionModalState
   }
 
   void _confirmDescription() {
+    // This is the "Send" action
     Navigator.pop(context, _geminiProcessedText.trim().isNotEmpty ? _geminiProcessedText.trim() : null);
   }
 
-  void _retryDescription() {
+  void _retryInputSequence() {
+    // Called by "Retry with Mic"
     if (mounted) {
       setState(() {
         _currentInputState = VoiceInputState.idle;
         _rawSpeechText = '';
         _geminiProcessedText = '';
         _updateStatusAndConfirmationText();
-        // No auto-listen, let user tap mic again. 
-        // _startListening will re-check permissions if needed.
+        // User will tap mic again.
       });
     }
   }
@@ -359,19 +394,19 @@ class _IncidentVoiceDescriptionModalState
   }
 
   void _updateStatusAndConfirmationText() {
-    // final AppLocalizations? loc = AppLocalizations.of(context); // For localized strings
+    // ... (keep existing status/confirmation text update logic)
     final markerDetails = getMarkerInfo(widget.markerType);
     final incidentName = markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
 
     switch (_currentInputState) {
       case VoiceInputState.idle:
         _statusText = _hasMicPermission && _speechEnabled
-            ? 'Tap the mic to describe the $incidentName'
+            ? 'Hold the mic to describe the $incidentName' // Updated instruction
             : (_hasMicPermission ? 'Speech service initializing...' : 'Microphone permission needed.');
         _confirmationPrompt = '';
         break;
       case VoiceInputState.listening:
-        _statusText = 'Listening for $incidentName details...';
+        _statusText = 'Listening for $incidentName details... Release to process.'; // Updated
         _confirmationPrompt = '';
         break;
       case VoiceInputState.processing:
@@ -380,10 +415,9 @@ class _IncidentVoiceDescriptionModalState
         break;
       case VoiceInputState.confirming:
         _statusText = 'AI understood:';
-        _confirmationPrompt = 'Is this correct for the $incidentName?';
+        _confirmationPrompt = 'Send this description for the $incidentName?'; // Updated
         break;
       case VoiceInputState.error:
-        // _statusText is set by _handleSpeechError or _handleGeminiError.
         _confirmationPrompt = 'An error occurred. Please try again or cancel.';
         break;
     }
@@ -394,9 +428,120 @@ class _IncidentVoiceDescriptionModalState
     if (_speechToText.isListening) {
       _speechToText.stop();
     }
-    _speechToText.cancel();
+    _speechToText.cancel(); // Important for STT plugin
     _micAnimationController.dispose();
     super.dispose();
+  }
+  
+  // --- UI Builder Methods ---
+
+  Widget _buildMicInputControl(bool canListen, Color accentColor) {
+    return GestureDetector(
+      onTapDown: canListen ? (details) {
+        _micAnimationController.forward(); // Scale up on press
+        _initiateListening();
+      } : null,
+      onTapUp: canListen ? (details) {
+        _micAnimationController.reverse(); // Scale down on release
+        _stopListeningAndProcess();
+      } : null,
+      onTapCancel: canListen ? () { // Handle if tap is cancelled (e.g., drag off)
+        _micAnimationController.reverse();
+        if (_speechToText.isListening) {
+          _stopListeningAndProcess();
+        }
+      } : null,
+      child: ScaleTransition(
+        scale: _micScaleAnimation,
+        child: Container(
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            color: canListen ? accentColor : Colors.grey.shade700,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              )
+            ],
+          ),
+          child: Icon(
+            // Icon could change based on _currentInputState == VoiceInputState.listening
+            _currentInputState == VoiceInputState.listening ? Icons.settings_voice : Icons.mic,
+            color: Colors.white,
+            size: 40,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProcessingIndicator(Color accentColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 30.0), // Increased padding
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(accentColor)),
+          // Status text is already shown above
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmationControls(Color accentColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton.icon(
+          icon: const Icon(Icons.send, color: Colors.white, size: 18),
+          label: const Text('Send Description', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentColor,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            elevation: 3,
+          ),
+          onPressed: _confirmDescription,
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          icon: const Icon(Icons.mic_off_outlined, color: Colors.orangeAccent, size: 20),
+          label: const Text('Retry with Mic', style: TextStyle(color: Colors.orangeAccent, fontSize: 15)),
+          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+          onPressed: _retryInputSequence,
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildErrorControls(Color accentColor) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 15.0),
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.refresh, color: Colors.white),
+        label: const Text('Try Again', style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+            backgroundColor: accentColor,
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        ),
+        onPressed: () async {
+          if (mounted) {
+            setState(() {
+              _currentInputState = VoiceInputState.idle;
+              _rawSpeechText = '';
+              _geminiProcessedText = '';
+            });
+            await _checkPermissionsAndInitializeRecognizers();
+            if (mounted) _updateStatusAndConfirmationText();
+            // Do not auto-listen, user must tap mic.
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -404,7 +549,6 @@ class _IncidentVoiceDescriptionModalState
     final MarkerInfo? markerDetails = getMarkerInfo(widget.markerType);
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
     final String title = markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
-
     bool canListen = _hasMicPermission && _speechEnabled;
 
     return Dialog(
@@ -420,7 +564,6 @@ class _IncidentVoiceDescriptionModalState
           children: <Widget>[
             Text('Report: $title', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: accentColor)),
             const SizedBox(height: 20),
-            // Status text is always visible
             Text(_statusText, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9)), textAlign: TextAlign.center),
             const SizedBox(height: 10),
 
@@ -441,89 +584,27 @@ class _IncidentVoiceDescriptionModalState
                 padding: const EdgeInsets.only(top: 8.0, bottom: 15.0),
                 child: Text(_confirmationPrompt, style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8)), textAlign: TextAlign.center),
               ),
-            const SizedBox(height: 10),
+            
+            const SizedBox(height: 20), // Space before dynamic action area
 
-            // Action Area: Mic, Processing, Confirmation, or Error+Retry
+            // --- Dynamic Action Area ---
             if (_currentInputState == VoiceInputState.processing)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(accentColor)),
-                    const SizedBox(height: 15),
-                    // Text(_statusText, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9)), textAlign: TextAlign.center), // Already shown above
-                  ],
-                ),
-              )
+              _buildProcessingIndicator(accentColor)
             else if (_currentInputState == VoiceInputState.idle || _currentInputState == VoiceInputState.listening)
-              ScaleTransition(
-                scale: _micScaleAnimation,
-                child: ElevatedButton(
-                  onPressed: canListen ? _startListening : null, // Use canListen
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: canListen ? accentColor : Colors.grey.shade700,
-                    disabledBackgroundColor: Colors.grey.shade700.withOpacity(0.5),
-                    shape: const CircleBorder(),
-                    padding: const EdgeInsets.all(20),
-                  ),
-                  child: Icon(
-                    _currentInputState == VoiceInputState.listening ? Icons.stop_circle_outlined : Icons.mic,
-                    color: Colors.white,
-                    size: 36,
-                  ),
-                ),
-              )
+              _buildMicInputControl(canListen, accentColor)
             else if (_currentInputState == VoiceInputState.confirming)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.close, color: Colors.redAccent),
-                    label: const Text('No, Retry', style: TextStyle(color: Colors.redAccent)),
-                    onPressed: _retryDescription,
-                  ),
-                  TextButton.icon(
-                    icon: Icon(Icons.check, color: Colors.greenAccent),
-                    label: const Text('Yes, Add', style: TextStyle(color: Colors.greenAccent)),
-                    onPressed: _confirmDescription,
-                  ),
-                ],
-              )
+              _buildConfirmationControls(accentColor)
             else if (_currentInputState == VoiceInputState.error)
-              Padding(
-                padding: const EdgeInsets.only(top: 15.0),
-                child: ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, color: Colors.white,),
-                label: const Text('Try Again',style: TextStyle(color: Colors.white)), 
-                  style: ElevatedButton.styleFrom(backgroundColor: accentColor),
-                  onPressed: () async { 
-                    if(mounted) {
-                      setState(() {
-                        _currentInputState = VoiceInputState.idle; 
-                        _rawSpeechText = '';
-                        _geminiProcessedText = '';
-                        _updateStatusAndConfirmationText();
-                      });
-                      await _checkPermissionsAndInitializeRecognizers(); // This now handles both mic and STT init logic
-                      if(mounted) _updateStatusAndConfirmationText(); // Update text based on result of re-init
-                      
-                      if (mounted && _hasMicPermission && _speechEnabled && _currentInputState == VoiceInputState.idle) {
-                        _startListening();
-                      } else if (mounted) {
-                        setState((){});
-                      }
-                    }
-                  },
-                ),
-              ),
-            const SizedBox(height: 10),
+              _buildErrorControls(accentColor),
 
-            // Cancel button visibility
-            if (_currentInputState != VoiceInputState.confirming && _currentInputState != VoiceInputState.processing)
+            const SizedBox(height: 20), // Space after dynamic action area
+
+            // --- Cancel Button (conditionally visible) ---
+            // Show Cancel unless processing. In confirming state, user has "Retry" or "Send".
+            if (_currentInputState != VoiceInputState.processing && _currentInputState != VoiceInputState.confirming) 
               TextButton(
                 onPressed: _cancelInput,
-                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 15)),
               ),
           ],
         ),
@@ -532,13 +613,14 @@ class _IncidentVoiceDescriptionModalState
   }
 }
 
+// showIncidentVoiceDescriptionDialog and StringExtension remain the same
 Future<String?> showIncidentVoiceDescriptionDialog({
   required BuildContext context,
   required MakerType markerType,
 }) async {
   return await showDialog<String?>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: false, // User must explicitly cancel or confirm
     builder: (BuildContext dialogContext) {
       return IncidentVoiceDescriptionModal(markerType: markerType);
     },
