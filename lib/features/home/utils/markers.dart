@@ -6,7 +6,7 @@ enum MakerType {
   fire,
   crash,
   theft,
-  dog,
+  pet,
   emergency, 
   none,
 }
@@ -49,8 +49,8 @@ final Map<MakerType, MarkerInfo> markerInfoMap = {
     color: Colors.purple,
     iconPath: 'assets/images/theft.png',
   ),
-  MakerType.dog: MarkerInfo(
-    title: 'Dog Alert',
+  MakerType.pet: MarkerInfo(
+    title: 'Pet Alert',
     emergencyNumber: '913684363',
     color: Colors.green,
     iconPath: 'assets/images/dog.png',
@@ -79,7 +79,7 @@ double getMarkerHue(MakerType type) {
       return BitmapDescriptor.hueAzure;
     case MakerType.theft:
       return BitmapDescriptor.hueViolet;
-    case MakerType.dog:
+    case MakerType.pet:
       return BitmapDescriptor.hueGreen;
     case MakerType.emergency:
       return BitmapDescriptor.hueRed;

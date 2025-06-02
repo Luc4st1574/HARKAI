@@ -18,7 +18,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
       MakerType.fire,
       MakerType.crash,
       MakerType.theft,
-      MakerType.dog,
+      MakerType.pet,
     ];
 
     // Spacing for the grid
