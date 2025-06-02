@@ -114,7 +114,6 @@ class _HomeState extends State<Home> {
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
           zIndex: 2.0,
-          infoWindow: const InfoWindow(title: 'Place marker here'),
           anchor: const Offset(0.5, 0.4),
         ),
       );
