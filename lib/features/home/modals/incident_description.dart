@@ -100,22 +100,24 @@ class _IncidentVoiceDescriptionModalState
     }
     debugPrint("IncidentModal: Initializing Gemini for audio processing...");
     try {
+      final String incidentTypeName = widget.markerType.name.toString().split('.').last.capitalizeAllWords();
       final String systemPrompt =
-          "You are an AI assistant for Harkai, a citizen security app. "
-          "You will receive an audio input from a user describing an incident. "
-          "Your task is to listen to the audio and provide a very short, concise text summary of the incident. "
-          "This summary will be used as a marker description on a map. Keep it brief and factual. "
-          "The user is reporting an incident of type: ${widget.markerType.name}. "
-          "For example, if the audio describes 'there's a lot of smoke and flames coming from the bakery on Elm Street', "
-          "you might refine it to 'Fire at bakery on Elm Street, heavy smoke.' "
-          "If the audio is unclear or too short, indicate that. Respond in the language of the audio if possible, otherwise English."
-          "Some user will use the app in Spanish, so you should be able to understand and respond in Spanish if the audio is in that language.";
+          "You are Harki, an AI assistant for the Harkai citizen security app. "
+          "The user has pre-selected an incident type: '$incidentTypeName'. "
+          "You will receive an audio input from the user describing this incident. Your tasks are:\n"
+          "1. VALIDATION: Determine if the audio description genuinely matches the pre-selected incident type: '$incidentTypeName'.\n"
+          "2. RESPONSE GENERATION:\n"
+          "   - IF IT MATCHES: Respond EXACTLY with 'MATCH: ' followed by a very short, concise text summary of the incident suitable for a map marker (max 15 words). Example: If type is 'Fire' and audio describes a house fire, respond: 'MATCH: House fire with heavy smoke on Main St.'\n"
+          "   - IF IT DOES NOT MATCH but describes another valid incident type (Fire, Crash, Theft, Pet, Emergency): Respond EXACTLY with 'MISMATCH: This sounds more like a [Correct Incident Type] alert. Please confirm this or re-record for $incidentTypeName.' Example: If selected type is 'Fire' but audio is about a lost dog, respond: 'MISMATCH: This sounds more like a Pet alert. Please confirm this or re-record for Fire.'\n"
+          "   - IF IT DOES NOT MATCH AND IT'S UNCLEAR or NOT A REPORTABLE INCIDENT (e.g., casual conversation, insufficient detail): Respond EXACTLY with 'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'\n"
+          "Be factual. Respond in the language of the audio if possible (especially Spanish or English), otherwise default to English. Keep summaries very brief.";
+
 
       _generativeModel = GenerativeModel(
         model: 'gemini-1.5-flash',
         apiKey: apiKey,
         systemInstruction: Content.system(systemPrompt),
-        generationConfig: GenerationConfig(temperature: 0.7, maxOutputTokens: 60),
+        generationConfig: GenerationConfig(temperature: 0.7, maxOutputTokens: 100), // Increased maxOutputTokens slightly for mismatch messages
       );
       debugPrint("IncidentModal: Gemini initialized successfully for audio.");
     } catch (e) {
@@ -124,13 +126,22 @@ class _IncidentVoiceDescriptionModalState
     if(mounted) _updateStatusAndInstructionText();
   }
 
-  void _handleError(String errorMessage, {bool isGeminiError = false}) {
+  void _handleError(String errorMessage, {bool isGeminiError = false, bool isMismatch = false, bool isUnclear = false}) {
     if (mounted) {
       _micAnimationController.reverse();
       setState(() {
         _currentInputState = VoiceInputState.error;
-        _statusText = isGeminiError ? "Gemini Error: $errorMessage" : errorMessage;
-        _updateStatusAndInstructionText();
+        if (isMismatch) {
+          _statusText = "Incident Type Mismatch";
+          _userInstructionText = errorMessage; // errorMessage here is Gemini's suggestion
+        } else if (isUnclear) {
+          _statusText = "Audio Unclear or Invalid";
+           _userInstructionText = errorMessage; // errorMessage here is Gemini's feedback
+        } else { // General error
+          _statusText = isGeminiError ? "Gemini Processing Error" : "Error";
+          _userInstructionText = errorMessage; // The original error message string
+        }
+        // _updateStatusAndInstructionText(); // Not strictly needed as texts are set here directly for error
       });
     }
   }
@@ -194,9 +205,8 @@ class _IncidentVoiceDescriptionModalState
       final path = await _audioRecorder.stop();
       debugPrint("Recording stopped. File saved at: $path");
       if (path != null) {
-        // Verify file size to ensure something was recorded
         final audioFile = File(path);
-        if (await audioFile.exists() && await audioFile.length() > 0) {
+        if (await audioFile.exists() && await audioFile.length() > 100) { // Check for a minimal file size
             _recordedAudioPath = path;
             if (mounted) {
               _micAnimationController.reverse();
@@ -207,7 +217,7 @@ class _IncidentVoiceDescriptionModalState
             }
         } else {
             _handleError("Recording seems empty or file not saved correctly.");
-             _recordedAudioPath = null; // Ensure path is null if recording failed
+            _recordedAudioPath = null;
         }
       } else {
         _handleError("Failed to stop recording or no audio path returned.");
@@ -246,29 +256,44 @@ class _IncidentVoiceDescriptionModalState
           return;
       }
       
-      const String mimeType = "audio/aac";
+      const String mimeType = "audio/aac"; // Matching the encoder used
 
       final response = await _generativeModel!.generateContent([
           Content.data(mimeType, audioBytes)
       ]);
 
       final text = response.text;
+      _geminiProcessedText = text ?? "Gemini couldn't process the audio or returned no text."; // Store full response initially
+
       if (mounted) {
-        setState(() {
-          _geminiProcessedText = text ?? "Gemini couldn't process the audio or returned no text.";
-          _currentInputState = VoiceInputState.confirmingDescription;
-          _updateStatusAndInstructionText();
-        });
+        if (text != null && text.isNotEmpty) {
+            if (text.startsWith("MATCH:")) {
+                _geminiProcessedText = text.substring("MATCH:".length).trim();
+                setState(() {
+                    _currentInputState = VoiceInputState.confirmingDescription;
+                    _updateStatusAndInstructionText();
+                });
+            } else if (text.startsWith("MISMATCH:")) {
+                // _geminiProcessedText already holds the full mismatch message
+                _handleError(_geminiProcessedText, isGeminiError: false, isMismatch: true);
+            } else if (text.startsWith("UNCLEAR:")) {
+                // _geminiProcessedText already holds the full unclear message
+                _handleError(_geminiProcessedText, isGeminiError: false, isUnclear: true);
+            } else { // Fallback if Gemini doesn't follow the prefix rule (treat as potential match)
+                _geminiProcessedText = text; // Use the full text
+                setState(() {
+                    _currentInputState = VoiceInputState.confirmingDescription;
+                    _updateStatusAndInstructionText(); 
+                });
+            }
+        } else { // text is null or empty from Gemini
+            _geminiProcessedText = "Could not get description from Harki."; // Fallback for UI display
+            _handleError("Gemini returned no actionable text.", isGeminiError: true);
+        }
       }
     } catch (e) {
+      _geminiProcessedText = "Error processing with Harki."; // Fallback for UI
       _handleError("Gemini audio processing failed: ${e.toString()}", isGeminiError: true);
-      if (mounted) {
-        setState(() {
-          _geminiProcessedText = "Could not get description.";
-          _currentInputState = VoiceInputState.confirmingDescription;
-          _updateStatusAndInstructionText();
-        });
-      }
     }
   }
 
@@ -278,18 +303,21 @@ class _IncidentVoiceDescriptionModalState
 
   void _retryFullSequence() {
     if (mounted) {
-      // Clean up previous recording if it exists
       if (_recordedAudioPath != null) {
         final file = File(_recordedAudioPath!);
         file.exists().then((exists) {
-          if (exists) file.delete();
+          if (exists) {
+            file.delete().catchError((e) {
+            debugPrint("Error deleting temp file: $e");
+            return file;
+          });
+          }
         });
       }
       setState(() {
         _currentInputState = VoiceInputState.idle;
         _recordedAudioPath = null;
         _geminiProcessedText = '';
-        // Re-check permissions and Gemini init if an error occurred there
         if (!_hasMicPermission || _generativeModel == null) {
             _checkPermissionsAndInitializeServices();
         } else {
@@ -315,10 +343,10 @@ class _IncidentVoiceDescriptionModalState
   }
 
   void _cancelInput() async {
-    if (await _audioRecorder.isRecording()) {
+    if (mounted && await _audioRecorder.isRecording()) {
       await _audioRecorder.stop();
     }
-    await _cleanupRecordedFile(); // Clean up the file on cancel
+    await _cleanupRecordedFile(); 
     if (mounted) {
       Navigator.pop(context, null);
     }
@@ -341,7 +369,7 @@ class _IncidentVoiceDescriptionModalState
         break;
       case VoiceInputState.recordedReadyToSend:
         _statusText = 'Audio Recorded!';
-        _userInstructionText = 'Press "Send" to get a description.';
+        _userInstructionText = 'Press "Send" to get a description from Harki.';
         break;
       case VoiceInputState.sendingToGemini:
         _statusText = 'Harki is analyzing audio...';
@@ -352,24 +380,60 @@ class _IncidentVoiceDescriptionModalState
         _userInstructionText = 'Is this description correct for the $incidentName?';
         break;
       case VoiceInputState.error:
-        _userInstructionText = 'Please try again or cancel.';
+        // Status and instruction text for error states are now primarily set by _handleError.
+        // This ensures specific Gemini feedback (mismatch, unclear) is displayed.
+        // We can have a generic fallback if _statusText/userInstructionText hasn't been set by _handleError.
+        if (_statusText == 'Initializing...' || _statusText.isEmpty || _statusText == 'Report: $incidentName') { // Check if it's a generic or uninitialized state
+            _statusText = 'An Error Occurred';
+        }
+        if (_userInstructionText.isEmpty || _userInstructionText == 'Hold the Mic button to record a short description.' || _userInstructionText == 'Microphone permission needed to record.'){
+            _userInstructionText = 'Please try again or cancel.';
+        }
         break;
     }
   }
 
   @override
   void dispose() async {
-    if (await _audioRecorder.isRecording()) {
-        await _audioRecorder.stop();
-    }
-    _audioRecorder.dispose();
-    _micAnimationController.dispose();
-    await _cleanupRecordedFile(); // Ensure cleanup on dispose as well
-    super.dispose();
-  }
+    try {
+      bool isRecording = false;
+      try {
+        // It's generally safer to avoid `mounted` checks within async dispose methods,
+        isRecording = await _audioRecorder.isRecording();
+      } catch (e) {
+        debugPrint("Error in dispose: checking _audioRecorder.isRecording(): $e");
+        // Assuming not recording if there's an error checking.
+      }
 
+      if (isRecording) {
+        try {
+          await _audioRecorder.stop();
+          debugPrint("Audio recorder stopped in dispose.");
+        } catch (e) {
+          debugPrint("Error in dispose: stopping _audioRecorder: $e");
+        }
+      }
+      // Add null check in case initState didn't complete successfully
+      _micAnimationController.dispose();
+      // Dispose audio recorder (synchronous, must be called after stop)
+      _audioRecorder.dispose();
+      // Attempt to clean up the recorded file (asynchronous)
+      try {
+        await _cleanupRecordedFile();
+      } catch (e) {
+        debugPrint("Error in dispose: _cleanupRecordedFile(): $e");
+      }
+
+    } catch (e) {
+      // Catch any other synchronous errors from dispose calls like _micAnimationController.dispose()
+      debugPrint("Generic error during dispose operations: $e");
+    } finally {
+      super.dispose();
+    }
+  }
+  
   Widget _buildMicInputControl(Color accentColor) {
-    bool canRecord = _hasMicPermission && (_currentInputState == VoiceInputState.idle || _currentInputState == VoiceInputState.recording);
+    bool canRecord = _hasMicPermission && _generativeModel != null && (_currentInputState == VoiceInputState.idle || _currentInputState == VoiceInputState.recording);
     return GestureDetector(
       onLongPressStart: canRecord && _currentInputState == VoiceInputState.idle ? (details) => _startRecording() : null,
       onLongPressEnd: _currentInputState == VoiceInputState.recording ? (details) => _stopRecording() : null,
@@ -377,7 +441,7 @@ class _IncidentVoiceDescriptionModalState
         if (canRecord && _currentInputState == VoiceInputState.idle) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Hold to record, release to stop.")));
         } else if (!canRecord && _currentInputState == VoiceInputState.idle) {
-            _checkPermissionsAndInitializeServices(); // Attempt to re-check/request if tapped in error state
+            _checkPermissionsAndInitializeServices(); 
         }
       },
       child: ScaleTransition(
@@ -402,7 +466,7 @@ class _IncidentVoiceDescriptionModalState
   Widget _buildSendToGeminiButton(Color accentColor) {
     return ElevatedButton.icon(
       icon: const Icon(Icons.send_to_mobile, color: Colors.white, size: 18),
-      label: const Text('SEND', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+      label: const Text('SEND TO HARKI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
       style: ElevatedButton.styleFrom(
         backgroundColor: accentColor,
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
@@ -421,12 +485,15 @@ class _IncidentVoiceDescriptionModalState
         children: [
           CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(accentColor)),
           const SizedBox(height: 15),
+           Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
         ],
       ),
     );
   }
 
   Widget _buildConfirmationControls(Color accentColor) {
+    final markerDetails = getMarkerInfo(widget.markerType);
+    final incidentName = markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -441,7 +508,7 @@ class _IncidentVoiceDescriptionModalState
                 ),
                 child: Text(_geminiProcessedText, style: const TextStyle(fontSize: 16, color: Colors.white), textAlign: TextAlign.center),
               ),
-        Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
+        Text('Is this description correct for the $incidentName?', style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -470,12 +537,18 @@ class _IncidentVoiceDescriptionModalState
   }
   
   Widget _buildErrorControls(Color accentColor) {
+    // _statusText and _userInstructionText are set by _handleError for mismatch/unclear cases
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // _statusText is displayed by the main title Text widget already
         Padding(
-          padding: const EdgeInsets.only(top:10.0, bottom: 15.0),
-          child: Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
+          padding: const EdgeInsets.only(top:0.0, bottom: 15.0), // Reduced top padding as status is above
+          child: Text(
+            _userInstructionText, // This will contain Gemini's feedback for mismatch/unclear
+            style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.9 * 255).toInt())),
+            textAlign: TextAlign.center,
+          ),
         ),
         ElevatedButton.icon(
           icon: const Icon(Icons.refresh, color: Colors.white),
@@ -485,7 +558,7 @@ class _IncidentVoiceDescriptionModalState
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
           ),
-          onPressed: _retryFullSequence,
+          onPressed: _retryFullSequence, // This will restart recording for the original marker type
         ),
       ],
     );
@@ -496,10 +569,10 @@ class _IncidentVoiceDescriptionModalState
     final MarkerInfo? markerDetails = getMarkerInfo(widget.markerType);
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
 
-    return PopScope( // Was WillPopScope
+    return PopScope( 
       canPop: _currentInputState != VoiceInputState.recording && _currentInputState != VoiceInputState.sendingToGemini,
-      onPopInvokedWithResult: (bool didPop, dynamic result) async { // Was onWillPop
-        if (didPop) return; // If already popped by system (e.g. back button)
+      onPopInvokedWithResult: (bool didPop, dynamic result) async { 
+        if (didPop) return; 
         if (_currentInputState == VoiceInputState.recording || _currentInputState == VoiceInputState.sendingToGemini) {
           // Prevent popping
         } else {
@@ -520,26 +593,56 @@ class _IncidentVoiceDescriptionModalState
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                _statusText,
+                _statusText, // This is updated by _updateStatusAndInstructionText or _handleError
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: _currentInputState == VoiceInputState.error ? Colors.redAccent : accentColor,
+                  color: _currentInputState == VoiceInputState.error && !(_statusText == "Incident Type Mismatch" || _statusText == "Audio Unclear or Invalid")
+                        ? Colors.redAccent
+                        : accentColor,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 15),
                 if (_currentInputState != VoiceInputState.sendingToGemini &&
                     _currentInputState != VoiceInputState.confirmingDescription &&
-                    _currentInputState != VoiceInputState.error && 
-                    _userInstructionText.isNotEmpty)
-                Text(
-                  _userInstructionText,
-                  style: TextStyle(fontSize: 16, color: Colors.white.withAlpha((0.9 * 255).toInt())),
-                  textAlign: TextAlign.center,
-                ),
+                    _currentInputState != VoiceInputState.error && // Error state now shows custom _userInstructionText via _buildErrorControls
+                    _userInstructionText.isNotEmpty &&
+                    _currentInputState != VoiceInputState.idle && // Idle has its own specific instruction
+                    _currentInputState != VoiceInputState.recording && // Recording has its own specific instruction
+                    _currentInputState != VoiceInputState.recordedReadyToSend // This also has specific instruction
+                    )
+                Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0), // Add some space before the controls
+                    child: Text(
+                    _userInstructionText, // General instruction text for non-error, non-confirmation states
+                    style: TextStyle(fontSize: 16, color: Colors.white.withAlpha((0.9 * 255).toInt())),
+                    textAlign: TextAlign.center,
+                                  ),
+                  ),
               
-              const SizedBox(height: 25),
+              // Specific instructions for idle, recording, recordedReadyToSend are handled within their build methods or implicitly by button presence
+              if (_currentInputState == VoiceInputState.idle || _currentInputState == VoiceInputState.recording)
+                Padding( // Add instruction text specifically for idle/recording state if mic is available
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: Text(
+                    _userInstructionText,
+                    style: TextStyle(fontSize: 16, color: Colors.white.withAlpha((0.9 * 255).toInt())),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else if (_currentInputState == VoiceInputState.recordedReadyToSend)
+                 Padding( // Instruction for ready to send state
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: Text(
+                    _userInstructionText,
+                    style: TextStyle(fontSize: 16, color: Colors.white.withAlpha((0.9 * 255).toInt())),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+
+              const SizedBox(height: 10), // Adjusted spacing
 
               if (_currentInputState == VoiceInputState.idle || _currentInputState == VoiceInputState.recording)
                 _buildMicInputControl(accentColor)
@@ -573,13 +676,14 @@ Future<String?> showIncidentVoiceDescriptionDialog({
 }) async {
   return await showDialog<String?>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: false, // Prevents dismissing by tapping outside, user must use buttons
     builder: (BuildContext dialogContext) {
       return IncidentVoiceDescriptionModal(markerType: markerType);
     },
   );
 }
 
+// Keep your StringExtension
 extension StringExtension on String {
   String capitalizeAllWords() {
     if (isEmpty) return this;
