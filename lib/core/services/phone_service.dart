@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously
+// ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart'; // Required for BuildContext and ScaffoldMessenger
 import 'package:permission_handler/permission_handler.dart' as perm_handler;

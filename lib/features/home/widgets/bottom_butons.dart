@@ -132,7 +132,7 @@ class BottomActionButtonsWidget extends StatelessWidget {
                     shape: const CircleBorder(),
                     padding: EdgeInsets.zero,
                     elevation: 12, // Keep this for visual prominence on white
-                    shadowColor: Colors.black.withOpacity(0.45), // Keep for darker shadow on white
+                    shadowColor: Colors.black.withAlpha((0.45 * 255).toInt()), // Keep for darker shadow on white
                     side: BorderSide(color: Colors.grey.shade300, width: 1),
                   ),
                   child: Center(

@@ -77,8 +77,8 @@ Circle createCircleFromIncidence(IncidenceData incidence) {
     circleId: CircleId('circle_${incidence.id}'),
     center: LatLng(incidence.latitude, incidence.longitude),
     radius: 80, // Radius set to 80
-    fillColor: baseColor.withOpacity(0.25), // Translucent fill
-    strokeColor: baseColor.withOpacity(0.7), // Slightly more opaque stroke
+    fillColor: baseColor.withAlpha((0.25 * 255).round()), // Translucent fill
+    strokeColor: baseColor.withAlpha((0.7 * 255).round()), // Slightly more opaque stroke
     strokeWidth: 1,
   );
 }

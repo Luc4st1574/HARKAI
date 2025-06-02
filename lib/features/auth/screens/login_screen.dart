@@ -94,7 +94,7 @@ class LoginState extends State<Login> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: localizations.emailHint, // Localized (reused)
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  hintStyle: TextStyle(color: Colors.white.withAlpha((0.5 * 255).toInt())),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF57D463)),
                   ),
@@ -368,7 +368,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: const Color(0xFF57D463)),
         hintText: hintText, // Displays the localized hint text
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        hintStyle: TextStyle(color: Colors.white.withAlpha((0.5 * 255).toInt())),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFF57D463)),
         ),

@@ -248,7 +248,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
           left: 8.0, right: 10.0, top: 12.0, bottom: 4.0),
       child: CircleAvatar(
         radius: 20,
-        backgroundColor: const Color(0xFF57D463).withOpacity(0.2),
+        backgroundColor: const Color(0xFF57D463).withAlpha((0.2 * 255).toInt()),
         child: const CircleAvatar(
           radius: 18,
           backgroundImage: AssetImage('assets/images/bot.png'),

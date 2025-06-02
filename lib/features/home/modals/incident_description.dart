@@ -150,21 +150,11 @@ class _IncidentVoiceDescriptionModalState
     }
     
     try {
-      // --- CONFIGURATION POINT FOR GEMINI COMPATIBILITY ---
-      // 1. Choose an encoder supported by 'record' package AND Gemini.
-      //    Common options:
-      //    - AudioEncoder.pcm16bits (for WAV output, often widely supported)
-      //    - AudioEncoder.aacLc (for AAC output, common on mobile)
-      //    - AudioEncoder.opus (good quality, efficient, check Gemini support)
-      // 2. Set a sampleRate supported by Gemini (e.g., 16000 Hz).
-      // 3. The file extension in _getFilePath should match the encoder.
-      //    (e.g., ".wav" for pcm16bits, ".m4a" or ".aac" for aacLc, ".opus" for opus)
-
-      const chosenEncoder = AudioEncoder.aacLc; // EXAMPLE: Using AAC
+      const chosenEncoder = AudioEncoder.aacLc;
       const chosenSampleRate = 16000;
-      const chosenNumChannels = 1; // Mono is typical for voice
-      const chosenBitRate = 48000; // Relevant for encoders like AAC/Opus
-      const fileExtension = "m4a"; // EXAMPLE: Matches AAC
+      const chosenNumChannels = 1;
+      const chosenBitRate = 48000;
+      const fileExtension = "m4a"; 
 
       _recordedAudioPath = await _getFilePath(fileExtension);
       
@@ -255,15 +245,8 @@ class _IncidentVoiceDescriptionModalState
           _handleError("Cannot send empty audio file.", isGeminiError: false);
           return;
       }
-
-      // --- MIME TYPE CONFIGURATION FOR GEMINI ---
-      // This MUST match the format you recorded using RecordConfig.
-      // Examples:
-      // - If AudioEncoder.pcm16bits (WAV): "audio/wav"
-      // - If AudioEncoder.aacLc: "audio/aac" or "audio/mp4" (test what Gemini prefers for AAC)
-      // - If AudioEncoder.opus: "audio/opus"
-      // Consult Gemini documentation for supported audio MIME types.
-      const String mimeType = "audio/aac"; // EXAMPLE: Corresponds to AudioEncoder.aacLc
+      
+      const String mimeType = "audio/aac";
 
       final response = await _generativeModel!.generateContent([
           Content.data(mimeType, audioBytes)
@@ -336,7 +319,9 @@ class _IncidentVoiceDescriptionModalState
       await _audioRecorder.stop();
     }
     await _cleanupRecordedFile(); // Clean up the file on cancel
-    Navigator.pop(context, null);
+    if (mounted) {
+      Navigator.pop(context, null);
+    }
   }
 
   void _updateStatusAndInstructionText() {
@@ -402,7 +387,7 @@ class _IncidentVoiceDescriptionModalState
           decoration: BoxDecoration(
             color: canRecord ? accentColor : Colors.grey.shade700,
             shape: BoxShape.circle,
-            boxShadow: [ BoxShadow( color: Colors.black.withOpacity(0.3), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1),) ],
+            boxShadow: [ BoxShadow( color: Colors.black.withAlpha((0.3 * 255).toInt()), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1),) ],
           ),
           child: Icon(
             _currentInputState == VoiceInputState.recording ? Icons.stop_circle_outlined : Icons.mic,
@@ -450,13 +435,13 @@ class _IncidentVoiceDescriptionModalState
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withAlpha((0.2 * 255).toInt()),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: accentColor.withOpacity(0.5))
+                  border: Border.all(color: accentColor.withAlpha((0.5 * 255).toInt()))
                 ),
                 child: Text(_geminiProcessedText, style: const TextStyle(fontSize: 16, color: Colors.white), textAlign: TextAlign.center),
               ),
-        Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8)), textAlign: TextAlign.center),
+        Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -490,7 +475,7 @@ class _IncidentVoiceDescriptionModalState
       children: [
         Padding(
           padding: const EdgeInsets.only(top:10.0, bottom: 15.0),
-          child: Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8)), textAlign: TextAlign.center),
+          child: Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
         ),
         ElevatedButton.icon(
           icon: const Icon(Icons.refresh, color: Colors.white),
@@ -513,13 +498,14 @@ class _IncidentVoiceDescriptionModalState
 
     return PopScope( // Was WillPopScope
       canPop: _currentInputState != VoiceInputState.recording && _currentInputState != VoiceInputState.sendingToGemini,
-      onPopInvoked: (bool didPop) async { // Was onWillPop
+      onPopInvokedWithResult: (bool didPop, dynamic result) async { // Was onWillPop
         if (didPop) return; // If already popped by system (e.g. back button)
         if (_currentInputState == VoiceInputState.recording || _currentInputState == VoiceInputState.sendingToGemini) {
           // Prevent popping
         } else {
           await _cleanupRecordedFile();
-          if (mounted) Navigator.of(context).pop();
+          if (!context.mounted) return;
+          Navigator.of(context).pop();
         }
       },
       child: Dialog(
@@ -549,7 +535,7 @@ class _IncidentVoiceDescriptionModalState
                     _userInstructionText.isNotEmpty)
                 Text(
                   _userInstructionText,
-                  style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9)),
+                  style: TextStyle(fontSize: 16, color: Colors.white.withAlpha((0.9 * 255).toInt())),
                   textAlign: TextAlign.center,
                 ),
               

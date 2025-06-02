@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -184,7 +182,7 @@ class ProfileState extends State<Profile> {
           mode: url_launcher.LaunchMode.externalApplication,
         );
       } catch (e) {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${localizations.profileDialerErrorPrefix}${e.toString()}')), // Localized prefix
           );
@@ -199,14 +197,14 @@ class ProfileState extends State<Profile> {
             mode: url_launcher.LaunchMode.externalApplication,
           );
         } catch (e) {
-          if (context.mounted) {
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('${localizations.profileDialerErrorPrefix}${e.toString()}')), // Localized prefix
             );
           }
         }
       } else {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(localizations.profilePhonePermissionDenied)), // Localized
           );
@@ -234,25 +232,25 @@ class ProfileState extends State<Profile> {
                 Navigator.of(dialogContext).pop(); // Close the dialog first
                 if (user?.email != null) {
                   try {
-                     await FirebaseAuth.instance.sendPasswordResetEmail(email: user!.email!);
-                     if(context.mounted) { // Check context before showing SnackBar
-                        ScaffoldMessenger.of(context).showSnackBar(
+                      await FirebaseAuth.instance.sendPasswordResetEmail(email: user!.email!);
+                     if (dialogContext.mounted) { // Check dialogContext before showing SnackBar
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
                           SnackBar(content: Text(localizations.profilePasswordResetEmailSent)), // Localized
                         );
-                     }
+                    }
                   } catch (e) {
-                     if(context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                    if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
                           // Consider a more generic error message or a specific key for this error
                           SnackBar(content: Text('Error: ${e.toString()}')),
                         );
-                     }
+                    }
                   }
                 } else {
-                  if(context.mounted) { // Check context
-                     ScaffoldMessenger.of(context).showSnackBar(
+                  if (dialogContext.mounted) { // Check dialogContext
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
                         SnackBar(content: Text(localizations.profileNoEmailForPasswordReset)), // Localized
-                     );
+                    );
                   }
                 }
               },
