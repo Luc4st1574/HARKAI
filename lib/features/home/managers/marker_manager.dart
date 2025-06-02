@@ -12,11 +12,13 @@ class MarkerManager {
   MakerType _selectedIncident = MakerType.none;
   MakerType get selectedIncident => _selectedIncident;
 
-  Set<Marker> _incidentMarkers = {};
-  Set<Marker> get incidentMarkers => _incidentMarkers;
+  // Store raw IncidenceData
+  List<IncidenceData> _incidencesData = [];
+  List<IncidenceData> get incidences => _incidencesData;
 
-  Set<Circle> _incidentCircles = {}; // New: Set to store circles
-  Set<Circle> get incidentCircles => _incidentCircles; // New: Getter for circles
+  // Circles remain similar
+  Set<Circle> _incidentCircles = {};
+  Set<Circle> get incidentCircles => _incidentCircles;
 
   StreamSubscription<List<IncidenceData>>? _incidentsSubscription;
   Timer? _expiryCheckTimer;
@@ -29,7 +31,7 @@ class MarkerManager {
 
   Future<void> initialize() async {
     _setupIncidentListener();
-    debugPrint('MarkerManager: Initializing and performing initial cleanup of expired incidents...');
+    debugPrint('MarkerManager: Initializing and performing initial cleanup...');
     int initialCleanedCount = await _firestoreService.markExpiredIncidencesAsInvisible();
     debugPrint('MarkerManager: Initial cleanup completed. $initialCleanedCount incidents marked invisible.');
     _startPeriodicExpiryChecks();
@@ -44,23 +46,24 @@ class MarkerManager {
     _incidentsSubscription = _firestoreService
         .getIncidencesStream()
         .listen((List<IncidenceData> incidences) {
-      final newMarkers = <Marker>{};
-      final newCircles = <Circle>{}; // New: Set for circles for this update
+      _incidencesData = incidences; // Store raw data
+      
+      // Circles can still be generated here or in Home.dart
+      final newCircles = <Circle>{};
       for (var incidence in incidences) {
-        newMarkers.add(createMarkerFromIncidence(incidence));
-        newCircles.add(createCircleFromIncidence(incidence)); // New: Create and add circle
+        newCircles.add(createCircleFromIncidence(incidence));
       }
-      _incidentMarkers = newMarkers;
-      _incidentCircles = newCircles; // New: Update the circles set
-      _onStateChange();
+      _incidentCircles = newCircles;
+      
+      _onStateChange(); // Notify Home to rebuild markers
     }, onError: (error) {
-      _incidentMarkers = {};
-      _incidentCircles = {}; // New: Clear circles on error too
+      _incidencesData = [];
+      _incidentCircles = {};
       _onStateChange();
       debugPrint('MarkerManager: Error fetching incidents: $error');
     });
   }
-
+  
   void _startPeriodicExpiryChecks({Duration interval = const Duration(hours: 1)}) {
     _expiryCheckTimer?.cancel();
     _expiryCheckTimer = Timer.periodic(interval, (timer) async {
@@ -69,7 +72,6 @@ class MarkerManager {
         int cleanedCount = await _firestoreService.markExpiredIncidencesAsInvisible();
         if (cleanedCount > 0) {
           debugPrint('MarkerManager: Periodically marked $cleanedCount expired incidents as invisible.');
-          // The stream listener (_setupIncidentListener) will automatically update markers and circles.
         } else {
           debugPrint('MarkerManager: No expired incidents found in periodic check.');
         }
@@ -80,36 +82,38 @@ class MarkerManager {
     debugPrint('MarkerManager: Periodic expiry checks started with an interval of ${interval.inMinutes} minutes.');
   }
 
-  Future<bool> addMarkerAndShowNotification({
+
+  Future<void> addMarkerAndShowNotification({ // Renamed from addMarkerAndShowNotification
     required BuildContext context,
     required MakerType makerType,
     required double latitude,
     required double longitude,
     String? description,
+    String? imageUrl, // New parameter
   }) async {
     final success = await _firestoreService.addIncidence(
       type: makerType,
       latitude: latitude,
       longitude: longitude,
       description: description,
+      imageUrl: imageUrl, // Pass imageUrl
     );
 
     if (context.mounted) {
       final markerInfo = getMarkerInfo(makerType);
-      final String markerTitle = markerInfo?.title ?? makerType.name.toString().split('.').last.capitalizeAllWords();
-      // Show a snackbar notification with the result
+      final String markerTitle = markerInfo?.title ?? _StringExtension(makerType.name.toString().split('.').last).capitalizeAllWords();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
-              ? '$markerTitle marker added!'
-              : 'Failed to add ${markerTitle.toLowerCase()} marker.'),
+              ? '$markerTitle incident reported!'
+              : 'Failed to report $markerTitle incident.'),
         ),
       );
     }
-    return success;
   }
 
-  Future<String?> handleMarkerSelectionAndGetDescription({
+  // This method now triggers the dialog and processes its result
+  Future<void> processIncidentReporting({
     required BuildContext context,
     required MakerType newMarkerToSelect,
     required double? targetLatitude,
@@ -123,16 +127,39 @@ class MarkerManager {
 
     if (!wasSelected && newInternalSelectedMarker != MakerType.none) {
       if (targetLatitude != null && targetLongitude != null) {
-        final description = await showIncidentVoiceDescriptionDialog(
+        // Show the media input dialog
+        final result = await showIncidentVoiceDescriptionDialog( // This is your enhanced modal
           context: context,
           markerType: newInternalSelectedMarker,
         );
-        if (description == null) {
-          _selectedIncident = MakerType.none;
-          _onStateChange();
-          return null;
+
+        // result is now Map<String, String?>? e.g., {'description': '...', 'imageUrl': '...'}
+        if (result != null) {
+          final String? description = result['description'];
+          final String? imageUrl = result['imageUrl'];
+
+          // Only add marker if there's a description or an image
+          if (description != null || imageUrl != null) {
+            if (context.mounted) {
+              await addMarkerAndShowNotification(
+                context: context,
+                makerType: newInternalSelectedMarker, // Use the marker type selected for the dialog
+                latitude: targetLatitude,
+                longitude: targetLongitude,
+                description: description,
+                imageUrl: imageUrl,
+              );
+            }
+          } else {
+            debugPrint("Incident reporting cancelled or no media provided.");
+          }
+        } else {
+            debugPrint("Incident reporting dialog returned null (cancelled).");
         }
-        return description;
+        // Reset selected incident if dialog is cancelled or completed, to allow re-selection
+        _selectedIncident = MakerType.none;
+        _onStateChange();
+
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -141,35 +168,60 @@ class MarkerManager {
         }
         _selectedIncident = MakerType.none;
         _onStateChange();
-        return null;
       }
-    } else if (wasSelected) {
+    } else if (wasSelected) { // If it was already selected, deselect it
       _selectedIncident = MakerType.none;
       _onStateChange();
     }
-    return null;
   }
-
-  Future<String?> handleEmergencyAndGetDescription({
+  
+  // Simplified version for emergency, assuming it might have a slightly different flow or pre-filled description.
+  // Or it could also use the full processIncidentReporting. For now, let's keep it similar.
+  Future<void> processEmergencyReporting({
     required BuildContext context,
     required double? targetLatitude,
     required double? targetLongitude,
   }) async {
     if (targetLatitude != null && targetLongitude != null) {
-      final description = await showIncidentVoiceDescriptionDialog(
+      final result = await showIncidentVoiceDescriptionDialog(
         context: context,
-        markerType: MakerType.emergency,
+        markerType: MakerType.emergency, // Specifically for emergency
       );
-      return description;
+
+      if (result != null) {
+        final String? description = result['description'];
+        final String? imageUrl = result['imageUrl'];
+        
+        if (description != null || imageUrl != null) {
+            if (context.mounted) {
+              await addMarkerAndShowNotification(
+                  context: context,
+                  makerType: MakerType.emergency,
+                  latitude: targetLatitude,
+                  longitude: targetLongitude,
+                  description: description ?? "Emergency Report", // Default description if none
+                  imageUrl: imageUrl,
+              );
+              // Optionally, keep emergency selected or clear it
+              setActiveMaker(MakerType.emergency);
+              _selectedIncident = MakerType.none; // Clear after reporting
+              _onStateChange();
+            }
+        } else {
+            debugPrint("Emergency reporting cancelled or no media provided.");
+        }
+      } else {
+          debugPrint("Emergency reporting dialog returned null (cancelled).");
+      }
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to add emergency marker: Target location unknown.')),
+          const SnackBar(content: Text('Unable to report emergency: Target location unknown.')),
         );
       }
-      return null;
     }
   }
+
 
   void resetSelectedMarkerToNone() {
     _selectedIncident = MakerType.none;
@@ -179,6 +231,13 @@ class MarkerManager {
   void dispose() {
     _incidentsSubscription?.cancel();
     _expiryCheckTimer?.cancel();
-    debugPrint('MarkerManager: Disposed. Incidents subscription and expiry timer cancelled.');
+    debugPrint('MarkerManager: Disposed.');
+  }
+}
+
+extension _StringExtension on String {
+    String capitalizeAllWords() {
+    if (isEmpty) return this;
+    return split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');
   }
 }

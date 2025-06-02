@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'markers.dart';
@@ -13,6 +13,7 @@ class IncidenceData {
   final double longitude;
   final MakerType type;
   final String description;
+  final String? imageUrl;
   final Timestamp timestamp;
   final bool isVisible;
 
@@ -23,11 +24,12 @@ class IncidenceData {
     required this.longitude,
     required this.type,
     required this.description,
+    this.imageUrl,
     required this.timestamp,
     required this.isVisible,
   });
 
-  /// Factory constructor to create a HeatPointData instance from a Firestore document.
+  /// Factory constructor to create a IncidenceData instance from a Firestore document.
   factory IncidenceData.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return IncidenceData(
@@ -42,6 +44,7 @@ class IncidenceData {
         }
       ),
       description: data['description'] as String? ?? '',
+      imageUrl: data['imageUrl'] as String?,
       timestamp: data['timestamp'] as Timestamp? ?? Timestamp.now(),
       isVisible: data['isVisible'] as bool? ?? true,
     );
@@ -49,40 +52,46 @@ class IncidenceData {
 
   @override
   String toString() {
-    return 'HeatPointData(id: $id, userId: $userId, lat: $latitude, lng: $longitude, type: ${type.name}, desc: "$description", timestamp: $timestamp, isVisible: $isVisible)'; // ✨ Added userId
+    return 'IncidenceData(id: $id, userId: $userId, lat: $latitude, lng: $longitude, type: ${type.name}, desc: "$description", imageUrl: $imageUrl, timestamp: $timestamp, isVisible: $isVisible)';
   }
 }
 
 /// Utility function to create a [Marker] from [IncidenceData].
-Marker createMarkerFromIncidence(IncidenceData incidence) {
+Marker createMarkerFromIncidence(
+  IncidenceData incidence, {
+  Function(IncidenceData)? onImageMarkerTapped, // Callback for markers with images
+}) {
   final incidentInfoForMarker = getMarkerInfo(incidence.type);
   return Marker(
     markerId: MarkerId(incidence.id),
     position: LatLng(incidence.latitude, incidence.longitude),
     icon: BitmapDescriptor.defaultMarkerWithHue(getMarkerHue(incidence.type)),
-    infoWindow: InfoWindow(
-      title: incidentInfoForMarker?.title ?? incidence.type.name.capitalize(),
-      snippet: incidence.description.isNotEmpty ? incidence.description : null,
-    ),
+    infoWindow: (incidence.imageUrl == null)
+        ? InfoWindow(
+            title: incidentInfoForMarker?.title ?? incidence.type.name.capitalize(),
+            snippet: incidence.description.isNotEmpty ? incidence.description : null,
+          )
+        : InfoWindow.noText, // No default InfoWindow if there's an image and custom tap
+    onTap: (incidence.imageUrl != null && onImageMarkerTapped != null)
+        ? () => onImageMarkerTapped(incidence)
+        : null,
   );
 }
 
 /// Utility function to create a [Circle] from [IncidenceData].
 Circle createCircleFromIncidence(IncidenceData incidence) {
   final MarkerInfo? markerInfo = getMarkerInfo(incidence.type);
-  // Determine the color for the circle, defaulting if not specified
   final Color baseColor = markerInfo?.color ?? Colors.grey;
 
   return Circle(
     circleId: CircleId('circle_${incidence.id}'),
     center: LatLng(incidence.latitude, incidence.longitude),
-    radius: 80, // Radius set to 80
-    fillColor: baseColor.withAlpha((0.25 * 255).round()), // Translucent fill
-    strokeColor: baseColor.withAlpha((0.7 * 255).round()), // Slightly more opaque stroke
+    radius: 80,
+    fillColor: baseColor.withAlpha((0.25 * 255).round()),
+    strokeColor: baseColor.withAlpha((0.7 * 255).round()),
     strokeWidth: 1,
   );
 }
-
 
 /// Service class to manage interactions with the Firestore 'HeatPoints' collection.
 class FirestoreService {
@@ -97,6 +106,7 @@ class FirestoreService {
     required double latitude,
     required double longitude,
     String? description,
+    String? imageUrl, // New parameter
   }) async {
     if (type == MakerType.none) {
       return false;
@@ -114,12 +124,13 @@ class FirestoreService {
         'longitude': longitude,
         'type': type.name,
         'description': description ?? '',
+        'imageUrl': imageUrl, // Save imageUrl
         'timestamp': FieldValue.serverTimestamp(),
         'isVisible': true,
       });
       return true;
     } catch (e) {
-      // print('Error adding heat point: $e');
+      debugPrint('Error adding incidence: $e');
       return false;
     }
   }
@@ -134,17 +145,16 @@ class FirestoreService {
         try {
           return IncidenceData.fromFirestore(doc);
         } catch (e) {
-          // print('Error parsing HeatPointData: $e');
+          debugPrint('Error parsing IncidenceData: $e');
           return null;
         }
       }).whereType<IncidenceData>().toList();
     }).handleError((error) {
-      // print('Error in getHeatPointsStream: $error');
+      debugPrint('Error in getIncidencesStream: $error');
       return <IncidenceData>[];
     });
   }
 
-  /// Marks heat points older than [expiryDuration] as not visible.
   Future<int> markExpiredIncidencesAsInvisible(
       {Duration expiryDuration = const Duration(hours: 1)}) async {
     final DateTime cutoffTime = DateTime.now().subtract(expiryDuration);
@@ -175,6 +185,7 @@ class FirestoreService {
       }
       return updatedCount;
     } catch (e) {
+      debugPrint('Error marking expired incidences: $e');
       return 0;
     }
   }
@@ -184,5 +195,9 @@ extension StringExtension on String {
   String capitalize() {
     if (isEmpty) return this;
     return "${this[0].toUpperCase()}${substring(1)}";
+  }
+    String capitalizeAllWords() { // Added for consistency if used elsewhere
+    if (isEmpty) return this;
+    return split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');
   }
 }

@@ -18,6 +18,7 @@ import '../widgets/location_info.dart';
 import '../widgets/map.dart';
 import '../widgets/incident_buttons.dart';
 import '../widgets/bottom_butons.dart';
+import '../modals/incident_image.dart';
 
 // Managers
 import '../managers/marker_manager.dart';
@@ -34,12 +35,12 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   // Service Instances
   final LocationService _locationService = LocationService();
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _firestoreService = FirestoreService(); // Used by MarkerManager
   final PhoneService _phoneService = PhoneService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final SpeechPermissionService _speechPermissionService = SpeechPermissionService(); // Add new service instance
+  final SpeechPermissionService _speechPermissionService = SpeechPermissionService();
 
-  // Managers (Instances of the renamed classes)
+  // Managers
   late final MarkerManager _dataEventManager;
   late final MapLocationManager _mapLocationManager;
   late final UserSessionManager _userSessionManager;
@@ -71,7 +72,7 @@ class _HomeState extends State<Home> {
     );
     
     _dataEventManager = MarkerManager(
-      firestoreService: _firestoreService,
+      firestoreService: _firestoreService, // Pass the instance
       onStateChange: () { if (mounted) setState(() {}); },
     );
 
@@ -81,15 +82,9 @@ class _HomeState extends State<Home> {
   Future<void> _initializeScreenData() async {
     _userSessionManager.initialize();
     await _mapLocationManager.initializeManager();
-    await _dataEventManager.initialize();
-
-    // Initialize speech permissions and service at startup
+    await _dataEventManager.initialize(); // Initializes MarkerManager
     bool speechReady = await _speechPermissionService.ensurePermissionsAndInitializeService(openSettingsOnError: true);
-    if (speechReady) {
-      debugPrint("Home: Speech permissions granted and STT service seems available/initialized at startup.");
-    } else {
-      debugPrint("Home: Failed to grant speech permissions or initialize STT service at startup. Voice input may not work as expected.");
-    }
+    debugPrint("Home: Speech service ready: $speechReady");
   }
 
   @override
@@ -100,9 +95,28 @@ class _HomeState extends State<Home> {
     _mapController?.dispose();
     super.dispose();
   }
+  
+  // Method to prepare markers for the map, including custom onTap for image markers
+  Set<Marker> _prepareMapMarkers() {
+    // Use the raw IncidenceData list from MarkerManager
+    return _dataEventManager.incidences 
+        .map((incidence) => createMarkerFromIncidence( // from incidences.dart
+              incidence,
+              onImageMarkerTapped: (tappedIncidence) { 
+                // This callback is passed to createMarkerFromIncidence
+                // It will be set as the onTap for markers that have an imageUrl
+                showDialog(
+                  context: context, // Use the Home screen's context
+                  builder: (_) => IncidentImageDisplayModal(incidence: tappedIncidence),
+                );
+              },
+            ))
+        .toSet();
+  }
 
   Set<Marker> _getDisplayMarkers() {
-    Set<Marker> displayMarkers = Set.from(_dataEventManager.incidentMarkers);
+    Set<Marker> displayMarkers = _prepareMapMarkers(); // Uses the new method
+
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -113,8 +127,8 @@ class _HomeState extends State<Home> {
           markerId: const MarkerId('target_location_pin'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          zIndex: 2.0,
-          anchor: const Offset(0.5, 0.4),
+          zIndex: 2.0, // Ensure target pin is on top of other markers if needed
+          anchor: const Offset(0.5, 0.4), // Adjust anchor as needed
         ),
       );
     }
@@ -122,7 +136,13 @@ class _HomeState extends State<Home> {
   }
 
   Set<Marker> _getMarkersForBigMapModal() {
-    Set<Marker> markers = Set.from(_dataEventManager.incidentMarkers);
+    // For the big map, InfoWindow is usually enough.
+    // If you want the image modal here too, use _prepareMapMarkers.
+    // Otherwise, a simpler marker creation is fine.
+    Set<Marker> markers = _dataEventManager.incidences
+        .map((incidence) => createMarkerFromIncidence(incidence)) // Default marker, will show InfoWindow
+        .toSet();
+        
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -142,61 +162,36 @@ class _HomeState extends State<Home> {
     return markers;
   }
 
+  Set<Circle> _getCirclesForDisplay() {
+    // Directly use the circles prepared by MarkerManager
+    return _dataEventManager.incidentCircles;
+  }
+
   Set<Circle> _getCirclesForBigMapModal() {
+    // Directly use the circles prepared by MarkerManager
     return _dataEventManager.incidentCircles;
   }
 
   Future<void> _handleIncidentButtonPressed(MakerType markerType) async {
     if (!mounted) return;
-
-    final String? description = await _dataEventManager.handleMarkerSelectionAndGetDescription(
-      context: context,
-      newMarkerToSelect: markerType,
-      targetLatitude: _mapLocationManager.targetLatitude,
-      targetLongitude: _mapLocationManager.targetLongitude,
+    // Use the updated processing method in MarkerManager
+    await _dataEventManager.processIncidentReporting(
+        context: context,
+        newMarkerToSelect: markerType,
+        targetLatitude: _mapLocationManager.targetLatitude,
+        targetLongitude: _mapLocationManager.targetLongitude,
     );
-
-    if (!mounted) return;
-
-    if (_dataEventManager.selectedIncident != MakerType.none && description != null) {
-      if (_mapLocationManager.targetLatitude != null && _mapLocationManager.targetLongitude != null) {
-        await _dataEventManager.addMarkerAndShowNotification(
-          context: context,
-          makerType: _dataEventManager.selectedIncident,
-          latitude: _mapLocationManager.targetLatitude!,
-          longitude: _mapLocationManager.targetLongitude!,
-          description: description,
-        );
-      }
-    }
   }
 
   Future<void> _handleEmergencyButtonPressed() async {
     if (!mounted) return;
-
-    final String? description = await _dataEventManager.handleEmergencyAndGetDescription(
+      await _dataEventManager.processEmergencyReporting(
         context: context,
         targetLatitude: _mapLocationManager.targetLatitude,
         targetLongitude: _mapLocationManager.targetLongitude,
     );
-
-    if (!mounted) return;
-
-    if (description != null && _mapLocationManager.targetLatitude != null && _mapLocationManager.targetLongitude != null) {
-        await _dataEventManager.addMarkerAndShowNotification(
-            context: context,
-            makerType: MakerType.emergency,
-            latitude: _mapLocationManager.targetLatitude!,
-            longitude: _mapLocationManager.targetLongitude!,
-            description: description,
-        );
-      if (mounted) {
-        _dataEventManager.setActiveMaker(MakerType.emergency);
-      }
-    } else if (description == null && _mapLocationManager.targetLatitude != null && _mapLocationManager.targetLongitude != null) {
-        debugPrint("Emergency marker not added as description dialog was cancelled.");
-    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -212,8 +207,16 @@ class _HomeState extends State<Home> {
               child: Container(
                 margin: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white, // Background for the scrollable content area
                   borderRadius: BorderRadius.circular(20.0),
+                  boxShadow: [ // Optional: add shadow for depth
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 0,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
                 ),
                 child: CustomScrollView(
                   slivers: [
@@ -222,11 +225,11 @@ class _HomeState extends State<Home> {
                         children: [
                           LocationInfoWidget(locationText: _mapLocationManager.locationText),
                           MapDisplayWidget(
-                            key: ValueKey('mapDisplay_${_mapLocationManager.targetLatitude}_${_mapLocationManager.targetLongitude}'),
+                            key: ValueKey('mapDisplay_${_mapLocationManager.initialCameraPosition?.latitude}_${_mapLocationManager.initialCameraPosition?.longitude}'),
                             initialLatitude: initialMapCenter?.latitude,
                             initialLongitude: initialMapCenter?.longitude,
-                            markers: _getDisplayMarkers(),
-                            circles: _dataEventManager.incidentCircles,
+                            markers: _getDisplayMarkers(), 
+                            circles: _getCirclesForDisplay(), // Pass circles to the map
                             selectedMarker: _dataEventManager.selectedIncident,
                             onMapTappedWithMarker: _mapLocationManager.handleMapTapped,
                             onMapLongPressed: (cameraPosition) =>
@@ -245,15 +248,15 @@ class _HomeState extends State<Home> {
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(vertical: 8.0), // Spacing around incident buttons
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: _handleIncidentButtonPressed,
                         ),
                       ),
                     ),
-                    SliverFillRemaining(
-                      hasScrollBody: false,
+                    SliverFillRemaining( // To push bottom buttons to the actual bottom
+                      hasScrollBody: false, // False if content above might not fill the screen
                       child: Align(
                         alignment: Alignment.bottomCenter,
                         child: BottomActionButtonsWidget(
