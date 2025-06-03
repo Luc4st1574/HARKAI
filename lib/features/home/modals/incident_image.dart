@@ -44,7 +44,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withAlpha((0.9 * 255).toInt()),
                 ),
               ),
             if (incidence.description.isNotEmpty) const SizedBox(height: 5),
@@ -52,19 +52,15 @@ class IncidentImageDisplayModal extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2), // Subtle background for description
+                  color: Colors.black.withAlpha((0.2 * 255).toInt()), // Subtle background for description
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   incidence.description,
-                  style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.85)),
+                  style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.85 * 255).toInt())),
                 ),
               ),
-            // Message if only image exists and no description (moved to be after potential image)
-            // We will handle the "No additional description provided." message differently below if needed.
-
             const SizedBox(height: 15), // Spacing between description and image
-
             // Image Display
             if (incidence.imageUrl != null)
               Container(
@@ -74,7 +70,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: accentColor.withOpacity(0.5))),
+                    border: Border.all(color: accentColor.withAlpha((0.5 * 255).toInt()))),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.network(
@@ -99,7 +95,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.broken_image, size: 50, color: accentColor.withOpacity(0.7)),
+                              Icon(Icons.broken_image, size: 50, color: accentColor.withAlpha((0.7 * 255).toInt())),
                               const SizedBox(height: 8),
                               Text("Image unavailable", style: TextStyle(color: Colors.white70)),
                             ],
@@ -111,20 +107,18 @@ class IncidentImageDisplayModal extends StatelessWidget {
                 ),
               )
             else // Placeholder if no image
-              Container(
+              SizedBox(
                 height: 100, // Adjusted height if needed, or remove if "No image" is not desired here
                 child: Center(child: Text("No image for this incident.", style: TextStyle(color: Colors.white70))),
               ),
 
-            // Message if description is empty AND an image exists
-            // This replaces the previous "No additional description provided." logic to fit the new order
             if (incidence.description.isEmpty && incidence.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0), // Add some space above this text if needed
                 child: Text(
                   "No additional description provided for the image.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  style: TextStyle(color: Colors.white.withAlpha((0.7 * 255).toInt())),
                 ),
               ),
             

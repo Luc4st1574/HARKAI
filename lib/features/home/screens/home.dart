@@ -211,7 +211,7 @@ class _HomeState extends State<Home> {
                   borderRadius: BorderRadius.circular(20.0),
                   boxShadow: [ // Optional: add shadow for depth
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withAlpha((0.1 * 255).toInt()),
                       spreadRadius: 0,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
