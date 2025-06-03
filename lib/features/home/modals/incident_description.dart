@@ -6,14 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:record/record.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'modules/media_services.dart';
+import 'modules/media_handler.dart';
+import 'modules/ui_builders.dart';
+
 import 'package:harkai/core/services/storage_service.dart';
-import '../utils/markers.dart';
-import '/core/services/speech_service.dart';
+import '../utils/markers.dart'; // For MakerType and getMarkerInfo
 
 // Enum to manage the state of the media input modal
 enum MediaInputState {
@@ -26,7 +27,7 @@ enum MediaInputState {
 
   // Step 2: Image (Optional)
   displayingConfirmedAudio, // Confirmed audio shown, user decides to add image or submit audio only
-  awaitingImageCapture, // User chose to add image, camera action
+  awaitingImageCapture, // User chose to add image, camera action (less explicit state now, part of displayingConfirmedAudio)
   imagePreview, // Image captured, ready for analysis or retake/remove
   sendingImageToGemini, // Sending image to Gemini
   imageAnalyzed, // Image analyzed by Gemini (approved or not), user can submit with image, retake, or remove
@@ -52,35 +53,40 @@ class IncidentVoiceDescriptionModal extends StatefulWidget {
 class _IncidentVoiceDescriptionModalState
     extends State<IncidentVoiceDescriptionModal> with TickerProviderStateMixin {
   // Audio specific
-  late AudioRecorder _audioRecorder;
   String? _recordedAudioPath;
   String _geminiAudioProcessedText = ''; // Holds the raw response from Gemini for audio
   String _confirmedAudioDescription = ''; // Holds the user-confirmed audio description
 
   // Image specific
-  final ImagePicker _imagePicker = ImagePicker();
   File? _capturedImageFile;
   String _geminiImageAnalysisResultText = ''; // Feedback from Gemini about the image
   bool _isImageApprovedByGemini = false;
   String? _uploadedImageUrl;
 
-  // Shared
+  // Shared State
   MediaInputState _currentInputState = MediaInputState.idle;
   GenerativeModel? _generativeModel;
   bool _hasMicPermission = false;
   String _statusText = 'Initializing...';
   String _userInstructionText = '';
+
+  // Animation
   late AnimationController _micAnimationController;
   late Animation<double> _micScaleAnimation;
 
-  // Services
-  final StorageService _storageService = StorageService();
+  // Service and Handler instances
+  late IncidentMediaServices _mediaServices;
+  late DeviceMediaHandler _deviceMediaHandler;
+  final StorageService _storageService = StorageService(); // For uploading image
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-    _audioRecorder = AudioRecorder();
+
+    final apiKey = dotenv.env['HARKI_KEY'] ?? "";
+    _mediaServices = IncidentMediaServices(apiKey: apiKey);
+    _deviceMediaHandler = DeviceMediaHandler();
 
     _micAnimationController = AnimationController(
       vsync: this,
@@ -91,57 +97,47 @@ class _IncidentVoiceDescriptionModalState
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _checkPermissionsAndInitializeServices();
-      if (mounted) {
-        _updateStatusAndInstructionText();
-      }
+      await _initializeModal();
     });
   }
 
-  Future<void> _checkPermissionsAndInitializeServices() async {
-    PermissionStatus micStatus = await Permission.microphone.status;
+  Future<void> _initializeModal() async {
+    // Check permissions
+    PermissionStatus micStatus =
+        await _mediaServices.getMicrophonePermissionStatus();
     _hasMicPermission = micStatus.isGranted;
 
     if (!_hasMicPermission) {
-      _hasMicPermission = await SpeechPermissionService().requestMicrophonePermission(openSettingsOnError: true);
+      _hasMicPermission =
+          await _mediaServices.requestMicrophonePermission(openSettingsOnError: true);
       if (!_hasMicPermission && mounted) {
-        _handleError("Microphone permission is required for audio recording. Please restart the report to enable it if you wish to use audio.");
+        _handleError(
+            "Microphone permission is required for audio recording. Please grant it in settings or restart the report process.");
+            // UI will update via _updateStatusAndInstructionText below
       }
     }
-    await _initializeGemini();
-    if (mounted) _updateStatusAndInstructionText();
-  }
 
-  Future<void> _initializeGemini() async {
-    final apiKey = dotenv.env['HARKI_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      _handleError("Harki AI Key not found. Media processing unavailable.");
-      return;
+    // Initialize Gemini
+    if (_generativeModel == null) {
+        _generativeModel = _mediaServices.initializeGeminiModel();
+        if (_generativeModel == null && mounted) {
+            _handleError("Failed to initialize Harki AI. Media processing unavailable.");
+        } else if (mounted) {
+            debugPrint("IncidentModal: Gemini initialized via MediaServices.");
+        }
     }
-    try {
-      const systemInstruction =
-          "You are Harki, an AI assistant for the Harkai citizen security app. "
-          "Analyze user-provided media (audio or image) based on their specific instructions which will include a pre-selected incident type. "
-          "Provide concise responses in the specified formats (MATCH, MISMATCH, INAPPROPRIATE, UNCLEAR). "
-          "Prioritize safety and relevance. Respond in the language of the input if identifiable (Spanish/English), else English."
-          "Most user inputs will be in Spanish, so prioritize that language unless specified otherwise and do not translate your response to english if spanish was the used languaje by the user.";
-
-      _generativeModel = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: apiKey,
-        systemInstruction: Content.system(systemInstruction),
-        generationConfig: GenerationConfig(temperature: 0.7, maxOutputTokens: 150),
-      );
-      debugPrint("IncidentModal: Gemini initialized.");
-    } catch (e) {
-      _handleError("Failed to initialize Harki AI: ${e.toString()}");
-    }
-    if (mounted) _updateStatusAndInstructionText();
-  }
-
-  void _handleError(String errorMessage, {bool isGeminiError = false, bool isMismatch = false, bool isUnclear = false}) {
+    
     if (mounted) {
-      _micAnimationController.reverse();
+      _updateStatusAndInstructionText(); // Initial UI update
+    }
+  }
+
+  void _handleError(String errorMessage,
+      {bool isGeminiError = false,
+      bool isMismatch = false,
+      bool isUnclear = false}) {
+    if (mounted) {
+      _micAnimationController.reverse(); // Ensure mic animation stops
       setState(() {
         _currentInputState = MediaInputState.error;
         if (isMismatch) {
@@ -158,24 +154,33 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-  Future<String> _getTempFilePath(String extension) async {
-    final directory = await getTemporaryDirectory();
-    return '${directory.path}/incident_media_${DateTime.now().millisecondsSinceEpoch}.$extension';
-  }
-
   // --- Audio Methods (Step 1) ---
-  Future<void> _startRecording() async {
+  Future<void> _handleStartRecording() async {
     _clearAllMediaData(clearAudioProcessingResults: true, clearImageProcessingResults: true, updateState: false);
+    
     if (!_hasMicPermission) {
       _handleError("Microphone permission not granted. Cannot record audio.");
+      await _initializeModal(); // Attempt to re-check/re-ask for permissions
       return;
     }
-    if (await _audioRecorder.isRecording()) await _audioRecorder.stop();
+    if (_generativeModel == null) {
+        _handleError("Harki AI is not ready. Cannot process audio.");
+        await _initializeModal(); // Attempt to re-initialize
+        return;
+    }
 
-    try {
-      _recordedAudioPath = await _getTempFilePath("m4a");
-      const config = RecordConfig(encoder: AudioEncoder.aacLc, sampleRate: 16000, numChannels: 1, bitRate: 48000);
-      await _audioRecorder.start(config, path: _recordedAudioPath!);
+    _recordedAudioPath = await _deviceMediaHandler.getTemporaryFilePath("m4a");
+    const config = RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        sampleRate: 16000,
+        numChannels: 1,
+        bitRate: 48000);
+
+    final successPath = await _deviceMediaHandler.startRecording(
+        filePath: _recordedAudioPath!, config: config);
+
+    if (successPath != null) {
+      _recordedAudioPath = successPath;
       if (mounted) {
         _micAnimationController.forward();
         setState(() {
@@ -183,70 +188,97 @@ class _IncidentVoiceDescriptionModalState
           _updateStatusAndInstructionText();
         });
       }
-    } catch (e) { _handleError("Could not start recording: $e"); }
+    } else {
+      _recordedAudioPath = null;
+      _handleError("Could not start recording. Please ensure microphone is available.");
+    }
   }
 
-  Future<void> _stopRecording() async {
-    if (!await _audioRecorder.isRecording()) return;
-    try {
-      final path = await _audioRecorder.stop();
-      if (path != null && File(path).existsSync() && await File(path).length() > 100) {
-        _recordedAudioPath = path;
-        if (mounted) {
-          _micAnimationController.reverse();
-          setState(() { _currentInputState = MediaInputState.audioRecordedReadyToSend; _updateStatusAndInstructionText(); });
-        }
-      } else { _handleError("Audio recording seems empty or was not saved correctly."); _recordedAudioPath = null; }
-    } catch (e) { _handleError("Error stopping audio recording: $e"); }
+  Future<void> _handleStopRecording() async {
+    final path = await _deviceMediaHandler.stopRecording();
+    if (path != null) {
+      _recordedAudioPath = path;
+      if (mounted) {
+        _micAnimationController.reverse();
+        setState(() {
+          _currentInputState = MediaInputState.audioRecordedReadyToSend;
+          _updateStatusAndInstructionText();
+        });
+      }
+    } else {
+      _recordedAudioPath = null; // Clear path if stopping failed or recording was invalid
+      if (mounted) _micAnimationController.reverse();
+      _handleError( "Audio recording seems empty or was not saved correctly. Please try again.");
+      // Stay in a state where user can retry, perhaps idle or error.
+      // Forcing back to idle to allow another attempt.
+      if (mounted) {
+        setState(() {
+          _currentInputState = MediaInputState.idle;
+          _updateStatusAndInstructionText();
+        });
+      }
+    }
   }
 
-  Future<void> _sendAudioToGemini() async {
+  Future<void> _handleSendAudioToGemini() async {
     if (_recordedAudioPath == null || _generativeModel == null) {
       _handleError("No audio recorded or Harki AI not ready.", isGeminiError: _generativeModel == null);
       return;
     }
-    setState(() { _currentInputState = MediaInputState.sendingAudioToGemini; _updateStatusAndInstructionText(); });
+    if (mounted) {
+      setState(() {
+        _currentInputState = MediaInputState.sendingAudioToGemini;
+        _updateStatusAndInstructionText();
+      });
+    }
 
     try {
       final audioFile = File(_recordedAudioPath!);
       final Uint8List audioBytes = await audioFile.readAsBytes();
-      final String incidentTypeName = widget.markerType.name.toString().split('.').last.capitalizeAllWords();
+      final String incidentTypeName =
+          widget.markerType.name.toString().split('.').last.capitalizeAllWords();
 
-      final audioUserInstruction = "Incident Type: '$incidentTypeName'. Process the following audio. "
-          "Expected response formats: 'MATCH: [Short summary, max 15 words, of the audio content related to the incident type.]', "
-          "'MISMATCH: This audio seems to describe a [Correct Incident Type] incident. Please confirm this type or re-record for the $incidentTypeName incident.', "
-          "'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'";
+      final text = await _mediaServices.analyzeAudioWithGemini(
+        model: _generativeModel!,
+        audioBytes: audioBytes,
+        audioMimeType: "audio/aac", // Mime type for .m4a is typically audio/mp4 or audio/aac
+        incidentTypeName: incidentTypeName,
+      );
 
-      final response = await _generativeModel!.generateContent([
-          Content('user', [
-            TextPart(audioUserInstruction),
-            DataPart("audio/aac", audioBytes)
-          ])
-      ]);
-      final text = response.text;
-      _geminiAudioProcessedText = text ?? "Harki AI couldn't process the audio."; // Store raw Gemini response
+      _geminiAudioProcessedText = text ?? "Harki AI couldn't process the audio.";
 
       if (mounted) {
         if (text != null && text.isNotEmpty) {
           if (text.startsWith("MATCH:")) {
-            // Don't set _confirmedAudioDescription yet, just store Gemini's suggestion
             _geminiAudioProcessedText = text.substring("MATCH:".length).trim();
-            setState(() { _currentInputState = MediaInputState.audioDescriptionReadyForConfirmation; _updateStatusAndInstructionText(); });
+            setState(() {
+              _currentInputState = MediaInputState.audioDescriptionReadyForConfirmation;
+              _updateStatusAndInstructionText();
+            });
           } else if (text.startsWith("MISMATCH:") || text.startsWith("UNCLEAR:")) {
-            _handleError(_geminiAudioProcessedText, isMismatch: text.startsWith("MISMATCH:"), isUnclear: text.startsWith("UNCLEAR:"));
+            _handleError(_geminiAudioProcessedText,
+                isMismatch: text.startsWith("MISMATCH:"),
+                isUnclear: text.startsWith("UNCLEAR:"));
           } else {
-             // Unexpected but show response
-            _handleError("Harki AI audio response format was unexpected: $_geminiAudioProcessedText. Please review or retry.", isGeminiError: true);
+            _handleError(
+                "Harki AI audio response format was unexpected: $_geminiAudioProcessedText. Please review or retry.",
+                isGeminiError: true);
           }
-        } else { _handleError("Harki AI returned no actionable text for audio.", isGeminiError: true); }
+        } else {
+          _handleError("Harki AI returned no actionable text for audio.",
+              isGeminiError: true);
+        }
       }
-    } catch (e) { _handleError("Harki AI audio processing failed: ${e.toString()}", isGeminiError: true); }
+    } catch (e) {
+      _handleError("Harki AI audio processing failed: ${e.toString()}",
+          isGeminiError: true);
+    }
   }
 
-  void _confirmAudioAndProceed() {
+  void _handleConfirmAudioAndProceed() {
     if (_geminiAudioProcessedText.isNotEmpty) {
-      _confirmedAudioDescription = _geminiAudioProcessedText; // Now it's confirmed
-      _geminiAudioProcessedText = ''; // Clear the raw Gemini text as it's now confirmed
+      _confirmedAudioDescription = _geminiAudioProcessedText;
+      _geminiAudioProcessedText = ''; // Clear the raw Gemini text
       if (mounted) {
         setState(() {
           _currentInputState = MediaInputState.displayingConfirmedAudio;
@@ -258,17 +290,31 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-
   // --- Image Methods (Step 2) ---
-  Future<void> _captureImage() async {
-    // _clearImageData only, keep confirmed audio
-    _clearImageData(updateState: false);
+  Future<void> _handleCaptureImage() async {
+    _clearImageData(updateState: false); // Clear only image related data before capturing new one
 
-    try {
-      final XFile? pickedFile = await _imagePicker.pickImage(source: ImageSource.camera, maxWidth: 1024, imageQuality: 70);
-      if (pickedFile != null) {
+    if (_generativeModel == null) {
+        _handleError("Harki AI is not ready. Cannot process image.");
+        await _initializeModal(); // Attempt to re-initialize
+        return;
+    }
+    
+    // Indicate to user that camera is being launched
+    if (mounted) {
+        // setState(() {
+        //     _currentInputState = MediaInputState.awaitingImageCapture; // This state can be implied
+        //     _updateStatusAndInstructionText();
+        // });
+    }
+
+    final File? capturedFile = await _deviceMediaHandler.captureImageFromCamera(
+        maxWidth: 1024, imageQuality: 70);
+
+    if (mounted) {
+      if (capturedFile != null) {
         setState(() {
-          _capturedImageFile = File(pickedFile.path);
+          _capturedImageFile = capturedFile;
           _currentInputState = MediaInputState.imagePreview;
           _geminiImageAnalysisResultText = '';
           _isImageApprovedByGemini = false;
@@ -276,42 +322,40 @@ class _IncidentVoiceDescriptionModalState
           _updateStatusAndInstructionText();
         });
       } else {
-         // If user cancels picker, go back to decision state for image
+        // User cancelled picker, go back to decision state
         setState(() {
           _currentInputState = MediaInputState.displayingConfirmedAudio;
           _updateStatusAndInstructionText();
         });
       }
-    } catch (e) { _handleError("Failed to capture image: $e"); }
+    }
   }
 
-  Future<void> _sendImageToGemini() async {
+  Future<void> _handleSendImageToGemini() async {
     if (_capturedImageFile == null || _generativeModel == null) {
       _handleError("No image captured or Harki AI not ready.", isGeminiError: _generativeModel == null);
       return;
     }
-    setState(() { _currentInputState = MediaInputState.sendingImageToGemini; _updateStatusAndInstructionText(); });
+    if (mounted) {
+      setState(() {
+        _currentInputState = MediaInputState.sendingImageToGemini;
+        _updateStatusAndInstructionText();
+      });
+    }
 
     try {
       final Uint8List imageBytes = await _capturedImageFile!.readAsBytes();
       final String mimeType = _capturedImageFile!.path.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      final String incidentTypeName = widget.markerType.name.toString().split('.').last.capitalizeAllWords();
+      final String incidentTypeName =
+          widget.markerType.name.toString().split('.').last.capitalizeAllWords();
 
-      final imageUserInstruction = "Incident Type: '$incidentTypeName'. Process the following image. "
-          "1. SAFETY: If image contains explicit sexual content or excessive gore, respond EXACTLY with 'INAPPROPRIATE: The image contains content that cannot be posted.'. "
-          "2. RELEVANCE (If safe): Does image genuinely match '$incidentTypeName'? "
-          "3. RESPONSE (If safe): "
-          "IF MATCHES INCIDENT TYPE: Respond EXACTLY 'MATCH:'. "
-          "IF MISMATCH (but valid other type like Fire, Crash, Theft, Pet, Emergency): Respond EXACTLY 'MISMATCH: This image looks more like a [Correct Incident Type] alert. Please confirm this type or retake image for $incidentTypeName incident.'. "
-          "IF IRRELEVANT/UNCLEAR: Respond EXACTLY 'UNCLEAR: The image is not clear enough or does not seem to describe a reportable incident for '$incidentTypeName'. Please try retaking the picture.'.";
+      final text = await _mediaServices.analyzeImageWithGemini(
+        model: _generativeModel!,
+        imageBytes: imageBytes,
+        imageMimeType: mimeType,
+        incidentTypeName: incidentTypeName,
+      );
 
-      final response = await _generativeModel!.generateContent([
-          Content('user', [
-            TextPart(imageUserInstruction),
-            DataPart(mimeType, imageBytes)
-          ])
-      ]);
-      final text = response.text;
       _geminiImageAnalysisResultText = text ?? "Harki AI couldn't process the image.";
       debugPrint("Gemini Image Response: $_geminiImageAnalysisResultText");
 
@@ -325,20 +369,24 @@ class _IncidentVoiceDescriptionModalState
             // _geminiImageAnalysisResultText is already Gemini's response
           }
         } else {
-            _isImageApprovedByGemini = false;
-            _geminiImageAnalysisResultText = "Harki AI returned no actionable text for image.";
+          _isImageApprovedByGemini = false;
+          _geminiImageAnalysisResultText = "Harki AI returned no actionable text for image.";
         }
-        setState(() { _currentInputState = MediaInputState.imageAnalyzed; _updateStatusAndInstructionText(); });
+        setState(() {
+          _currentInputState = MediaInputState.imageAnalyzed;
+          _updateStatusAndInstructionText();
+        });
       }
     } catch (e) {
-      _isImageApprovedByGemini = false;
+      _isImageApprovedByGemini = false; // Ensure not approved on error
       _handleError("Harki AI image processing failed: ${e.toString()}", isGeminiError: true);
     }
   }
 
-  void _removeImageAndGoBackToDecision() {
-    _clearImageData(updateState: false);
-    if(mounted) {
+  void _handleRemoveImageAndGoBackToDecision() {
+    _clearImageData(updateState: false); // Clear image data
+    // No need to delete _capturedImageFile here, as it's a temp file from picker, OS handles it or it's overwritten.
+    if (mounted) {
       setState(() {
         _currentInputState = MediaInputState.displayingConfirmedAudio;
         _updateStatusAndInstructionText();
@@ -346,68 +394,76 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-
   // --- Data Clearing and Final Submission ---
   void _clearImageData({bool updateState = true}) {
-    if(mounted){
-      setState(() {
-        _capturedImageFile = null;
-        _geminiImageAnalysisResultText = '';
-        _isImageApprovedByGemini = false;
-        _uploadedImageUrl = null;
-        if (updateState && !_currentInputState.name.startsWith("step2_")) { // Only reset to idle if not in step 2
-            _currentInputState = MediaInputState.idle;
+    if (mounted) {
+      _capturedImageFile = null; 
+      _geminiImageAnalysisResultText = '';
+      _isImageApprovedByGemini = false;
+      _uploadedImageUrl = null;
+      if (updateState) {
+          setState(() {
+            // Logic to determine next state after clearing image data
+            if (_currentInputState.name.startsWith("image") || _currentInputState == MediaInputState.displayingConfirmedAudio) {
+                 _currentInputState = MediaInputState.displayingConfirmedAudio; // Go back to image decision point
+            } else {
+                 _currentInputState = MediaInputState.idle; // Or appropriate fallback
+            }
             _updateStatusAndInstructionText();
-        } else if (updateState && _currentInputState.name.startsWith("step2_")){
-            // If in step 2 and clearing image, go back to the decision point of step 2
-            _currentInputState = MediaInputState.displayingConfirmedAudio;
-            _updateStatusAndInstructionText();
-        }
-      });
+          });
+      }
     }
   }
 
   void _clearAllMediaData({bool clearAudioProcessingResults = true, bool clearImageProcessingResults = true, bool updateState = true}) {
     if (mounted) {
-      setState(() {
+      // Delete recorded audio if it exists
+      if (_recordedAudioPath != null) {
+        _deviceMediaHandler.deleteTemporaryFile(_recordedAudioPath);
         _recordedAudioPath = null;
-        _capturedImageFile = null;
-        _uploadedImageUrl = null;
+      }
+      // Clear image data (without deleting file, as explained in _clearImageData)
+      _capturedImageFile = null;
+      _uploadedImageUrl = null;
 
-        if (clearAudioProcessingResults) {
-          _geminiAudioProcessedText = '';
-          _confirmedAudioDescription = '';
-        }
-        if (clearImageProcessingResults) {
-          _geminiImageAnalysisResultText = '';
-          _isImageApprovedByGemini = false;
-        }
-        if (updateState) {
-          _currentInputState = MediaInputState.idle;
-          _updateStatusAndInstructionText();
-        }
-      });
+      if (clearAudioProcessingResults) {
+        _geminiAudioProcessedText = '';
+        _confirmedAudioDescription = '';
+      }
+      if (clearImageProcessingResults) {
+        _geminiImageAnalysisResultText = '';
+        _isImageApprovedByGemini = false;
+      }
+      if (updateState) {
+        setState(() {
+            _currentInputState = MediaInputState.idle;
+            _updateStatusAndInstructionText();
+        });
+      }
     }
   }
 
+  Future<void> _handleFinalSubmitIncident() async {
+    if (_currentUser?.uid == null) {
+      _handleError("User not logged in. Cannot submit incident.");
+       // Go back to a state where user can decide further actions or simply show error.
+      if(mounted) setState(() { _currentInputState = _capturedImageFile != null && _isImageApprovedByGemini ? MediaInputState.imageAnalyzed : MediaInputState.displayingConfirmedAudio; _updateStatusAndInstructionText();});
+      return;
+    }
 
-  Future<void> _finalSubmitIncident() async {
     // Image Upload if an approved image exists and hasn't been uploaded
     if (_capturedImageFile != null && _isImageApprovedByGemini && _uploadedImageUrl == null) {
-      if (_currentUser?.uid != null) {
+      if (mounted) {
         setState(() { _currentInputState = MediaInputState.uploadingMedia; _updateStatusAndInstructionText(); });
-        _uploadedImageUrl = await _storageService.uploadIncidentImage(
-            imageFile: _capturedImageFile!,
-            userId: _currentUser!.uid,
-            incidentType: widget.markerType.name);
-        if (_uploadedImageUrl == null && mounted) {
-          _handleError("Failed to upload image. Please try again or submit without image.");
-          // Go back to a state where user can decide to submit without image or retry upload
-          setState(() { _currentInputState = MediaInputState.imageAnalyzed; _updateStatusAndInstructionText();});
-          return;
-        }
-      } else {
-        _handleError("User not logged in. Cannot upload image.");
+      }
+      _uploadedImageUrl = await _mediaServices.uploadIncidentImage(
+          storageService: _storageService, // Pass the instance
+          imageFile: _capturedImageFile!,
+          userId: _currentUser!.uid,
+          incidentType: widget.markerType.name); // Pass the original enum name string
+
+      if (_uploadedImageUrl == null && mounted) {
+        _handleError("Failed to upload image. Please try again or submit without image.");
         setState(() { _currentInputState = MediaInputState.imageAnalyzed; _updateStatusAndInstructionText();});
         return;
       }
@@ -415,59 +471,69 @@ class _IncidentVoiceDescriptionModalState
 
     // Final check: must have confirmed audio description. Image is optional.
     if (_confirmedAudioDescription.isNotEmpty) {
-        if (mounted) {
-            debugPrint("Submitting: Audio='$_confirmedAudioDescription', ImageUrl='$_uploadedImageUrl'");
-            Navigator.pop(context, {'description': _confirmedAudioDescription, 'imageUrl': _uploadedImageUrl});
-        }
+      if (mounted) {
+        debugPrint("Submitting: Audio='$_confirmedAudioDescription', ImageUrl='$_uploadedImageUrl'");
+        Navigator.pop(context, {'description': _confirmedAudioDescription, 'imageUrl': _uploadedImageUrl});
+      }
     } else {
-        // This case should ideally not be reached if flow is correct, as audio must be confirmed first.
-        _handleError("No confirmed audio description available to submit. Please complete audio step first or cancel.");
-         setState(() { _currentInputState = MediaInputState.idle; _updateStatusAndInstructionText();}); // Go back to start
+      _handleError("No confirmed audio description available. Please complete audio step first.");
+      if(mounted) setState(() { _currentInputState = MediaInputState.idle; _updateStatusAndInstructionText();});
     }
   }
 
-  Future<void> _deleteTempFiles() async {
+  Future<void> _deleteRecordedAudioFile() async {
     if (_recordedAudioPath != null) {
-      try { final file = File(_recordedAudioPath!); if(await file.exists()) await file.delete(); } catch (e) { debugPrint("Error deleting temp audio: $e");}
+      await _deviceMediaHandler.deleteTemporaryFile(_recordedAudioPath);
       _recordedAudioPath = null;
     }
   }
 
-  void _retryFullProcess() async { 
-    await _deleteTempFiles();
+  Future<void> _handleRetryFullProcess() async {
+    await _deleteRecordedAudioFile();
     _clearAllMediaData(updateState: false); // Clears everything including confirmed audio
-    if (mounted) {
-      setState(() {
-        _currentInputState = MediaInputState.idle;
-        if (!_hasMicPermission || _generativeModel == null) {
-            _checkPermissionsAndInitializeServices();
-        } else {
-            _updateStatusAndInstructionText();
-        }
-      });
+    
+    // Re-initialize permissions and Gemini if they were problematic
+    if (!_hasMicPermission || _generativeModel == null) {
+        await _initializeModal(); // This will also call _updateStatusAndInstructionText
+    } else if (mounted) {
+        setState(() {
+          _currentInputState = MediaInputState.idle;
+          _updateStatusAndInstructionText();
+        });
     }
   }
 
-  void _cancelInput() async {
-    if (mounted && await _audioRecorder.isRecording()) {
-      try { await _audioRecorder.stop(); } catch (e) { debugPrint("Error stopping recorder on cancel: $e"); }
+  Future<void> _handleCancelInput() async {
+    if (await _deviceMediaHandler.isAudioRecording()) {
+      await _deviceMediaHandler.stopRecording(); // Stop recording if active
     }
-    await _deleteTempFiles();
-    _clearAllMediaData(updateState: false);
-    if (mounted) Navigator.pop(context, null);
+    await _deleteRecordedAudioFile();
+    _clearAllMediaData(updateState: false); // Clear all data without UI update yet
+    if (mounted) {
+      Navigator.pop(context, null); // Pop the dialog
+    }
   }
+  
+  void _onTapMicHintOrPermissionRecheck() {
+      if (!_hasMicPermission || _generativeModel == null) {
+          _initializeModal(); // Attempt to re-check permissions or re-initialize Gemini
+      }
+      // If it has permission and model, the SnackBar hint is shown by the UI builder's onTap
+  }
+
 
   void _updateStatusAndInstructionText() {
     final markerDetails = getMarkerInfo(widget.markerType);
-    final incidentName = markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
+    final incidentName =
+        markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
 
     switch (_currentInputState) {
-      // Step 1: Audio
       case MediaInputState.idle:
         _statusText = 'Step 1: Report Audio for $incidentName';
         _userInstructionText = 'Hold Mic to record audio description.';
-        if (!_hasMicPermission) _userInstructionText = 'Mic permission needed. You can grant it in settings or restart the report process.';
-        if (_generativeModel == null) _userInstructionText = "Harki AI is initializing. Please wait.";
+        if (!_hasMicPermission) _userInstructionText = 'Mic permission needed. Tap Mic to check/grant or grant in settings.';
+        if (_generativeModel == null && _hasMicPermission) _userInstructionText = "Harki AI is initializing. Please wait or tap Mic to retry.";
+        if(!_hasMicPermission && _generativeModel == null) _userInstructionText = "Mic permission needed & Harki AI initializing. Tap Mic to proceed.";
         break;
       case MediaInputState.recordingAudio:
         _statusText = 'Recording Audio...';
@@ -483,46 +549,39 @@ class _IncidentVoiceDescriptionModalState
         break;
       case MediaInputState.audioDescriptionReadyForConfirmation:
         _statusText = 'Confirm Audio Description:';
-        _userInstructionText = 'Harki suggests: "$_geminiAudioProcessedText".\nIs this correct?';
+        _userInstructionText =
+            'Harki suggests: "$_geminiAudioProcessedText".\nIs this correct?';
         break;
-
-      // Step 2: Image (Optional)
       case MediaInputState.displayingConfirmedAudio:
         _statusText = 'Step 2: Add Image (Optional)';
-        _userInstructionText = 'Confirmed Audio: "$_confirmedAudioDescription"\nAdd an image or submit with audio only.';
+        _userInstructionText =
+            'Confirmed Audio: "$_confirmedAudioDescription"\nAdd an image or submit with audio only.';
         break;
-      case MediaInputState.awaitingImageCapture: 
+      case MediaInputState.awaitingImageCapture:
         _statusText = 'Step 2: Capturing Image...';
-        _userInstructionText = 'Please use the camera.';
+        _userInstructionText = 'Please use the camera to capture an image.';
         break;
       case MediaInputState.imagePreview:
         _statusText = 'Step 2: Image Preview';
-        _userInstructionText = 'Analyze this image with Harki, retake it, or remove it to proceed with audio only.';
-        if (_confirmedAudioDescription.isNotEmpty) {
-            _userInstructionText = 'Confirmed Audio: "$_confirmedAudioDescription"\n\nThen: $_userInstructionText';
-        }
+        _userInstructionText =
+            'Analyze this image with Harki, retake it, or remove it to proceed with audio only.';
+        // Prepending confirmed audio is handled by the UI builder if needed
         break;
       case MediaInputState.sendingImageToGemini:
         _statusText = 'Harki Analyzing Image...';
         _userInstructionText = 'Please wait.';
-        if (_confirmedAudioDescription.isNotEmpty) {
-            _userInstructionText = 'Confirmed Audio: "$_confirmedAudioDescription"\n\nThen: $_userInstructionText';
-        }
         break;
       case MediaInputState.imageAnalyzed:
         _statusText = 'Step 2: Image Analyzed';
         if (_isImageApprovedByGemini) {
           _userInstructionText = "Image approved by Harki!\n";
         } else {
-          _userInstructionText = "Image Feedback from Harki: $_geminiImageAnalysisResultText\n";
+          _userInstructionText =
+              "Image Feedback from Harki: $_geminiImageAnalysisResultText\n";
         }
-        _userInstructionText += "Submit with current details, retake image, or remove image.";
-        if (_confirmedAudioDescription.isNotEmpty) {
-            _userInstructionText = 'Confirmed Audio: "$_confirmedAudioDescription"\n\n$_userInstructionText';
-        }
+        _userInstructionText +=
+            "Submit with current details, retake image, or remove image.";
         break;
-
-      // Shared
       case MediaInputState.uploadingMedia:
         _statusText = "Submitting Incident...";
         _userInstructionText = "Uploading media, please wait.";
@@ -536,209 +595,10 @@ class _IncidentVoiceDescriptionModalState
 
   @override
   void dispose() {
-    _performAsyncCleanupTasks();
-    try { _micAnimationController.dispose(); } catch (e) { debugPrint("Error disposing _micAnimationController: $e");}
-    try { _audioRecorder.dispose(); } catch (e) { debugPrint("Error disposing _audioRecorder: $e");}
+    _micAnimationController.dispose();
+    _deviceMediaHandler.disposeAudioRecorder(); // Dispose recorder via handler
+    _deleteRecordedAudioFile(); // Clean up any lingering temp audio file
     super.dispose();
-  }
-
-  Future<void> _performAsyncCleanupTasks() async {
-    // Simplified cleanup
-    try {
-      if (mounted && await _audioRecorder.isRecording()) { // Check mounted before async gap
-        await _audioRecorder.stop();
-      }
-      await _deleteTempFiles();
-    } catch (e) {
-      debugPrint("Error during async cleanup: $e");
-    }
-  }
-
-  // --- UI Builder Methods ---
-  Widget _buildMicInputControl(Color accentColor) {
-    bool canRecordAudio = _hasMicPermission && _generativeModel != null &&
-                          _currentInputState == MediaInputState.idle; // Mic only in idle state for Step 1
-
-    return GestureDetector(
-      onLongPressStart: canRecordAudio ? (details) => _startRecording() : null,
-      onLongPressEnd: _currentInputState == MediaInputState.recordingAudio ? (details) => _stopRecording() : null,
-      onTap: () {
-        if (canRecordAudio && _currentInputState != MediaInputState.recordingAudio) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Hold to record, release to stop.")));
-        } else if (!canRecordAudio && _currentInputState == MediaInputState.idle) { 
-            _checkPermissionsAndInitializeServices();
-        }
-      },
-      child: ScaleTransition(
-        scale: _micScaleAnimation,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: canRecordAudio ? accentColor : Colors.grey.shade700,
-            shape: BoxShape.circle,
-            boxShadow: [ BoxShadow( color: Colors.black.withAlpha((0.3 * 255).toInt()), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1),) ],
-          ),
-          child: Icon(
-            _currentInputState == MediaInputState.recordingAudio ? Icons.stop_circle_outlined : Icons.mic,
-            color: Colors.white, size: 36,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCameraInputControlForStep2(Color accentColor) {
-    bool canCaptureImage = _generativeModel != null &&
-                            (_currentInputState == MediaInputState.displayingConfirmedAudio ||
-                            _currentInputState == MediaInputState.imagePreview ||
-                            _currentInputState == MediaInputState.imageAnalyzed);
-
-    if (!canCaptureImage) return const SizedBox.shrink();
-
-    // Determine the label based on whether an image already exists
-    String cameraButtonLabel = _capturedImageFile == null ? "Add Picture" : "Retake Picture";
-
-    return Column( // Use a Column to place the label below the button
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.camera_alt, size: 36),
-          color: accentColor, // Icon color
-          padding: const EdgeInsets.all(16), // Adjusted padding
-          style: IconButton.styleFrom(
-            backgroundColor: accentColor.withAlpha((0.15 * 255).toInt()), // Slightly more subtle background
-            shape: const CircleBorder(),
-            side: BorderSide(color: accentColor.withOpacity(0.7), width: 1.5),
-            elevation: 2,
-          ),
-          onPressed: _captureImage,
-          tooltip: cameraButtonLabel, // Tooltip also uses the dynamic label
-        ),
-        const SizedBox(height: 4), // Space between button and label
-        Text(
-          cameraButtonLabel,
-          style: TextStyle(
-            color: accentColor, // Label color matches accent
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(Color accentColor) {
-    List<Widget> buttons = [];
-
-    switch (_currentInputState) {
-      // Step 1 Actions
-      case MediaInputState.audioRecordedReadyToSend:
-        buttons.add(ElevatedButton.icon(
-          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-          label: const Text('Send Audio to Harki', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-          onPressed: _sendAudioToGemini,
-        ));
-        break;
-      case MediaInputState.audioDescriptionReadyForConfirmation:
-        buttons.add(ElevatedButton.icon(
-          icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-          label: const Text('Confirm Audio & Proceed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-          onPressed: _confirmAudioAndProceed,
-        ));
-        buttons.add(const SizedBox(height: 10));
-        buttons.add(TextButton(
-            onPressed: _retryFullProcess, 
-            child: Text('Re-record Audio', style: TextStyle(color: accentColor))
-        ));
-        break;
-
-      // Step 2 Actions
-      case MediaInputState.displayingConfirmedAudio:
-        buttons.add(ElevatedButton.icon(
-          icon: const Icon(Icons.send_outlined, color: Colors.white, size: 20), 
-          label: const Text('Submit with Audio Only', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-          style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-          onPressed: _finalSubmitIncident, 
-        ));
-        break;
-      case MediaInputState.imagePreview:
-        buttons.add(ElevatedButton.icon(
-          icon: const Icon(Icons.science_outlined, color: Colors.white, size: 18),
-          label: const Text('Analyze Image with Harki', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-          onPressed: _sendImageToGemini,
-        ));
-        buttons.add(const SizedBox(height: 10));
-        buttons.add(TextButton(
-            onPressed: _removeImageAndGoBackToDecision,
-            child: Text('Use Audio Only (Remove Image)', style: TextStyle(color: Colors.grey.shade400))
-        ));
-        break;
-      case MediaInputState.imageAnalyzed:
-        if (_isImageApprovedByGemini) {
-          buttons.add(ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-            label: const Text('Submit with Audio & Image', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-            onPressed: _finalSubmitIncident,
-          ));
-            buttons.add(const SizedBox(height: 10));
-            buttons.add(TextButton( // Option to submit audio only even if image was approved
-            onPressed: () {
-              _clearImageData(updateState:false); // Clear image data but don't change state yet
-              _finalSubmitIncident(); // Submit with only audio
-            },
-            child: Text('Submit Audio Only Instead', style: TextStyle(color: Colors.grey.shade400))
-          ));
-        } else {
-              buttons.add(ElevatedButton.icon(
-                icon: const Icon(Icons.send_outlined, color: Colors.white, size: 20),
-                label: const Text('Submit with Audio Only', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-                onPressed: _finalSubmitIncident, // This will submit audio only as image is not approved/present
-            ));
-        }
-        // "Retake Image" is implicitly handled by the camera button still being visible.
-        // "Remove Image" is handled by the 'X' button on the preview.
-        break;
-      default:
-        break;
-    }
-    return Column(mainAxisSize: MainAxisSize.min, children: buttons);
-  }
-
-  Widget _buildProcessingIndicator(Color accentColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(accentColor)),
-          const SizedBox(height: 15),
-          Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorControls(Color accentColor) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 15.0),
-          child: Text(_userInstructionText, style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.9 * 255).toInt())), textAlign: TextAlign.center),
-        ),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          label: const Text('Try Again from Start', style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12)),
-          onPressed: _retryFullProcess,
-        ),
-      ],
-    );
   }
 
   @override
@@ -747,31 +607,37 @@ class _IncidentVoiceDescriptionModalState
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
 
     bool isProcessingAny = _currentInputState == MediaInputState.sendingAudioToGemini ||
-                          _currentInputState == MediaInputState.sendingImageToGemini ||
-                          _currentInputState == MediaInputState.uploadingMedia;
+        _currentInputState == MediaInputState.sendingImageToGemini ||
+        _currentInputState == MediaInputState.uploadingMedia;
 
     bool isStep1Active = _currentInputState == MediaInputState.idle ||
-                        _currentInputState == MediaInputState.recordingAudio ||
-                        _currentInputState == MediaInputState.audioRecordedReadyToSend ||
-                        _currentInputState == MediaInputState.sendingAudioToGemini ||
-                        _currentInputState == MediaInputState.audioDescriptionReadyForConfirmation;
-
-    bool isStep2Active = _currentInputState.name.startsWith("step2_");
+        _currentInputState == MediaInputState.recordingAudio ||
+        _currentInputState == MediaInputState.audioRecordedReadyToSend ||
+        _currentInputState == MediaInputState.sendingAudioToGemini ||
+        _currentInputState == MediaInputState.audioDescriptionReadyForConfirmation;
+    
+    // Simplified check for Step 2 UI elements visibility
+    bool showStep2ImageRelatedUI = _currentInputState == MediaInputState.displayingConfirmedAudio ||
+                                  _currentInputState == MediaInputState.imagePreview ||
+                                  _currentInputState == MediaInputState.sendingImageToGemini ||
+                                  _currentInputState == MediaInputState.imageAnalyzed;
 
 
     return PopScope(
       canPop: !isProcessingAny && _currentInputState != MediaInputState.recordingAudio,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
-        if (didPop) return; 
+        if (didPop) return;
         if (isProcessingAny || _currentInputState == MediaInputState.recordingAudio) {
           // Prevent popping
         } else {
-          _cancelInput(); 
+          _handleCancelInput();
         }
       },
       child: Dialog(
-        backgroundColor: const Color(0xFF001F3F),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0), side: BorderSide(color: accentColor, width: 2)),
+        backgroundColor: const Color(0xFF001F3F), // Navy blue background
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: BorderSide(color: accentColor, width: 2)),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -779,115 +645,110 @@ class _IncidentVoiceDescriptionModalState
             children: <Widget>[
               Text(
                 _statusText,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _currentInputState == MediaInputState.error && !(_statusText == "Type Mismatch" || _statusText == "Input Unclear/Invalid") ? Colors.redAccent : accentColor),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: (_currentInputState == MediaInputState.error &&
+                            !(_statusText == "Type Mismatch" || _statusText == "Input Unclear/Invalid"))
+                        ? Colors.redAccent
+                        : accentColor),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(_userInstructionText, style: TextStyle(fontSize: 14, color: Colors.white.withAlpha((0.8 * 255).toInt())), textAlign: TextAlign.center),
+                child: Text(_userInstructionText,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withAlpha((0.8 * 255).toInt())),
+                    textAlign: TextAlign.center),
               ),
               const SizedBox(height: 15),
 
-              // Display Confirmed Audio Description in Step 2
-              if (isStep2Active && _confirmedAudioDescription.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Column(
-                    children: [
-                      Text("Confirmed Audio:", style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                      Container(
-                        padding: const EdgeInsets.all(8), margin: const EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(5)),
-                        child: Text(_confirmedAudioDescription, style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
-                      ),
-                      const SizedBox(height:10),
-                      Divider(color: accentColor.withOpacity(0.3)),
-                      const SizedBox(height:10),
-                    ],
-                  ),
-                ),
+              IncidentModalUiBuilders.buildConfirmedAudioArea(
+                shouldShow: showStep2ImageRelatedUI || _currentInputState == MediaInputState.imagePreview,
+                confirmedAudioDescription: _confirmedAudioDescription,
+                accentColor: accentColor,
+              ),
 
-
-              // Image Preview Area for Step 2
-              if (_capturedImageFile != null && isStep2Active)
-                Padding(
-                  padding: const EdgeInsets.only(bottom:10.0),
-                  child: Column(
-                    children: [
-                      Text("Image for Incident:", style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 5),
-                      Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(_capturedImageFile!, height: 120, fit: BoxFit.contain)
-                          ),
-                            if (_currentInputState == MediaInputState.imagePreview || _currentInputState == MediaInputState.imageAnalyzed)
-                            Padding( // Add padding to make the icon easier to tap
-                              padding: const EdgeInsets.all(4.0),
-                              child: Tooltip(
-                                message: "Remove Image",
-                                child: InkWell( // Use InkWell for better tap feedback
-                                  onTap: _removeImageAndGoBackToDecision,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(Icons.cancel, color: Colors.white, size: 24),
-                                  ),
-                                ),
-                              ),
-                            )
-                        ],
-                      ),
-
-                      if (_currentInputState == MediaInputState.imageAnalyzed)
-                        Padding(
-                          padding: const EdgeInsets.only(top:4.0),
-                          child: Text(
-                            _isImageApprovedByGemini ? "Harki: Image looks good!" : (_geminiImageAnalysisResultText.isNotEmpty ? "Harki: $_geminiImageAnalysisResultText" : "Harki: Analysis complete."),
-                            style: TextStyle(color: _isImageApprovedByGemini ? Colors.greenAccent : Colors.orangeAccent, fontSize: 11),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height:10),
-                        Divider(color: accentColor.withOpacity(0.3)),
-                        const SizedBox(height:10),
-                    ],
-                  ),
-                ),
-              // --- End of Display Areas ---
-
+              IncidentModalUiBuilders.buildImagePreviewArea(
+                shouldShow: _capturedImageFile != null && (showStep2ImageRelatedUI || _currentInputState == MediaInputState.imagePreview),
+                capturedImageFile: _capturedImageFile,
+                currentInputState: _currentInputState,
+                isImageApprovedByGemini: _isImageApprovedByGemini,
+                geminiImageAnalysisResultText: _geminiImageAnalysisResultText,
+                accentColor: accentColor,
+                onRemoveImage: _handleRemoveImageAndGoBackToDecision,
+              ),
+              
               const SizedBox(height: 10),
 
               if (isProcessingAny)
-                _buildProcessingIndicator(accentColor)
+                IncidentModalUiBuilders.buildProcessingIndicator(
+                    accentColor: accentColor,
+                    userInstructionText: _userInstructionText)
               else if (_currentInputState == MediaInputState.error)
-                _buildErrorControls(accentColor)
+                IncidentModalUiBuilders.buildErrorControls(
+                    accentColor: accentColor,
+                    userInstructionText: _userInstructionText,
+                    onRetryFullProcess: _handleRetryFullProcess)
               else
-                Column( // Main controls column
+                Column(
                   children: [
-                    if (isStep1Active) 
-                      _buildMicInputControl(accentColor),
-                    if (isStep2Active && 
-                        _currentInputState != MediaInputState.sendingImageToGemini && 
-                        _currentInputState != MediaInputState.uploadingMedia) 
-                        _buildCameraInputControlForStep2(accentColor),
-
-                    const SizedBox(height: 15),
-                    _buildActionButtons(accentColor),
+                    if (isStep1Active) // Mic only visible in step 1 states
+                      IncidentModalUiBuilders.buildMicInputControl(
+                          context: context,
+                          canRecordAudio: _hasMicPermission && _generativeModel != null && _currentInputState == MediaInputState.idle,
+                          currentInputState: _currentInputState,
+                          micScaleAnimation: _micScaleAnimation,
+                          accentColor: accentColor,
+                          onLongPressStart: _handleStartRecording,
+                          onLongPressEnd: _handleStopRecording,
+                          onTapHint: _onTapMicHintOrPermissionRecheck,
+                        ),
+                    
+                    if (showStep2ImageRelatedUI && // Show camera button in relevant step 2 states
+                        _currentInputState != MediaInputState.sendingImageToGemini &&
+                        _currentInputState != MediaInputState.uploadingMedia)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0), // Add some space if mic is not shown
+                        child: IncidentModalUiBuilders.buildCameraInputControl(
+                            capturedImageFile: _capturedImageFile,
+                            accentColor: accentColor,
+                            onPressedCapture: _handleCaptureImage,
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    IncidentModalUiBuilders.buildActionButtons(
+                      context: context,
+                      currentInputState: _currentInputState,
+                      accentColor: accentColor,
+                      isImageApprovedByGemini: _isImageApprovedByGemini,
+                      onSendAudioToGemini: _handleSendAudioToGemini,
+                      onConfirmAudioAndProceed: _handleConfirmAudioAndProceed,
+                      onRetryFullProcessAudio: _handleRetryFullProcess,
+                      onSubmitWithAudioOnlyAfterConfirmation: _handleFinalSubmitIncident,
+                      onSendImageToGemini: _handleSendImageToGemini,
+                      onRemoveImageAndGoBackToDecision: _handleRemoveImageAndGoBackToDecision,
+                      onSubmitWithAudioAndImage: _handleFinalSubmitIncident,
+                      onSubmitAudioOnlyFromImageAnalyzed: () {
+                          _clearImageData(updateState:false); // Clear image, keep audio
+                          _handleFinalSubmitIncident();
+                      },
+                      onClearImageDataAndSubmitAudioOnlyFromAnalyzed: () {
+                          _clearImageData(updateState:false); // Clear image, keep audio
+                          _handleFinalSubmitIncident();
+                      }
+                    ),
                   ],
                 ),
 
               const SizedBox(height: 20),
               if (!isProcessingAny && _currentInputState != MediaInputState.recordingAudio)
                 TextButton(
-                  onPressed: _cancelInput,
-                  child: const Text('Cancel Report', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  onPressed: _handleCancelInput,
+                  child: const Text('Cancel Report',
+                      style: TextStyle(color: Colors.grey, fontSize: 15)),
                 ),
             ],
           ),
@@ -897,22 +758,28 @@ class _IncidentVoiceDescriptionModalState
   }
 }
 
+// The helper function to show the dialog
 Future<Map<String, String?>?> showIncidentVoiceDescriptionDialog({
   required BuildContext context,
   required MakerType markerType,
 }) async {
   return await showDialog<Map<String, String?>?>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: false, // Controlled by PopScope and explicit cancel
     builder: (BuildContext dialogContext) {
       return IncidentVoiceDescriptionModal(markerType: markerType);
     },
   );
 }
 
+// String extension remains here
 extension StringExtension on String {
   String capitalizeAllWords() {
     if (isEmpty) return this;
-    return split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');
+    return split(' ')
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : '')
+        .join(' ');
   }
 }
