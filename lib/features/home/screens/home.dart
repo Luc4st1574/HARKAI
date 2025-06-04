@@ -47,6 +47,9 @@ class _HomeState extends State<Home> {
   GoogleMapController? _mapController;
   AppLocalizations? _localizations;
 
+  // New state variable to control CustomScrollView physics
+  bool _isScrollViewLocked = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +58,7 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_localizations == null) { // Initialize only once
+    if (_localizations == null) { 
       _localizations = AppLocalizations.of(context)!;
 
       _userSessionManager = UserSessionManager(
@@ -109,6 +112,25 @@ class _HomeState extends State<Home> {
     _dataEventManager.dispose();
     _mapController?.dispose();
     super.dispose();
+  }
+
+  // Methods to lock and unlock the ScrollView
+  void _lockScrollView() {
+    if (mounted && !_isScrollViewLocked) {
+      setState(() {
+        _isScrollViewLocked = true;
+      });
+      debugPrint("Home Screen: ScrollView LOCKED for map interaction.");
+    }
+  }
+
+  void _unlockScrollView() {
+    if (mounted && _isScrollViewLocked) {
+      setState(() {
+        _isScrollViewLocked = false;
+      });
+      debugPrint("Home Screen: ScrollView UNLOCKED.");
+    }
   }
 
   Set<Marker> _prepareMapMarkers() {
@@ -186,7 +208,6 @@ class _HomeState extends State<Home> {
         .toSet();
   }
 
-  // Handler for incident button taps (existing)
   Future<void> _handleIncidentButtonPressed(MakerType markerType) async {
     if (!mounted || _localizations == null) return;
     await _dataEventManager.processIncidentReporting(
@@ -198,7 +219,6 @@ class _HomeState extends State<Home> {
     );
   }
   
-  // Handler for incident button long presses (existing, now also used for emergency button long press)
   void _handleIncidentButtonLongPressed(MakerType markerType) {
     if (!mounted || _userSessionManager.currentUser == null || _localizations == null) return;
     
@@ -206,7 +226,7 @@ class _HomeState extends State<Home> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => IncidentScreen( // Ensure IncidentScreen is the full-page version
+        builder: (context) => IncidentScreen(
           incidentType: markerType,
           currentUser: _userSessionManager.currentUser,
         ),
@@ -214,10 +234,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-
   Future<void> _handleEmergencyButtonPressed() async {
     if (!mounted || _localizations == null) return;
-    // This handles the TAP on the emergency button
     await _dataEventManager.processEmergencyReporting(
       context: context,
       localizations: _localizations!,
@@ -257,6 +275,10 @@ class _HomeState extends State<Home> {
                       ),
                     ]),
                 child: CustomScrollView(
+                  // Apply physics based on the lock state
+                  physics: _isScrollViewLocked
+                      ? const NeverScrollableScrollPhysics()
+                      : const AlwaysScrollableScrollPhysics(), // Or your preferred default
                   slivers: [
                     SliverToBoxAdapter(
                       child: Column(
@@ -269,17 +291,28 @@ class _HomeState extends State<Home> {
                             markers: _getDisplayMarkers(),
                             circles: _getCirclesForDisplay(),
                             selectedMarker: _dataEventManager.selectedIncident,
-                            onMapTappedWithMarker: _mapLocationManager.handleMapTapped,
-                            onMapLongPressed: (cameraPosition) =>
+                            onMapTappedWithMarker: (LatLng position) {
+                              _unlockScrollView();
+                              _mapLocationManager.handleMapTapped(position);
+                            },
+                            onMapLongPressed: (cameraPosition) {
+                                _unlockScrollView(); // Also unlock on long press if needed
                                 _mapLocationManager.handleMapLongPressed(
-                              context: context,
-                              currentCameraPosition: cameraPosition,
-                              markersForBigMap: _getMarkersForBigMapModal(),
-                              circlesForBigMap: _getCirclesForBigMapModal(),
-                            ),
+                                context: context,
+                                currentCameraPosition: cameraPosition,
+                                markersForBigMap: _getMarkersForBigMapModal(),
+                                circlesForBigMap: _getCirclesForBigMapModal(),
+                              );
+                            },
                             onMapCreated: _mapLocationManager.onMapCreated,
-                            onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),
+                            onResetTargetPressed: () {
+                              _unlockScrollView(); // Unlock if reset button is outside map gestures
+                              _mapLocationManager.resetTargetToUserLocation(context);
+                            },
                             onCameraMove: _mapLocationManager.handleCameraMove,
+                            // Pass the lock/unlock callbacks
+                            onMapInteractionStart: _lockScrollView,
+                            onMapInteractionEnd: _unlockScrollView,
                           ),
                         ],
                       ),
@@ -289,8 +322,14 @@ class _HomeState extends State<Home> {
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
-                          onIncidentButtonPressed: _handleIncidentButtonPressed,
-                          onIncidentButtonLongPressed: _handleIncidentButtonLongPressed, 
+                          onIncidentButtonPressed: (MakerType type) {
+                            _unlockScrollView(); // Unlock when incident buttons are pressed
+                            _handleIncidentButtonPressed(type);
+                          },
+                          onIncidentButtonLongPressed: (MakerType type) {
+                            _unlockScrollView(); // Unlock when incident buttons are long-pressed
+                            _handleIncidentButtonLongPressed(type);
+                          }, 
                         ),
                       ),
                     ),
@@ -301,9 +340,16 @@ class _HomeState extends State<Home> {
                         child: BottomActionButtonsWidget(
                           currentServiceName: getCallButtonServiceName(
                               _dataEventManager.selectedIncident, _localizations!),
-                          onEmergencyPressed: _handleEmergencyButtonPressed, // Tap action
-                          onLongPressEmergency: () => _handleIncidentButtonLongPressed(MakerType.emergency),
+                          onEmergencyPressed: () {
+                            _unlockScrollView(); // Unlock
+                            _handleEmergencyButtonPressed();
+                          },
+                          onLongPressEmergency: () {
+                            _unlockScrollView(); // Unlock
+                            _handleIncidentButtonLongPressed(MakerType.emergency);
+                          },
                           onPhonePressed: () {
+                            _unlockScrollView(); // Unlock
                             if (!mounted || _localizations == null) return;
                             _userSessionManager.makePhoneCall(
                               context: context,

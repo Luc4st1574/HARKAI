@@ -646,7 +646,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentScreenTitle(String incidentType) {
-    return 'Incidentes $incidentType Cercanas';
+    return '$incidentType cerca a ti';
   }
 
   @override
@@ -680,7 +680,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get placesScreenTitle => 'Lugares';
 
   @override
-  String get addPlaceButtonTitle => 'Lugar';
+  String get addPlaceButtonTitle => 'Lugares interesantes';
 
   @override
   String get placeMarkerName => 'Lugar';

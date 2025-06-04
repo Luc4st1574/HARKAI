@@ -1,26 +1,26 @@
+// lib/main.dart
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_app_check/firebase_app_check.dart'; // Import App Check
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'core/config/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/splash/screens/splash_screen.dart';
 
-// Import for localization
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Add these print statements to see what locales Flutter detects from the device
+  // The problematic line `GoogleMap.useAndroidViewSurface = false;` has been removed.
+
   final List<Locale> deviceLocalesList = WidgetsBinding.instance.platformDispatcher.locales;
   final Locale devicePrimaryLocale = WidgetsBinding.instance.platformDispatcher.locale;
   print('FLUTTER DETECTED DEVICE LOCALES LIST: $deviceLocalesList');
   print('FLUTTER DETECTED PRIMARY DEVICE LOCALE: $devicePrimaryLocale');
 
-  // Load environment variables
   try {
     await dotenv.load(fileName: ".env");
     print("Environment variables loaded successfully.");
@@ -28,7 +28,6 @@ void main() async {
     print("Failed to load environment variables: $e");
   }
 
-  // Ensure Firebase is initialized only once
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
@@ -44,7 +43,7 @@ void main() async {
     } else {
       print('Firebase already initialized: ${Firebase.apps}');
     }
-    runApp(const MyApp()); // Run the main app if Firebase init is successful
+    runApp(const MyApp());
   } catch (e) {
     print('Error during Firebase initialization or App Check activation: $e');
     runApp(const ErrorApp());
