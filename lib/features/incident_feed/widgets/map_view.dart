@@ -55,17 +55,36 @@ class _IncidentMapViewContentState extends State<IncidentMapViewContent> {
   }
 
   void _checkIncidentVisibility() {
+    // If the incident type is 'place', it should always be visible.
+    if (widget.incidentTypeForExpiry == MakerType.place) {
+      if (mounted) {
+        setState(() {
+          _isIncidentVisible = true;
+        });
+      }
+      return; 
+    }
+
     final now = DateTime.now();
+    bool shouldBeVisible = true;
+
     if (widget.incidentTypeForExpiry == MakerType.pet) {
       final startOfToday = DateTime(now.year, now.month, now.day);
       if (widget.incident.timestamp.toDate().isBefore(startOfToday)) {
-        _isIncidentVisible = false;
+        shouldBeVisible = false;
       }
     } else {
+      // For other incident types (fire, crash, theft, emergency)
       final oneHourAgo = now.subtract(const Duration(hours: 1));
       if (widget.incident.timestamp.toDate().isBefore(oneHourAgo)) {
-        _isIncidentVisible = false;
+        shouldBeVisible = false;
       }
+    }
+
+    if (mounted && _isIncidentVisible != shouldBeVisible) {
+        setState(() {
+          _isIncidentVisible = shouldBeVisible;
+        });
     }
   }
 

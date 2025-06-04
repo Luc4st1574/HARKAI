@@ -329,8 +329,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                                   color: Colors.white, 
                                 ),
                                 label: Text(
-                                  _localizations!.addPlaceButtonTitle,
-                                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
+                                  _localizations!.buttonAddPlace,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.yellow.shade700,

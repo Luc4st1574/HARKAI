@@ -385,5 +385,6 @@
     "paymentSuccessfulMessage": "¡Pago exitoso! Lugar añadido.",
     "paymentFailedMessage": "El pago falló. Por favor, inténtalo de nuevo.",
     "photoRequiredMessage": "Una foto es obligatoria para añadir un lugar.",
-    "placesIncidentFeedTitle": "Lugares Cercanos"
+    "placesIncidentFeedTitle": "Lugares Cercanos",
+    "buttonAddPlace": "Añadir Lugar"
 }

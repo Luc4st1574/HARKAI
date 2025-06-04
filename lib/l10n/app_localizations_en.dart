@@ -689,4 +689,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placesIncidentFeedTitle => 'Nearby Places';
+
+  @override
+  String get buttonAddPlace => 'Add Place';
 }

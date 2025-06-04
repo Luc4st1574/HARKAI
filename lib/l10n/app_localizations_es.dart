@@ -706,4 +706,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get placesIncidentFeedTitle => 'Lugares Cercanos';
+
+  @override
+  String get buttonAddPlace => 'Añadir Lugar';
 }

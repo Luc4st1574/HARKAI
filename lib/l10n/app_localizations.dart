@@ -1241,6 +1241,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nearby Places'**
   String get placesIncidentFeedTitle;
+
+  /// No description provided for @buttonAddPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Place'**
+  String get buttonAddPlace;
 }
 
 class _AppLocalizationsDelegate
