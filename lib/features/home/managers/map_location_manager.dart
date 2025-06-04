@@ -185,6 +185,13 @@ class MapLocationManager {
     debugPrint("Camera moved to: Target: ${position.target}, Zoom: ${position.zoom}");
   }
 
+  String? get currentCityName {
+    if (!_isErrorOrStatus && _locationData.isNotEmpty) {
+      return _locationData.split(',').first.trim();
+    }
+    return null;
+  }
+
   Future<void> handleMapLongPressed({
     required BuildContext context,
     required CameraPosition currentCameraPosition,

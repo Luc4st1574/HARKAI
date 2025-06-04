@@ -24,7 +24,7 @@ import '../modals/incident_image.dart';
 // Managers
 import '../managers/marker_manager.dart';
 import '../managers/map_location_manager.dart';
-import '../managers/session_permision_manager.dart';
+import '../managers/user_session_manager.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -213,7 +213,10 @@ class _HomeState extends State<Home> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final String? currentCity = _mapLocationManager.currentCityName; // Get current city
+
     final LatLng? initialMapCenter = _mapLocationManager.initialCameraPosition;
+
 
     return Scaffold(
       backgroundColor: const Color(0xFF001F3F),
@@ -279,13 +282,21 @@ class _HomeState extends State<Home> {
                       child: Align(
                         alignment: Alignment.bottomCenter,
                         child: BottomActionButtonsWidget(
-                          currentServiceName: getCallButtonServiceName(_dataEventManager.selectedIncident, _localizations!),
+                          currentServiceName: getCallButtonServiceName(
+                              _dataEventManager.selectedIncident, _localizations!),
                           onEmergencyPressed: _handleEmergencyButtonPressed,
-                          onPhonePressed: () => _userSessionManager.makePhoneCall(
-                            context: context,
-                            localizations: _localizations!,
-                            selectedIncident: _dataEventManager.selectedIncident,
-                          ),
+                          onPhonePressed: () {
+                            // Ensure context is available and localizations are not null
+                            if (!mounted || _localizations == null) return;
+                            
+                            _userSessionManager.makePhoneCall(
+                              context: context,
+                              localizations: _localizations!,
+                              selectedIncident: _dataEventManager.selectedIncident,
+                              cityName: currentCity, // Pass the city name here
+                              firestoreService: _firestoreService, // Pass FirestoreService instance
+                            );
+                          },
                         ),
                       ),
                     ),

@@ -35,8 +35,10 @@ class MarkerManager {
   }
 
   void setActiveMaker(MakerType markerType) {
-    _selectedIncident = markerType;
-    _onStateChange();
+    if (_selectedIncident != markerType) {
+      _selectedIncident = markerType;
+      _onStateChange();
+    }
   }
 
   void _setupIncidentListener(AppLocalizations localizations) {
@@ -95,70 +97,81 @@ class MarkerManager {
   }
 
   Future<void> processIncidentReporting({
-    required BuildContext context, // Has context
-    required AppLocalizations localizations, // Explicitly pass localizations
-    required MakerType newMarkerToSelect,
+    required BuildContext context,
+    required AppLocalizations localizations,
+    required MakerType newMarkerToSelect, // This is the type of the button pressed
     required double? targetLatitude,
     required double? targetLongitude,
   }) async {
-    final bool wasSelected = _selectedIncident == newMarkerToSelect;
-    final MakerType newInternalSelectedMarker = wasSelected ? MakerType.none : newMarkerToSelect;
+    if (_selectedIncident == newMarkerToSelect) {
+      // If the same incident button is tapped again, deselect it.
+      _selectedIncident = MakerType.none;
+      _onStateChange();
+      debugPrint("MarkerManager: Deselected incident type ${newMarkerToSelect.name}.");
+      return; // Exit without showing dialog
+    }
 
-    _selectedIncident = newInternalSelectedMarker;
+    // A new incident type is selected, or an existing different one was active.
+    _selectedIncident = newMarkerToSelect;
     _onStateChange();
+    debugPrint("MarkerManager: Selected incident type ${newMarkerToSelect.name} for reporting.");
 
-    if (!wasSelected && newInternalSelectedMarker != MakerType.none) {
-      if (targetLatitude != null && targetLongitude != null) {
-        final result = await showIncidentVoiceDescriptionDialog(
-          context: context,
-          markerType: newInternalSelectedMarker,
-        );
+    if (targetLatitude != null && targetLongitude != null) {
+      final result = await showIncidentVoiceDescriptionDialog(
+        context: context,
+        markerType: _selectedIncident, // Use the currently active _selectedIncident
+      );
 
-        if (result != null) {
-          final String? description = result['description'];
-          final String? imageUrl = result['imageUrl'];
+      if (result != null) {
+        final String? description = result['description'];
+        final String? imageUrl = result['imageUrl'];
 
-          if (description != null || imageUrl != null) {
-            if (context.mounted) {
-              await addMarkerAndShowNotification( // This method gets localizations from its own context
-                context: context,
-                makerType: newInternalSelectedMarker,
-                latitude: targetLatitude,
-                longitude: targetLongitude,
-                description: description,
-                imageUrl: imageUrl,
-              );
-            }
-          } else {
-            debugPrint("Incident reporting cancelled or no media provided.");
+        if (description != null || imageUrl != null) {
+          if (context.mounted) {
+            await addMarkerAndShowNotification(
+              context: context,
+              makerType: _selectedIncident, // Report the currently active type
+              latitude: targetLatitude,
+              longitude: targetLongitude,
+              description: description,
+              imageUrl: imageUrl,
+            );
+            debugPrint("MarkerManager: Incident ${_selectedIncident.name} reported. Selection persists.");
           }
         } else {
-            debugPrint("Incident reporting dialog returned null (cancelled).");
+          debugPrint("MarkerManager: Incident reporting cancelled or no media provided for ${_selectedIncident.name}. Reverting selection.");
+          _selectedIncident = MakerType.none;
+          _onStateChange();
         }
-        _selectedIncident = MakerType.none;
-        _onStateChange();
-
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(localizations.targetLocationNotSet)), // Use localized string
-          );
-        }
+        // Dialog was cancelled by the user (e.g., back button or cancel button in modal)
+        debugPrint("MarkerManager: Incident reporting dialog cancelled by user for ${_selectedIncident.name}. Reverting selection.");
         _selectedIncident = MakerType.none;
         _onStateChange();
       }
-    } else if (wasSelected) {
-      _selectedIncident = MakerType.none;
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizations.targetLocationNotSet)),
+        );
+      }
+      debugPrint("MarkerManager: Target location not set for ${_selectedIncident.name}. Reverting selection.");
+      _selectedIncident = MakerType.none; // Reset if no target location
       _onStateChange();
     }
   }
   
   Future<void> processEmergencyReporting({
-    required BuildContext context, // Has context
-    required AppLocalizations localizations, // Explicitly pass localizations
+    required BuildContext context,
+    required AppLocalizations localizations,
     required double? targetLatitude,
     required double? targetLongitude,
   }) async {
+    // Always treat emergency button press as selecting MakerType.emergency
+    _selectedIncident = MakerType.emergency;
+    _onStateChange(); // Update UI (phone button text to "Call Emergencies" or specific agent)
+    debugPrint("MarkerManager: Emergency reporting selected.");
+
     if (targetLatitude != null && targetLongitude != null) {
       final result = await showIncidentVoiceDescriptionDialog(
         context: context,
@@ -168,35 +181,42 @@ class MarkerManager {
       if (result != null) {
         final String? description = result['description'];
         final String? imageUrl = result['imageUrl'];
-        
+
         if (description != null || imageUrl != null) {
-            if (context.mounted) {
-              await addMarkerAndShowNotification( // This method gets localizations from context
-                  context: context,
-                  makerType: MakerType.emergency,
-                  latitude: targetLatitude,
-                  longitude: targetLongitude,
-                  description: description ?? localizations.incidentModalStatusError, // Example default
-                  imageUrl: imageUrl,
-              );
-              setActiveMaker(MakerType.emergency);
-              _selectedIncident = MakerType.none;
-              _onStateChange();
-            }
+          if (context.mounted) {
+            await addMarkerAndShowNotification(
+              context: context,
+              makerType: MakerType.emergency,
+              latitude: targetLatitude,
+              longitude: targetLongitude,
+              description: description ?? localizations.incidentModalStatusError,
+              imageUrl: imageUrl,
+            );
+            // Emergency reported. _selectedIncident REMAINS MakerType.emergency
+            debugPrint("MarkerManager: Emergency incident reported. Selection persists as 'emergency'.");
+          }
         } else {
-            debugPrint("Emergency reporting cancelled or no media provided.");
+          debugPrint("MarkerManager: Emergency reporting cancelled (no media). Reverting selection.");
+          _selectedIncident = MakerType.none;
+          _onStateChange();
         }
       } else {
-          debugPrint("Emergency reporting dialog returned null (cancelled).");
+        debugPrint("MarkerManager: Emergency reporting dialog cancelled by user. Reverting selection.");
+        _selectedIncident = MakerType.none; // Reset if dialog is cancelled
+        _onStateChange();
       }
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.emergencyReportLocationUnknown)), // Use localized string
+          SnackBar(content: Text(localizations.emergencyReportLocationUnknown)),
         );
       }
+      debugPrint("MarkerManager: Target location not set for emergency report. Reverting selection.");
+      _selectedIncident = MakerType.none; // Reset if no target location
+      _onStateChange();
     }
   }
+
 
   void resetSelectedMarkerToNone() {
     _selectedIncident = MakerType.none;

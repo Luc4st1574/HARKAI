@@ -98,24 +98,24 @@ double getMarkerHue(MakerType type) {
 
 /// Gets the localized service name for the call button based on the selected alert.
 /// Requires AppLocalizations instance.
+String getCallButtonEmergencyNumber(MakerType selectedAlert, AppLocalizations localizations) {
+  final MarkerInfo? alertInfo;
+  if (selectedAlert == MakerType.none || selectedAlert == MakerType.emergency) {
+    alertInfo = getMarkerInfo(MakerType.emergency, localizations);
+  } else {
+    alertInfo = getMarkerInfo(selectedAlert, localizations);
+  }
+  return alertInfo?.emergencyNumber ?? '911'; // Default to 911 if no specific number
+}
+
+// getCallButtonServiceName remains mostly the same, it's for the button label.
 String getCallButtonServiceName(MakerType selectedAlert, AppLocalizations localizations) {
   final MarkerInfo? alertInfo;
   if (selectedAlert == MakerType.none) {
     alertInfo = getMarkerInfo(MakerType.emergency, localizations);
-    // Fallback to a generic "Emergencies" if specific emergency agent info isn't ideal for button
     return localizations.homeCallAgentButton(alertInfo?.agent ?? localizations.agentEmergencies);
   }
 
   alertInfo = getMarkerInfo(selectedAlert, localizations);
-  // Use the agent name from the localized MarkerInfo
   return localizations.homeCallAgentButton(alertInfo?.agent ?? localizations.agentEmergencies);
-}
-
-/// Gets the emergency number for the call button based on the selected alert.
-/// This doesn't require localization for the number itself, but AppLocalizations is needed for getMarkerInfo.
-String getCallButtonEmergencyNumber(MakerType selectedAlert, AppLocalizations localizations) {
-  if (selectedAlert == MakerType.none || selectedAlert == MakerType.emergency) {
-    return getMarkerInfo(MakerType.emergency, localizations)?.emergencyNumber ?? '911'; // Fallback
-  }
-  return getMarkerInfo(selectedAlert, localizations)?.emergencyNumber ?? '911'; // Fallback
 }

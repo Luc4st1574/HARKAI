@@ -71,9 +71,13 @@ class IncidentMediaServices {
     // This user instruction for audio is taken directly from your original code.
     final audioUserInstruction =
         "Incident Type: '$incidentTypeName'. Process the following audio. "
+        "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary. "
         "Expected response formats: 'MATCH: [Short summary, max 15 words, of the audio content related to the incident type.]', "
         "'MISMATCH: This audio seems to describe a [Correct Incident Type] incident. Please confirm this type or re-record for the $incidentTypeName incident.', "
-        "'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'";
+        "'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'"
+        "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' that must be in English."
+        "Only the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' must be in English, the rest of the response must be in Spanish."
+        "Do not translate the response to English if Spanish was the used language by the user.";
 
     try {
       final response = await model.generateContent([
@@ -105,7 +109,10 @@ class IncidentMediaServices {
         "3. RESPONSE (If safe): "
         "IF MATCHES INCIDENT TYPE: Respond EXACTLY 'MATCH:'. "
         "IF MISMATCH (but valid other type like Fire, Crash, Theft, Pet, Emergency): Respond EXACTLY 'MISMATCH: This image looks more like a [Correct Incident Type] alert. Please confirm this type or retake image for $incidentTypeName incident.'. "
-        "IF IRRELEVANT/UNCLEAR: Respond EXACTLY 'UNCLEAR: The image is not clear enough or does not seem to describe a reportable incident for '$incidentTypeName'. Please try retaking the picture.'.";
+        "IF IRRELEVANT/UNCLEAR: Respond EXACTLY 'UNCLEAR: The image is not clear enough or does not seem to describe a reportable incident for '$incidentTypeName'. Please try retaking the picture.'."
+        "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' that must be in English."
+        "Only the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' must be in English, the rest of the response must be in Spanish."
+        "Do not translate the response to English if Spanish was the used language by the user.";
 
     try {
       final response = await model.generateContent([
