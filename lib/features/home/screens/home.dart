@@ -20,6 +20,7 @@ import '../widgets/map.dart';
 import '../widgets/incident_buttons.dart';
 import '../widgets/bottom_butons.dart';
 import '../modals/incident_image.dart';
+import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
 
 // Managers
 import '../managers/marker_manager.dart';
@@ -196,6 +197,21 @@ class _HomeState extends State<Home> {
     );
   }
 
+  void _handleIncidentButtonLongPressed(MakerType markerType) {
+    if (!mounted || _userSessionManager.currentUser == null) return;
+    
+    print("Incident button long pressed: ${markerType.name}. Navigating to IncidentScreen.");
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => IncidentScreen(
+          incidentType: markerType,
+          currentUser: _userSessionManager.currentUser,
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleEmergencyButtonPressed() async {
     if (!mounted || _localizations == null) return;
     await _dataEventManager.processEmergencyReporting(
@@ -274,6 +290,7 @@ class _HomeState extends State<Home> {
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: _handleIncidentButtonPressed,
+                          onIncidentButtonLongPressed: _handleIncidentButtonLongPressed,
                         ),
                       ),
                     ),

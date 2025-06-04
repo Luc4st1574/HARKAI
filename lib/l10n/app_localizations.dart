@@ -1139,6 +1139,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not launch dialer: {error}'**
   String phoneServiceCouldNotLaunchDialer(String error);
+
+  /// Title for the incident feed screen, takes incident type name.
+  ///
+  /// In en, this message translates to:
+  /// **'{incidentType} Incidents Near You'**
+  String incidentScreenTitle(String incidentType);
+
+  /// Message shown when no incidents of a specific type are found.
+  ///
+  /// In en, this message translates to:
+  /// **'No {incidentType} incidents found nearby at the moment.'**
+  String incidentFeedNoIncidentsFound(String incidentType);
+
+  /// No description provided for @incidentTileDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Incident Reported'**
+  String get incidentTileDefaultTitle;
+
+  /// Distance in meters for incident tile.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance}m away'**
+  String incidentTileDistanceMeters(String distance);
+
+  /// Distance in kilometers for incident tile.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance}km away'**
+  String incidentTileDistanceKm(String distance);
+
+  /// Title for the incident map view, takes incident type name.
+  ///
+  /// In en, this message translates to:
+  /// **'Location of {incidentType}'**
+  String incidentMapViewTitle(String incidentType);
+
+  /// No description provided for @incidentMapViewIncidentExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This incident report has expired or is no longer visible.'**
+  String get incidentMapViewIncidentExpired;
 }
 
 class _AppLocalizationsDelegate

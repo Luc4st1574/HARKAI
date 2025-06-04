@@ -314,5 +314,57 @@
     "placeholders": {
       "error": { "type": "String" }
     }
-  }
+  },
+  "incidentScreenTitle": "Incidentes {incidentType} Cercanas",
+  "@incidentScreenTitle": {
+    "description": "Título para la pantalla de listado de incidentes, toma el nombre del tipo de incidente.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fuego"
+      }
+    }
+  },
+  "incidentFeedNoIncidentsFound": "No se encontraron incidentes de {incidentType} cercanos por el momento.",
+  "@incidentFeedNoIncidentsFound": {
+    "description": "Mensaje que se muestra cuando no se encuentran incidentes de un tipo específico.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fuego"
+      }
+    }
+  },
+  "incidentTileDefaultTitle": "Incidente Reportado",
+  "incidentTileDistanceMeters": "A {distance}m",
+  "@incidentTileDistanceMeters": {
+    "description": "Distancia en metros para la tarjeta de incidente.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "150"
+      }
+    }
+  },
+  "incidentTileDistanceKm": "A {distance}km",
+  "@incidentTileDistanceKm": {
+    "description": "Distancia en kilómetros para la tarjeta de incidente.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "1.2"
+      }
+    }
+  },
+  "incidentMapViewTitle": "Ubicación de {incidentType}",
+  "@incidentMapViewTitle": {
+    "description": "Título para la vista de mapa del incidente, toma el nombre del tipo de incidente.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Robo"
+      }
+    }
+  },
+  "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible."
 }

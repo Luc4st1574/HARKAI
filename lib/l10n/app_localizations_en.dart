@@ -625,4 +625,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String phoneServiceCouldNotLaunchDialer(String error) {
     return 'Could not launch dialer: $error';
   }
+
+  @override
+  String incidentScreenTitle(String incidentType) {
+    return '$incidentType Incidents Near You';
+  }
+
+  @override
+  String incidentFeedNoIncidentsFound(String incidentType) {
+    return 'No $incidentType incidents found nearby at the moment.';
+  }
+
+  @override
+  String get incidentTileDefaultTitle => 'Incident Reported';
+
+  @override
+  String incidentTileDistanceMeters(String distance) {
+    return '${distance}m away';
+  }
+
+  @override
+  String incidentTileDistanceKm(String distance) {
+    return '${distance}km away';
+  }
+
+  @override
+  String incidentMapViewTitle(String incidentType) {
+    return 'Location of $incidentType';
+  }
+
+  @override
+  String get incidentMapViewIncidentExpired =>
+      'This incident report has expired or is no longer visible.';
 }

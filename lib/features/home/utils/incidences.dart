@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'markers.dart';
-import 'package:harkai/l10n/app_localizations.dart'; // Added import
+import 'markers.dart'; // Ensure this path is correct
+import 'package:harkai/l10n/app_localizations.dart';
 
 /// A data class to represent a heat point retrieved from Firestore.
 class IncidenceData {
@@ -17,6 +17,9 @@ class IncidenceData {
   final String? imageUrl;
   final Timestamp timestamp;
   final bool isVisible;
+  // Optional: For client-side distance calculation storage in IncidentScreen
+  double? distance;
+
 
   IncidenceData({
     required this.id,
@@ -28,6 +31,7 @@ class IncidenceData {
     this.imageUrl,
     required this.timestamp,
     required this.isVisible,
+    this.distance, // Added for convenience
   });
 
   /// Factory constructor to create a IncidenceData instance from a Firestore document.
@@ -41,7 +45,6 @@ class IncidenceData {
       type: MakerType.values.firstWhere(
         (e) => e.name == data['type'],
         orElse: () {
-          // Fallback if type string doesn't match any enum value
           debugPrint("Unknown MakerType encountered in Firestore: ${data['type']}, defaulting to 'none'.");
           return MakerType.none;
         }
@@ -72,13 +75,13 @@ Marker createMarkerFromIncidence(
     markerId: MarkerId(incidence.id),
     position: LatLng(incidence.latitude, incidence.longitude),
     icon: BitmapDescriptor.defaultMarkerWithHue(getMarkerHue(incidence.type)),
-    infoWindow: (incidence.imageUrl == null)
+    infoWindow: (incidence.imageUrl == null || incidence.imageUrl!.isEmpty)
         ? InfoWindow(
-            title: incidentInfoForMarker?.title ?? incidence.type.name.capitalize(),
+            title: incidentInfoForMarker?.title ?? incidence.type.name.capitalizeAllWords(),
             snippet: incidence.description.isNotEmpty ? incidence.description : null,
           )
         : InfoWindow.noText,
-    onTap: (incidence.imageUrl != null && onImageMarkerTapped != null)
+    onTap: (incidence.imageUrl != null && incidence.imageUrl!.isNotEmpty && onImageMarkerTapped != null)
         ? () => onImageMarkerTapped(incidence)
         : null,
   );
@@ -92,18 +95,15 @@ Circle createCircleFromIncidence(IncidenceData incidence, AppLocalizations local
   return Circle(
     circleId: CircleId('circle_${incidence.id}'),
     center: LatLng(incidence.latitude, incidence.longitude),
-    radius: 80, // Consider making this configurable or dynamic
+    radius: 80,
     fillColor: baseColor.withAlpha((0.25 * 255).round()),
     strokeColor: baseColor.withAlpha((0.7 * 255).round()),
     strokeWidth: 1,
   );
 }
 
-// Helper function to normalize city names for Firestore Document ID matching
 String _normalizeCityNameForFirestoreQuery(String cityName) {
   if (cityName.isEmpty) return "";
-
-  // 1. Remove common accents
   String withoutAccents = cityName
       .replaceAll('á', 'a').replaceAll('Á', 'A')
       .replaceAll('é', 'e').replaceAll('É', 'E')
@@ -112,21 +112,15 @@ String _normalizeCityNameForFirestoreQuery(String cityName) {
       .replaceAll('ú', 'u').replaceAll('Ú', 'U')
       .replaceAll('ü', 'u').replaceAll('Ü', 'U')
       .replaceAll('ñ', 'n').replaceAll('Ñ', 'N');
-
-  // 2. Convert to lowercase
   String lowerCaseName = withoutAccents.toLowerCase();
-
-  // 3. Replace multiple spaces with a single space and trim
   String normalized = lowerCaseName.replaceAll(RegExp(r'\s+'), ' ').trim();
-
-  return normalized; // e.g., "víctor larco herrera"
+  return normalized;
 }
 
-/// Service class to manage interactions with Firestore collections.
 class FirestoreService {
   final CollectionReference _heatPointsCollection =
       FirebaseFirestore.instance.collection('HeatPoints');
-  final CollectionReference _numbersCollection = // Added for the "Numbers" collection
+  final CollectionReference _numbersCollection =
       FirebaseFirestore.instance.collection('Numbers');
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
@@ -143,13 +137,11 @@ class FirestoreService {
       debugPrint("Attempted to add incidence with MakerType.none. Operation cancelled.");
       return false;
     }
-
     final User? currentUser = _firebaseAuth.currentUser;
     if (currentUser == null) {
       debugPrint("No authenticated user found. Cannot add incidence.");
       return false;
     }
-
     try {
       await _heatPointsCollection.add({
         'userId': currentUser.uid,
@@ -182,42 +174,62 @@ class FirestoreService {
           debugPrint('Error parsing IncidenceData from doc ${doc.id}: $e. Data: ${doc.data()}');
           return null;
         }
-      }).whereType<IncidenceData>().toList(); // Filters out nulls from parsing errors
+      }).whereType<IncidenceData>().toList();
     }).handleError((error) {
       debugPrint('Error in getIncidencesStream: $error');
-      return <IncidenceData>[]; // Return an empty list on error
+      return <IncidenceData>[];
+    });
+  }
+
+  /// Retrieves a stream of active/visible incidences of a specific type from Firestore.
+  Stream<List<IncidenceData>> getIncidencesStreamByType(MakerType type) { // Added this method
+    if (type == MakerType.none) {
+      return Stream.value([]); 
+    }
+    return _heatPointsCollection
+        .where('isVisible', isEqualTo: true)
+        .where('type', isEqualTo: type.name) // Filter by type in Firestore
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) { // Same mapping logic as getIncidencesStream
+        try {
+          return IncidenceData.fromFirestore(doc);
+        } catch (e) {
+          debugPrint('Error parsing IncidenceData from doc ${doc.id} for type ${type.name}: $e. Data: ${doc.data()}');
+          return null;
+        }
+      }).whereType<IncidenceData>().toList();
+    }).handleError((error) {
+      debugPrint('Error in getIncidencesStreamByType for ${type.name}: $error');
+      return <IncidenceData>[];
     });
   }
 
   Future<int> markExpiredIncidencesAsInvisible(
-      {Duration expiryDuration = const Duration(hours: 1)}) async { // Default expiry: 1 hour
+      {Duration expiryDuration = const Duration(hours: 1)}) async {
     final DateTime cutoffTime = DateTime.now().subtract(expiryDuration);
     final Timestamp cutoffTimestamp = Timestamp.fromDate(cutoffTime);
     int updatedCount = 0;
-
     try {
       final QuerySnapshot querySnapshot = await _heatPointsCollection
           .where('timestamp', isLessThan: cutoffTimestamp)
           .where('isVisible', isEqualTo: true)
           .get();
-
       if (querySnapshot.docs.isEmpty) {
         debugPrint("No expired incidences found to mark as invisible.");
         return 0;
       }
-
       WriteBatch batch = FirebaseFirestore.instance.batch();
       for (var doc in querySnapshot.docs) {
         batch.update(doc.reference, {'isVisible': false});
         updatedCount++;
-        // Firestore batch writes are limited (e.g., 500 operations per batch)
         if (updatedCount % 499 == 0 && updatedCount > 0) {
           await batch.commit();
           debugPrint("Committed a batch of $updatedCount expired incidences.");
-          batch = FirebaseFirestore.instance.batch(); // Start a new batch
+          batch = FirebaseFirestore.instance.batch();
         }
       }
-      // Commit any remaining operations in the last batch
       if (updatedCount > 0 && (updatedCount % 499 != 0 || querySnapshot.docs.length < 499) ) {
         await batch.commit();
         debugPrint("Committed the final batch of expired incidences. Total updated: $updatedCount");
@@ -229,30 +241,21 @@ class FirestoreService {
     }
   }
 
-  // Method to get emergency numbers for a city
   Future<Map<String, String>?> getEmergencyNumbersForCity(String cityName) async {
     if (cityName.isEmpty) {
       debugPrint('City name is empty, cannot fetch numbers.');
       return null;
     }
-
-    // Normalize the input city name for the query
     String normalizedQueryCityName = _normalizeCityNameForFirestoreQuery(cityName);
-    
     debugPrint('Attempting to fetch numbers for city. Original: "$cityName", Normalized for Query: "$normalizedQueryCityName"');
-
     try {
-      // Query the "Numbers" collection for a document where the "City" field
       final QuerySnapshot querySnapshot = await _numbersCollection
           .where("City", isEqualTo: normalizedQueryCityName)
           .limit(1)
           .get();
-
       if (querySnapshot.docs.isNotEmpty) {
-        // Get the first document found
         final DocumentSnapshot cityNumbersDoc = querySnapshot.docs.first;
         debugPrint('Numbers found for city "$normalizedQueryCityName" in document ID "${cityNumbersDoc.id}": ${cityNumbersDoc.data()}');
-        
         final Map<String, dynamic> rawData = cityNumbersDoc.data() as Map<String, dynamic>;
         final Map<String, String> stringData = rawData.map(
           (key, value) => MapEntry(key, value.toString()),
@@ -277,6 +280,9 @@ extension StringExtension on String {
 
   String capitalizeAllWords() {
     if (isEmpty) return this;
-    return split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');
+    return split(' ')
+        .where((word) => word.isNotEmpty)
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '')
+        .join(' ');
   }
 }

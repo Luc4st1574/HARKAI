@@ -71,7 +71,6 @@
   "chatMessageHintInitializing": "Harki AI is initializing...",
   "chatSenderNameHarki": "Harki",
   "chatSenderNameUserFallback": "You",
-
   "homeScreenLocationInfoText": "This is happening in your area",
   "homeMapLoadingText": "Loading map data...",
   "homeFireAlertButtonTitle": "Fire Alert",
@@ -82,7 +81,8 @@
   "@homeCallAgentButton": {
     "placeholders": {
       "agent": {
-        "type": "String"
+        "type": "String",
+        "example": "Police"
       }
     }
   },
@@ -92,14 +92,14 @@
   "agentPolice": "Police",
   "agentShelter": "Shelter",
   "agentEmergencies": "Emergencies",
-
   "mapLoadingLocation": "Loading location...",
   "mapFetchingLocation": "Fetching location...",
   "mapYouAreIn": "You are in {location}",
   "@mapYouAreIn": {
     "placeholders": {
       "location": {
-        "type": "String"
+        "type": "String",
+        "example": "New York"
       }
     }
   },
@@ -116,7 +116,6 @@
     }
   },
   "mapCurrentUserLocationNotAvailable": "Current user location not available.",
-
   "incidentReportedSuccess": "{incidentTitle} incident reported!",
   "@incidentReportedSuccess": {
     "placeholders": {
@@ -136,7 +135,6 @@
   "targetLocationNotSet": "Target location not set. Tap on map or use compass.",
   "emergencyReportLocationUnknown": "Unable to report emergency: Target location unknown.",
   "enlargedMapDataUnavailable": "Map data is currently unavailable. Please try again.",
-
   "incidentModalStep1ReportAudioTitle": "Step 1: Report Audio for {incidentName}",
   "@incidentModalStep1ReportAudioTitle": {
     "placeholders": {
@@ -260,13 +258,11 @@
   },
   "incidentModalImageHarkiAnalysisComplete": "Harki: Analysis complete.",
   "incidentModalAudioConfirmedAudio": "Confirmed Audio:",
-
   "incidentImageModalDescriptionLabel": "Description:",
   "incidentImageModalNoImage": "No image for this incident.",
   "incidentImageModalNoAdditionalDescription": "No additional description provided for the image.",
   "incidentImageModalCloseButton": "Close",
   "incidentImageModalImageUnavailable": "Image unavailable",
-
   "locationServiceDisabled": "Location services are disabled.",
   "locationServicePermissionDenied": "Location permission denied.",
   "locationServicePermissionPermanentlyDenied": "Location permissions are permanently denied. Please enable them in app settings.",
@@ -281,8 +277,12 @@
   "locationServiceGeocodingApiError": "Error from Geocoding API: {status} - {errorMessage}",
   "@locationServiceGeocodingApiError": {
     "placeholders": {
-      "status": { "type": "String" },
-      "errorMessage": { "type": "String" }
+      "status": {
+        "type": "String"
+      },
+      "errorMessage": {
+        "type": "String"
+      }
     }
   },
   "locationServiceGeocodingFailedDefault": "Failed to fetch address (API status not OK)",
@@ -290,29 +290,92 @@
   "locationServiceGeocodingLocationLatLonNoAddress": "Location: {latitude}, {longitude} (No address found)",
   "@locationServiceGeocodingLocationLatLonNoAddress": {
     "placeholders": {
-      "latitude": { "type": "String" },
-      "longitude": { "type": "String" }
+      "latitude": {
+        "type": "String"
+      },
+      "longitude": {
+        "type": "String"
+      }
     }
   },
   "locationServiceGeocodingLocationLatLonComponentsNotFound": "Location: {latitude}, {longitude} (Address components not found)",
   "@locationServiceGeocodingLocationLatLonComponentsNotFound": {
     "placeholders": {
-      "latitude": { "type": "String" },
-      "longitude": { "type": "String" }
+      "latitude": {
+        "type": "String"
+      },
+      "longitude": {
+        "type": "String"
+      }
     }
   },
   "locationServiceGeocodingErrorGeneric": "Geocoding error: {error}",
   "@locationServiceGeocodingErrorGeneric": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "phoneServicePermissionDenied": "Permission denied to make calls. Please enable it in settings.",
   "phoneServiceCouldNotLaunchDialer": "Could not launch dialer: {error}",
   "@phoneServiceCouldNotLaunchDialer": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
-  }
+  },
+  "incidentScreenTitle": "{incidentType} Incidents Near You",
+  "@incidentScreenTitle": {
+    "description": "Title for the incident feed screen, takes incident type name.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fire"
+      }
+    }
+  },
+  "incidentFeedNoIncidentsFound": "No {incidentType} incidents found nearby at the moment.",
+  "@incidentFeedNoIncidentsFound": {
+    "description": "Message shown when no incidents of a specific type are found.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fire"
+      }
+    }
+  },
+  "incidentTileDefaultTitle": "Incident Reported",
+  "incidentTileDistanceMeters": "{distance}m away",
+  "@incidentTileDistanceMeters": {
+    "description": "Distance in meters for incident tile.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "150"
+      }
+    }
+  },
+  "incidentTileDistanceKm": "{distance}km away",
+  "@incidentTileDistanceKm": {
+    "description": "Distance in kilometers for incident tile.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "1.2"
+      }
+    }
+  },
+  "incidentMapViewTitle": "Location of {incidentType}",
+  "@incidentMapViewTitle": {
+    "description": "Title for the incident map view, takes incident type name.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Theft"
+      }
+    }
+  },
+  "incidentMapViewIncidentExpired": "This incident report has expired or is no longer visible."
 }

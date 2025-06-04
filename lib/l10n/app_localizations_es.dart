@@ -640,4 +640,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String phoneServiceCouldNotLaunchDialer(String error) {
     return 'No se pudo iniciar el marcador: $error';
   }
+
+  @override
+  String incidentScreenTitle(String incidentType) {
+    return 'Incidentes $incidentType Cercanas';
+  }
+
+  @override
+  String incidentFeedNoIncidentsFound(String incidentType) {
+    return 'No se encontraron incidentes de $incidentType cercanos por el momento.';
+  }
+
+  @override
+  String get incidentTileDefaultTitle => 'Incidente Reportado';
+
+  @override
+  String incidentTileDistanceMeters(String distance) {
+    return 'A ${distance}m';
+  }
+
+  @override
+  String incidentTileDistanceKm(String distance) {
+    return 'A ${distance}km';
+  }
+
+  @override
+  String incidentMapViewTitle(String incidentType) {
+    return 'Ubicación de $incidentType';
+  }
+
+  @override
+  String get incidentMapViewIncidentExpired =>
+      'Este reporte de incidente ha expirado o ya no está visible.';
 }

@@ -6,11 +6,13 @@ import 'package:harkai/l10n/app_localizations.dart'; // Ensure this import is co
 class IncidentButtonsGridWidget extends StatelessWidget {
   final MakerType selectedIncident;
   final Function(MakerType) onIncidentButtonPressed;
+  final Function(MakerType) onIncidentButtonLongPressed;
 
   const IncidentButtonsGridWidget({
     super.key,
     required this.selectedIncident,
     required this.onIncidentButtonPressed,
+    required this.onIncidentButtonLongPressed,
   });
 
   @override
@@ -36,6 +38,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
                   markerType: markerTypesForGrid[0], // Fire
                   isSelected: selectedIncident == markerTypesForGrid[0],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[0]),
+                  onLongPressed: () => onIncidentButtonLongPressed(markerTypesForGrid[0]),
                 ),
               ),
               const SizedBox(width: gridSpacing),
@@ -44,6 +47,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
                   markerType: markerTypesForGrid[1], // Crash
                   isSelected: selectedIncident == markerTypesForGrid[1],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[1]),
+                  onLongPressed: () => onIncidentButtonLongPressed(markerTypesForGrid[1]),
                 ),
               ),
             ],
@@ -56,6 +60,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
                   markerType: markerTypesForGrid[2], // Theft
                   isSelected: selectedIncident == markerTypesForGrid[2],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[2]),
+                  onLongPressed: () => onIncidentButtonLongPressed(markerTypesForGrid[2]),
                 ),
               ),
               const SizedBox(width: gridSpacing),
@@ -64,6 +69,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
                   markerType: markerTypesForGrid[3], // Pet
                   isSelected: selectedIncident == markerTypesForGrid[3],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[3]),
+                  onLongPressed: () => onIncidentButtonLongPressed(markerTypesForGrid[3]),
                 ),
               ),
             ],
@@ -78,18 +84,20 @@ class _IndividualIncidentButton extends StatelessWidget {
   final MakerType markerType;
   final bool isSelected;
   final VoidCallback onPressed;
+  final VoidCallback? onLongPressed; // Make this nullable or required
 
   const _IndividualIncidentButton({
     required this.markerType,
     required this.isSelected,
     required this.onPressed,
+    this.onLongPressed, // Add to constructor
   });
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final MarkerInfo? markerDetails = getMarkerInfo(markerType, localizations);
-    String title = markerDetails?.title ?? 'Error'; 
+    String title = markerDetails?.title ?? 'Error';
 
     final Color buttonColor = markerDetails?.color ?? Colors.grey.shade700;
     final String iconPath = markerDetails?.iconPath ?? 'assets/images/alert.png';
@@ -102,6 +110,7 @@ class _IndividualIncidentButton extends StatelessWidget {
 
     return ElevatedButton(
       onPressed: onPressed,
+      onLongPress: onLongPressed, // Add this
       style: ElevatedButton.styleFrom(
         backgroundColor: buttonColor,
         foregroundColor: Colors.white,
@@ -129,7 +138,7 @@ class _IndividualIncidentButton extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              title, // Uses the localized title from markerDetails
+              title,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: fontSize,
