@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:harkai/features/home/utils/incidences.dart';
-import 'package:harkai/features/home/utils/markers.dart'; // For MarkerInfo and getMarkerInfo
+import 'package:harkai/features/home/utils/markers.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 class IncidentImageDisplayModal extends StatelessWidget {
   final IncidenceData incidence;
@@ -9,13 +10,17 @@ class IncidentImageDisplayModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MarkerInfo? markerDetails = getMarkerInfo(incidence.type);
+    final localizations = AppLocalizations.of(context)!; // Get localizations
+
+    // getMarkerInfo now requires localizations
+    final MarkerInfo? markerDetails = getMarkerInfo(incidence.type, localizations); 
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
-    // Use capitalizeAllWords from the StringExtension you defined earlier
+    
+    // Title comes from localized markerDetails
     final String title = markerDetails?.title ?? incidence.type.name.toString().split('.').last.capitalizeAllWords();
 
     return Dialog(
-      backgroundColor: const Color(0xFF001F3F), // Dark background from your theme
+      backgroundColor: const Color(0xFF001F3F),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20.0),
         side: BorderSide(color: accentColor, width: 2),
@@ -23,11 +28,11 @@ class IncidentImageDisplayModal extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Important to make the dialog wrap content
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              title,
+              title, // Already localized
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -37,10 +42,9 @@ class IncidentImageDisplayModal extends StatelessWidget {
             ),
             const SizedBox(height: 15),
 
-            // Description Display
             if (incidence.description.isNotEmpty)
               Text(
-                "Description:",
+                localizations.incidentImageModalDescriptionLabel, // Localized
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -52,20 +56,18 @@ class IncidentImageDisplayModal extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withAlpha((0.2 * 255).toInt()), // Subtle background for description
+                  color: Colors.black.withAlpha((0.2 * 255).toInt()),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  incidence.description,
+                  incidence.description, // This is data
                   style: TextStyle(fontSize: 15, color: Colors.white.withAlpha((0.85 * 255).toInt())),
                 ),
               ),
-            const SizedBox(height: 15), // Spacing between description and image
-            // Image Display
+            const SizedBox(height: 15),
             if (incidence.imageUrl != null)
               Container(
                 constraints: BoxConstraints(
-                  // Max height to prevent dialog from becoming too tall
                   maxHeight: MediaQuery.of(context).size.height * 0.4,
                 ),
                 decoration: BoxDecoration(
@@ -75,8 +77,9 @@ class IncidentImageDisplayModal extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   child: Image.network(
                     incidence.imageUrl!,
-                    fit: BoxFit.contain, // Use contain to see the whole image
+                    fit: BoxFit.contain,
                     loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                      // ... (loading builder remains the same)
                       if (loadingProgress == null) return child;
                       return Center(
                         child: CircularProgressIndicator(
@@ -89,7 +92,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
                     },
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        height: 150, // Placeholder height
+                        height: 150,
                         color: Colors.grey[800],
                         child: Center(
                           child: Column(
@@ -97,7 +100,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
                             children: [
                               Icon(Icons.broken_image, size: 50, color: accentColor.withAlpha((0.7 * 255).toInt())),
                               const SizedBox(height: 8),
-                              Text("Image unavailable", style: TextStyle(color: Colors.white70)),
+                              Text(localizations.incidentImageModalImageUnavailable, style: TextStyle(color: Colors.white70)), // Localized
                             ],
                           ),
                         ),
@@ -106,17 +109,17 @@ class IncidentImageDisplayModal extends StatelessWidget {
                   ),
                 ),
               )
-            else // Placeholder if no image
+            else
               SizedBox(
-                height: 100, // Adjusted height if needed, or remove if "No image" is not desired here
-                child: Center(child: Text("No image for this incident.", style: TextStyle(color: Colors.white70))),
+                height: 100,
+                child: Center(child: Text(localizations.incidentImageModalNoImage, style: TextStyle(color: Colors.white70))), // Localized
               ),
 
             if (incidence.description.isEmpty && incidence.imageUrl != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8.0), // Add some space above this text if needed
+                padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  "No additional description provided for the image.",
+                  localizations.incidentImageModalNoAdditionalDescription, // Localized
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white.withAlpha((0.7 * 255).toInt())),
                 ),
@@ -125,7 +128,7 @@ class IncidentImageDisplayModal extends StatelessWidget {
             const SizedBox(height: 25),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Close', style: TextStyle(color: accentColor, fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(localizations.incidentImageModalCloseButton, style: TextStyle(color: accentColor, fontSize: 16, fontWeight: FontWeight.bold)), // Localized
             ),
           ],
         ),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:harkai/l10n/app_localizations.dart';
 
 class EnlargedMapModal extends StatelessWidget {
   final double? initialLatitude;
   final double? initialLongitude;
   final Set<Marker> markers;
-  final Set<Circle> circles; // New: Add circles property
+  final Set<Circle> circles;
   final double currentZoom;
 
   const EnlargedMapModal({
@@ -13,19 +14,21 @@ class EnlargedMapModal extends StatelessWidget {
     required this.initialLatitude,
     required this.initialLongitude,
     required this.markers,
-    required this.circles, // New: Require circles in constructor
+    required this.circles,
     required this.currentZoom,
   });
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!; // Get AppLocalizations
+
     if (initialLatitude == null || initialLongitude == null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(15.0),
-        child: const Center(
+        child: Center(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("Map data is currently unavailable. Please try again."),
+            padding: const EdgeInsets.all(16.0),
+            child: Text(localizations.enlargedMapDataUnavailable), // Localized string
           ),
         ),
       );
@@ -41,10 +44,10 @@ class EnlargedMapModal extends StatelessWidget {
               zoom: currentZoom,
             ),
             markers: markers,
-            circles: circles, // New: Pass circles to GoogleMap
+            circles: circles,
             mapType: MapType.terrain,
             myLocationEnabled: true,
-            myLocationButtonEnabled: false, // Typically false in a modal
+            myLocationButtonEnabled: false,
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,
             scrollGesturesEnabled: true,

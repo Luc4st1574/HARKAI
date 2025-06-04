@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart'; // For User object
 import 'package:flutter/material.dart';
 import '../../profile/screens/profile.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// A widget that displays the header section of the home screen.
 class HomeHeaderWidget extends StatelessWidget {
@@ -16,8 +17,11 @@ class HomeHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!; // Get AppLocalizations instance
+
+    // Use profileDefaultUsername as a fallback if display name and email are null
     final String displayName =
-        currentUser?.displayName ?? currentUser?.email ?? 'Guest';
+        currentUser?.displayName ?? currentUser?.email ?? localizations.profileDefaultUsername;
     final String? photoURL = currentUser?.photoURL;
 
     return Padding(
@@ -60,7 +64,7 @@ class HomeHeaderWidget extends StatelessWidget {
                 children: [
                   // User Name
                   Text(
-                    displayName,
+                    displayName, // Now uses localized fallback
                     style: const TextStyle(
                       color: Color(0xFF57D463), // Color from original design
                       fontSize: 18,

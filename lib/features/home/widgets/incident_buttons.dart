@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/markers.dart'; 
+import '../utils/markers.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Ensure this import is correct
 
 /// A widget that displays a grid of incident buttons.
 class IncidentButtonsGridWidget extends StatelessWidget {
@@ -21,16 +22,13 @@ class IncidentButtonsGridWidget extends StatelessWidget {
       MakerType.pet,
     ];
 
-    // Spacing for the grid
     const double gridSpacing = 12.0;
 
     return Padding(
-      // Padding around the entire grid.
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // First row of incident buttons.
           Row(
             children: [
               Expanded(
@@ -40,7 +38,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[0]),
                 ),
               ),
-              const SizedBox(width: gridSpacing), // Spacing between buttons in a row.
+              const SizedBox(width: gridSpacing),
               Expanded(
                 child: _IndividualIncidentButton(
                   markerType: markerTypesForGrid[1], // Crash
@@ -55,7 +53,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: _IndividualIncidentButton(
-                  markerType: markerTypesForGrid[2],
+                  markerType: markerTypesForGrid[2], // Theft
                   isSelected: selectedIncident == markerTypesForGrid[2],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[2]),
                 ),
@@ -63,7 +61,7 @@ class IncidentButtonsGridWidget extends StatelessWidget {
               const SizedBox(width: gridSpacing),
               Expanded(
                 child: _IndividualIncidentButton(
-                  markerType: markerTypesForGrid[3],
+                  markerType: markerTypesForGrid[3], // Pet
                   isSelected: selectedIncident == markerTypesForGrid[3],
                   onPressed: () => onIncidentButtonPressed(markerTypesForGrid[3]),
                 ),
@@ -76,7 +74,6 @@ class IncidentButtonsGridWidget extends StatelessWidget {
   }
 }
 
-/// --- Individual Incident Button (Private to this file) ---
 class _IndividualIncidentButton extends StatelessWidget {
   final MakerType markerType;
   final bool isSelected;
@@ -90,16 +87,17 @@ class _IndividualIncidentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MarkerInfo? markerDetails = getMarkerInfo(markerType);
+    final localizations = AppLocalizations.of(context)!;
+    final MarkerInfo? markerDetails = getMarkerInfo(markerType, localizations);
+    String title = markerDetails?.title ?? 'Error'; 
 
-    final String title = markerDetails?.title ?? 'Marker ${markerType.name}';
     final Color buttonColor = markerDetails?.color ?? Colors.grey.shade700;
     final String iconPath = markerDetails?.iconPath ?? 'assets/images/alert.png';
     final AssetImage iconAsset = AssetImage(iconPath);
     const double iconSize = 20.0;
     const double fontSize = 13.0;
     const FontWeight fontWeight = FontWeight.bold;
-    const double buttonElevation = 5.0; // Consistent elevation for shadow
+    const double buttonElevation = 5.0;
     const EdgeInsets buttonPadding = EdgeInsets.symmetric(vertical: 14, horizontal: 10);
 
     return ElevatedButton(
@@ -122,9 +120,8 @@ class _IndividualIncidentButton extends StatelessWidget {
             image: iconAsset,
             height: iconSize,
             width: iconSize,
-            color: Colors.white, // Assuming icons are tintable or primarily white
+            color: Colors.white,
             errorBuilder: (context, error, stackTrace) {
-              // Fallback if the image asset fails to load
               return Icon(Icons.warning_amber_rounded,
                   color: Colors.white, size: iconSize);
             },
@@ -132,7 +129,7 @@ class _IndividualIncidentButton extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              title,
+              title, // Uses the localized title from markerDetails
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: fontSize,

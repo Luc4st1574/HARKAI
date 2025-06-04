@@ -110,11 +110,11 @@ abstract class AppLocalizations {
   /// **'Hello World!'**
   String get helloWorld;
 
-  /// No description provided for @welcomeMessage.
+  /// A welcome message with a placeholder for the user's name.
   ///
   /// In en, this message translates to:
   /// **'Welcome, {name}!'**
-  String welcomeMessage(Object name);
+  String welcomeMessage(String name);
 
   /// No description provided for @firebaseInitError.
   ///
@@ -469,6 +469,676 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You'**
   String get chatSenderNameUserFallback;
+
+  /// No description provided for @homeScreenLocationInfoText.
+  ///
+  /// In en, this message translates to:
+  /// **'This is happening in your area'**
+  String get homeScreenLocationInfoText;
+
+  /// No description provided for @homeMapLoadingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading map data...'**
+  String get homeMapLoadingText;
+
+  /// No description provided for @homeFireAlertButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Alert'**
+  String get homeFireAlertButtonTitle;
+
+  /// No description provided for @homeCrashAlertButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash Alert'**
+  String get homeCrashAlertButtonTitle;
+
+  /// No description provided for @homeTheftAlertButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theft Alert'**
+  String get homeTheftAlertButtonTitle;
+
+  /// No description provided for @homePetAlertButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet Alert'**
+  String get homePetAlertButtonTitle;
+
+  /// No description provided for @homeCallAgentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Call {agent}'**
+  String homeCallAgentButton(String agent);
+
+  /// No description provided for @homeCallEmergenciesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Emergencies'**
+  String get homeCallEmergenciesButton;
+
+  /// No description provided for @agentFirefighters.
+  ///
+  /// In en, this message translates to:
+  /// **'Firefighters'**
+  String get agentFirefighters;
+
+  /// No description provided for @agentSerenazgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Serenazgo'**
+  String get agentSerenazgo;
+
+  /// No description provided for @agentPolice.
+  ///
+  /// In en, this message translates to:
+  /// **'Police'**
+  String get agentPolice;
+
+  /// No description provided for @agentShelter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shelter'**
+  String get agentShelter;
+
+  /// No description provided for @agentEmergencies.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergencies'**
+  String get agentEmergencies;
+
+  /// No description provided for @mapLoadingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading location...'**
+  String get mapLoadingLocation;
+
+  /// No description provided for @mapFetchingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching location...'**
+  String get mapFetchingLocation;
+
+  /// No description provided for @mapYouAreIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in {location}'**
+  String mapYouAreIn(String location);
+
+  /// No description provided for @mapCouldNotFetchAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch address'**
+  String get mapCouldNotFetchAddress;
+
+  /// No description provided for @mapFailedToGetInitialLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get initial location'**
+  String get mapFailedToGetInitialLocation;
+
+  /// No description provided for @mapLocationServicesDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled.'**
+  String get mapLocationServicesDisabled;
+
+  /// No description provided for @mapLocationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied.'**
+  String get mapLocationPermissionDenied;
+
+  /// No description provided for @mapErrorFetchingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching location: {error}'**
+  String mapErrorFetchingLocation(String error);
+
+  /// No description provided for @mapCurrentUserLocationNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Current user location not available.'**
+  String get mapCurrentUserLocationNotAvailable;
+
+  /// No description provided for @incidentReportedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{incidentTitle} incident reported!'**
+  String incidentReportedSuccess(String incidentTitle);
+
+  /// No description provided for @incidentReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to report {incidentTitle} incident.'**
+  String incidentReportFailed(String incidentTitle);
+
+  /// No description provided for @targetLocationNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Target location not set. Tap on map or use compass.'**
+  String get targetLocationNotSet;
+
+  /// No description provided for @emergencyReportLocationUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to report emergency: Target location unknown.'**
+  String get emergencyReportLocationUnknown;
+
+  /// No description provided for @enlargedMapDataUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Map data is currently unavailable. Please try again.'**
+  String get enlargedMapDataUnavailable;
+
+  /// No description provided for @incidentModalStep1ReportAudioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1: Report Audio for {incidentName}'**
+  String incidentModalStep1ReportAudioTitle(String incidentName);
+
+  /// No description provided for @incidentModalStatusInitializing.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing...'**
+  String get incidentModalStatusInitializing;
+
+  /// No description provided for @incidentModalStatusRecordingAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Audio...'**
+  String get incidentModalStatusRecordingAudio;
+
+  /// No description provided for @incidentModalStatusAudioRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Recorded!'**
+  String get incidentModalStatusAudioRecorded;
+
+  /// No description provided for @incidentModalStatusSendingAudioToHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki Analyzing Audio...'**
+  String get incidentModalStatusSendingAudioToHarki;
+
+  /// No description provided for @incidentModalStatusConfirmAudioDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Audio Description:'**
+  String get incidentModalStatusConfirmAudioDescription;
+
+  /// No description provided for @incidentModalStatusStep2AddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Add Image (Optional)'**
+  String get incidentModalStatusStep2AddImage;
+
+  /// No description provided for @incidentModalStatusCapturingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Capturing Image...'**
+  String get incidentModalStatusCapturingImage;
+
+  /// No description provided for @incidentModalStatusImagePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Image Preview'**
+  String get incidentModalStatusImagePreview;
+
+  /// No description provided for @incidentModalStatusSendingImageToHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki Analyzing Image...'**
+  String get incidentModalStatusSendingImageToHarki;
+
+  /// No description provided for @incidentModalStatusImageAnalyzed.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Image Analyzed'**
+  String get incidentModalStatusImageAnalyzed;
+
+  /// No description provided for @incidentModalStatusSubmittingIncident.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting Incident...'**
+  String get incidentModalStatusSubmittingIncident;
+
+  /// No description provided for @incidentModalStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get incidentModalStatusError;
+
+  /// No description provided for @incidentModalStatusTypeMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Type Mismatch'**
+  String get incidentModalStatusTypeMismatch;
+
+  /// No description provided for @incidentModalStatusInputUnclearInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Unclear/Invalid'**
+  String get incidentModalStatusInputUnclearInvalid;
+
+  /// No description provided for @incidentModalStatusHarkiProcessingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki Processing Error'**
+  String get incidentModalStatusHarkiProcessingError;
+
+  /// No description provided for @incidentModalInstructionHoldMic.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold Mic to record audio description.'**
+  String get incidentModalInstructionHoldMic;
+
+  /// No description provided for @incidentModalInstructionMicPermissionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Mic permission needed. Tap Mic to check/grant or grant in settings.'**
+  String get incidentModalInstructionMicPermissionNeeded;
+
+  /// No description provided for @incidentModalInstructionHarkiInitializing.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI is initializing. Please wait or tap Mic to retry.'**
+  String get incidentModalInstructionHarkiInitializing;
+
+  /// No description provided for @incidentModalInstructionMicPermAndHarkiInit.
+  ///
+  /// In en, this message translates to:
+  /// **'Mic permission needed & Harki AI initializing. Tap Mic to proceed.'**
+  String get incidentModalInstructionMicPermAndHarkiInit;
+
+  /// No description provided for @incidentModalInstructionReleaseMic.
+  ///
+  /// In en, this message translates to:
+  /// **'Release Mic to stop.'**
+  String get incidentModalInstructionReleaseMic;
+
+  /// No description provided for @incidentModalInstructionSendAudioToHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap \"Send Audio to Harki\" for analysis.'**
+  String get incidentModalInstructionSendAudioToHarki;
+
+  /// No description provided for @incidentModalInstructionPleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait.'**
+  String get incidentModalInstructionPleaseWait;
+
+  /// No description provided for @incidentModalInstructionConfirmAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki suggests: \"{audioDescription}\".\nIs this correct?'**
+  String incidentModalInstructionConfirmAudio(String audioDescription);
+
+  /// No description provided for @incidentModalInstructionAddImageOrSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed Audio: \"{confirmedAudioDescription}\"\nAdd an image or submit with audio only.'**
+  String incidentModalInstructionAddImageOrSubmit(
+      String confirmedAudioDescription);
+
+  /// No description provided for @incidentModalInstructionUseCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Please use the camera to capture an image.'**
+  String get incidentModalInstructionUseCamera;
+
+  /// No description provided for @incidentModalInstructionAnalyzeRetakeRemoveImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze this image with Harki, retake it, or remove it to proceed with audio only.'**
+  String get incidentModalInstructionAnalyzeRetakeRemoveImage;
+
+  /// No description provided for @incidentModalInstructionImageApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Image approved by Harki!\nSubmit with current details, retake image, or remove image.'**
+  String get incidentModalInstructionImageApproved;
+
+  /// No description provided for @incidentModalInstructionImageFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Feedback from Harki: {imageFeedback}\nSubmit with current details, retake image, or remove image.'**
+  String incidentModalInstructionImageFeedback(String imageFeedback);
+
+  /// No description provided for @incidentModalInstructionUploadingMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading media, please wait.'**
+  String get incidentModalInstructionUploadingMedia;
+
+  /// No description provided for @incidentModalErrorMicPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission is required for audio recording. Please grant it in settings or restart the report process.'**
+  String get incidentModalErrorMicPermissionRequired;
+
+  /// No description provided for @incidentModalErrorFailedToInitHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to initialize Harki AI. Media processing unavailable.'**
+  String get incidentModalErrorFailedToInitHarki;
+
+  /// No description provided for @incidentModalErrorMicNotGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission not granted. Cannot record audio.'**
+  String get incidentModalErrorMicNotGranted;
+
+  /// No description provided for @incidentModalErrorHarkiNotReadyAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI is not ready. Cannot process audio.'**
+  String get incidentModalErrorHarkiNotReadyAudio;
+
+  /// No description provided for @incidentModalErrorCouldNotStartRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start recording. Please ensure microphone is available.'**
+  String get incidentModalErrorCouldNotStartRecording;
+
+  /// No description provided for @incidentModalErrorAudioEmptyNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio recording seems empty or was not saved correctly. Please try again.'**
+  String get incidentModalErrorAudioEmptyNotSaved;
+
+  /// No description provided for @incidentModalErrorNoAudioOrHarkiNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio recorded or Harki AI not ready.'**
+  String get incidentModalErrorNoAudioOrHarkiNotReady;
+
+  /// No description provided for @incidentModalErrorHarkiAudioResponseFormatUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI audio response format was unexpected: {responseText}. Please review or retry.'**
+  String incidentModalErrorHarkiAudioResponseFormatUnexpected(
+      String responseText);
+
+  /// No description provided for @incidentModalErrorHarkiNoActionableTextAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI returned no actionable text for audio.'**
+  String get incidentModalErrorHarkiNoActionableTextAudio;
+
+  /// No description provided for @incidentModalErrorHarkiAudioProcessingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI audio processing failed: {error}'**
+  String incidentModalErrorHarkiAudioProcessingFailed(String error);
+
+  /// No description provided for @incidentModalErrorNoAudioToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio description to confirm.'**
+  String get incidentModalErrorNoAudioToConfirm;
+
+  /// No description provided for @incidentModalErrorHarkiNotReadyImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI is not ready. Cannot process image.'**
+  String get incidentModalErrorHarkiNotReadyImage;
+
+  /// No description provided for @incidentModalErrorNoImageOrHarkiNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No image captured or Harki AI not ready.'**
+  String get incidentModalErrorNoImageOrHarkiNotReady;
+
+  /// No description provided for @incidentModalErrorHarkiNoActionableTextImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI returned no actionable text for image.'**
+  String get incidentModalErrorHarkiNoActionableTextImage;
+
+  /// No description provided for @incidentModalErrorHarkiImageProcessingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki AI image processing failed: {error}'**
+  String incidentModalErrorHarkiImageProcessingFailed(String error);
+
+  /// No description provided for @incidentModalErrorUserNotLoggedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'User not logged in. Cannot submit incident.'**
+  String get incidentModalErrorUserNotLoggedIn;
+
+  /// No description provided for @incidentModalErrorFailedToUploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload image. Please try again or submit without image.'**
+  String get incidentModalErrorFailedToUploadImage;
+
+  /// No description provided for @incidentModalErrorNoConfirmedAudioDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No confirmed audio description available. Please complete audio step first.'**
+  String get incidentModalErrorNoConfirmedAudioDescription;
+
+  /// No description provided for @incidentModalButtonHoldToRecordReleaseToStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record, release to stop.'**
+  String get incidentModalButtonHoldToRecordReleaseToStop;
+
+  /// No description provided for @incidentModalButtonSendAudioToHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Audio to Harki'**
+  String get incidentModalButtonSendAudioToHarki;
+
+  /// No description provided for @incidentModalButtonConfirmAudioAndProceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Audio & Proceed'**
+  String get incidentModalButtonConfirmAudioAndProceed;
+
+  /// No description provided for @incidentModalButtonRerecordAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-record Audio'**
+  String get incidentModalButtonRerecordAudio;
+
+  /// No description provided for @incidentModalButtonSubmitWithAudioOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit with Audio Only'**
+  String get incidentModalButtonSubmitWithAudioOnly;
+
+  /// No description provided for @incidentModalButtonAddPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Picture'**
+  String get incidentModalButtonAddPicture;
+
+  /// No description provided for @incidentModalButtonRetakePicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake Picture'**
+  String get incidentModalButtonRetakePicture;
+
+  /// No description provided for @incidentModalButtonAnalyzeImageWithHarki.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze Image with Harki'**
+  String get incidentModalButtonAnalyzeImageWithHarki;
+
+  /// No description provided for @incidentModalButtonUseAudioOnlyRemoveImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Audio Only (Remove Image)'**
+  String get incidentModalButtonUseAudioOnlyRemoveImage;
+
+  /// No description provided for @incidentModalButtonSubmitWithAudioAndImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit with Audio & Image'**
+  String get incidentModalButtonSubmitWithAudioAndImage;
+
+  /// No description provided for @incidentModalButtonSubmitAudioOnlyInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Audio Only Instead'**
+  String get incidentModalButtonSubmitAudioOnlyInstead;
+
+  /// No description provided for @incidentModalButtonTryAgainFromStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again from Start'**
+  String get incidentModalButtonTryAgainFromStart;
+
+  /// No description provided for @incidentModalButtonCancelReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Report'**
+  String get incidentModalButtonCancelReport;
+
+  /// No description provided for @incidentModalImageForIncident.
+  ///
+  /// In en, this message translates to:
+  /// **'Image for Incident:'**
+  String get incidentModalImageForIncident;
+
+  /// No description provided for @incidentModalImageRemoveTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Image'**
+  String get incidentModalImageRemoveTooltip;
+
+  /// No description provided for @incidentModalImageHarkiLooksGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki: Image looks good!'**
+  String get incidentModalImageHarkiLooksGood;
+
+  /// No description provided for @incidentModalImageHarkiFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki: {feedback}'**
+  String incidentModalImageHarkiFeedback(String feedback);
+
+  /// No description provided for @incidentModalImageHarkiAnalysisComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Harki: Analysis complete.'**
+  String get incidentModalImageHarkiAnalysisComplete;
+
+  /// No description provided for @incidentModalAudioConfirmedAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed Audio:'**
+  String get incidentModalAudioConfirmedAudio;
+
+  /// No description provided for @incidentImageModalDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description:'**
+  String get incidentImageModalDescriptionLabel;
+
+  /// No description provided for @incidentImageModalNoImage.
+  ///
+  /// In en, this message translates to:
+  /// **'No image for this incident.'**
+  String get incidentImageModalNoImage;
+
+  /// No description provided for @incidentImageModalNoAdditionalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No additional description provided for the image.'**
+  String get incidentImageModalNoAdditionalDescription;
+
+  /// No description provided for @incidentImageModalCloseButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get incidentImageModalCloseButton;
+
+  /// No description provided for @incidentImageModalImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image unavailable'**
+  String get incidentImageModalImageUnavailable;
+
+  /// No description provided for @locationServiceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled.'**
+  String get locationServiceDisabled;
+
+  /// No description provided for @locationServicePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied.'**
+  String get locationServicePermissionDenied;
+
+  /// No description provided for @locationServicePermissionPermanentlyDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permissions are permanently denied. Please enable them in app settings.'**
+  String get locationServicePermissionPermanentlyDenied;
+
+  /// No description provided for @locationServiceFailedToGetLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get location: {error}'**
+  String locationServiceFailedToGetLocation(String error);
+
+  /// No description provided for @locationServiceGeocodingApiError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error from Geocoding API: {status} - {errorMessage}'**
+  String locationServiceGeocodingApiError(String status, String errorMessage);
+
+  /// No description provided for @locationServiceGeocodingFailedDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch address (API status not OK)'**
+  String get locationServiceGeocodingFailedDefault;
+
+  /// No description provided for @locationServiceGeocodingNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No address results found for the given coordinates.'**
+  String get locationServiceGeocodingNoResults;
+
+  /// No description provided for @locationServiceGeocodingLocationLatLonNoAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {latitude}, {longitude} (No address found)'**
+  String locationServiceGeocodingLocationLatLonNoAddress(
+      String latitude, String longitude);
+
+  /// No description provided for @locationServiceGeocodingLocationLatLonComponentsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {latitude}, {longitude} (Address components not found)'**
+  String locationServiceGeocodingLocationLatLonComponentsNotFound(
+      String latitude, String longitude);
+
+  /// No description provided for @locationServiceGeocodingErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Geocoding error: {error}'**
+  String locationServiceGeocodingErrorGeneric(String error);
+
+  /// No description provided for @phoneServicePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied to make calls. Please enable it in settings.'**
+  String get phoneServicePermissionDenied;
+
+  /// No description provided for @phoneServiceCouldNotLaunchDialer.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not launch dialer: {error}'**
+  String phoneServiceCouldNotLaunchDialer(String error);
 }
 
 class _AppLocalizationsDelegate

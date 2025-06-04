@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'markers.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// A data class to represent a heat point retrieved from Firestore.
 class IncidenceData {
@@ -58,17 +59,22 @@ class IncidenceData {
 
 /// Utility function to create a [Marker] from [IncidenceData].
 Marker createMarkerFromIncidence(
-  IncidenceData incidence, {
-  Function(IncidenceData)? onImageMarkerTapped, // Callback for markers with images
-}) {
-  final incidentInfoForMarker = getMarkerInfo(incidence.type);
+  IncidenceData incidence, 
+  AppLocalizations localizations, // Added AppLocalizations parameter
+  {
+    Function(IncidenceData)? onImageMarkerTapped, // Callback for markers with images
+  }) {
+  // Now getMarkerInfo requires localizations
+  final MarkerInfo? incidentInfoForMarker = getMarkerInfo(incidence.type, localizations); 
+  
   return Marker(
     markerId: MarkerId(incidence.id),
     position: LatLng(incidence.latitude, incidence.longitude),
     icon: BitmapDescriptor.defaultMarkerWithHue(getMarkerHue(incidence.type)),
     infoWindow: (incidence.imageUrl == null)
         ? InfoWindow(
-            title: incidentInfoForMarker?.title ?? incidence.type.name.capitalize(),
+            // Title is now directly from the (localized) MarkerInfo
+            title: incidentInfoForMarker?.title ?? incidence.type.name.capitalize(), 
             snippet: incidence.description.isNotEmpty ? incidence.description : null,
           )
         : InfoWindow.noText, // No default InfoWindow if there's an image and custom tap
@@ -79,8 +85,9 @@ Marker createMarkerFromIncidence(
 }
 
 /// Utility function to create a [Circle] from [IncidenceData].
-Circle createCircleFromIncidence(IncidenceData incidence) {
-  final MarkerInfo? markerInfo = getMarkerInfo(incidence.type);
+Circle createCircleFromIncidence(IncidenceData incidence, AppLocalizations localizations) {
+  // Now getMarkerInfo requires localizations
+  final MarkerInfo? markerInfo = getMarkerInfo(incidence.type, localizations);
   final Color baseColor = markerInfo?.color ?? Colors.grey;
 
   return Circle(
@@ -122,7 +129,7 @@ class FirestoreService {
         'userId': currentUser.uid,
         'latitude': latitude,
         'longitude': longitude,
-        'type': type.name,
+        'type': type.name, // Storing enum name is fine, localization happens at display time
         'description': description ?? '',
         'imageUrl': imageUrl, // Save imageUrl
         'timestamp': FieldValue.serverTimestamp(),

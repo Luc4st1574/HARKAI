@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:harkai/l10n/app_localizations.dart'; 
 
 import 'modules/media_services.dart';
 import 'modules/media_handler.dart';
@@ -17,23 +18,19 @@ import 'package:harkai/core/services/storage_service.dart';
 import '../utils/markers.dart'; // For MakerType and getMarkerInfo
 
 // Enum to manage the state of the media input modal
+// Enum to manage the state of the media input modal
 enum MediaInputState {
-  // Step 1: Audio
-  idle, // Initial state, ready for audio recording
+  idle,
   recordingAudio,
-  audioRecordedReadyToSend, // Audio recorded, ready to send to Gemini
+  audioRecordedReadyToSend,
   sendingAudioToGemini,
-  audioDescriptionReadyForConfirmation, // Gemini processed audio (MATCH), user needs to confirm
-
-  // Step 2: Image (Optional)
-  displayingConfirmedAudio, // Confirmed audio shown, user decides to add image or submit audio only
-  awaitingImageCapture, // User chose to add image, camera action (less explicit state now, part of displayingConfirmedAudio)
-  imagePreview, // Image captured, ready for analysis or retake/remove
-  sendingImageToGemini, // Sending image to Gemini
-  imageAnalyzed, // Image analyzed by Gemini (approved or not), user can submit with image, retake, or remove
-
-  // Shared States
-  uploadingMedia, // Final submission process (uploading image if exists)
+  audioDescriptionReadyForConfirmation,
+  displayingConfirmedAudio,
+  awaitingImageCapture, // This state might be less explicit now
+  imagePreview,
+  sendingImageToGemini,
+  imageAnalyzed,
+  uploadingMedia,
   error,
 }
 
@@ -52,38 +49,33 @@ class IncidentVoiceDescriptionModal extends StatefulWidget {
 
 class _IncidentVoiceDescriptionModalState
     extends State<IncidentVoiceDescriptionModal> with TickerProviderStateMixin {
-  // Audio specific
   String? _recordedAudioPath;
-  String _geminiAudioProcessedText = ''; // Holds the raw response from Gemini for audio
-  String _confirmedAudioDescription = ''; // Holds the user-confirmed audio description
-
-  // Image specific
+  String _geminiAudioProcessedText = '';
+  String _confirmedAudioDescription = '';
   File? _capturedImageFile;
-  String _geminiImageAnalysisResultText = ''; // Feedback from Gemini about the image
+  String _geminiImageAnalysisResultText = '';
   bool _isImageApprovedByGemini = false;
   String? _uploadedImageUrl;
 
-  // Shared State
   MediaInputState _currentInputState = MediaInputState.idle;
   GenerativeModel? _generativeModel;
   bool _hasMicPermission = false;
-  String _statusText = 'Initializing...';
-  String _userInstructionText = '';
+  String _statusText = ''; // Will be set by _updateStatusAndInstructionText
+  String _userInstructionText = ''; // Will be set
 
-  // Animation
   late AnimationController _micAnimationController;
   late Animation<double> _micScaleAnimation;
 
-  // Service and Handler instances
   late IncidentMediaServices _mediaServices;
   late DeviceMediaHandler _deviceMediaHandler;
-  final StorageService _storageService = StorageService(); // For uploading image
+  final StorageService _storageService = StorageService();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
+
+  AppLocalizations? _localizations; // To store AppLocalizations instance
 
   @override
   void initState() {
     super.initState();
-
     final apiKey = dotenv.env['HARKI_KEY'] ?? "";
     _mediaServices = IncidentMediaServices(apiKey: apiKey);
     _deviceMediaHandler = DeviceMediaHandler();
@@ -95,14 +87,42 @@ class _IncidentVoiceDescriptionModalState
     _micScaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _micAnimationController, curve: Curves.easeInOut),
     );
+    // _localizations will be initialized in didChangeDependencies
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _initializeModal();
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize localizations here as context is available
+    if (_localizations == null) {
+      _localizations = AppLocalizations.of(context)!;
+      // Call _initializeModal only after localizations are set
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _initializeModal();
+      });
+    }
   }
 
   Future<void> _initializeModal() async {
-    // Check permissions
+    if (_localizations == null) {
+      // This might happen if didChangeDependencies hasn't completed or context isn't ready.
+      // Attempt to get it one more time.
+      if (mounted) {
+        _localizations = AppLocalizations.of(context);
+      }
+      if (_localizations == null) {
+        debugPrint("Error: Localizations not available during _initializeModal.");
+         // Potentially show a generic error or retry mechanism
+        setState(() {
+          _statusText = "Error initializing..."; // Non-localized fallback
+          _userInstructionText = "Please try again.";
+        });
+        return;
+      }
+    }
+
+    _statusText = _localizations!.incidentModalStatusInitializing; // Initial status
+
     PermissionStatus micStatus =
         await _mediaServices.getMicrophonePermissionStatus();
     _hasMicPermission = micStatus.isGranted;
@@ -111,24 +131,21 @@ class _IncidentVoiceDescriptionModalState
       _hasMicPermission =
           await _mediaServices.requestMicrophonePermission(openSettingsOnError: true);
       if (!_hasMicPermission && mounted) {
-        _handleError(
-            "Microphone permission is required for audio recording. Please grant it in settings or restart the report process.");
-            // UI will update via _updateStatusAndInstructionText below
+        _handleError(_localizations!.incidentModalErrorMicPermissionRequired);
       }
     }
 
-    // Initialize Gemini
     if (_generativeModel == null) {
-        _generativeModel = _mediaServices.initializeGeminiModel();
-        if (_generativeModel == null && mounted) {
-            _handleError("Failed to initialize Harki AI. Media processing unavailable.");
-        } else if (mounted) {
-            debugPrint("IncidentModal: Gemini initialized via MediaServices.");
-        }
+      _generativeModel = _mediaServices.initializeGeminiModel();
+      if (_generativeModel == null && mounted) {
+        _handleError(_localizations!.incidentModalErrorFailedToInitHarki);
+      } else if (mounted) {
+        debugPrint("IncidentModal: Gemini initialized via MediaServices.");
+      }
     }
-    
+
     if (mounted) {
-      _updateStatusAndInstructionText(); // Initial UI update
+      _updateStatusAndInstructionText(); // Initial UI update based on permissions and Gemini status
     }
   }
 
@@ -136,37 +153,37 @@ class _IncidentVoiceDescriptionModalState
       {bool isGeminiError = false,
       bool isMismatch = false,
       bool isUnclear = false}) {
-    if (mounted) {
-      _micAnimationController.reverse(); // Ensure mic animation stops
+    if (mounted && _localizations != null) {
+      _micAnimationController.reverse();
       setState(() {
         _currentInputState = MediaInputState.error;
         if (isMismatch) {
-          _statusText = "Type Mismatch";
+          _statusText = _localizations!.incidentModalStatusTypeMismatch;
         } else if (isUnclear) {
-          _statusText = "Input Unclear/Invalid";
+          _statusText = _localizations!.incidentModalStatusInputUnclearInvalid;
         } else if (isGeminiError) {
-          _statusText = "Harki Processing Error";
+          _statusText = _localizations!.incidentModalStatusHarkiProcessingError;
         } else {
-          _statusText = "Error";
+          _statusText = _localizations!.incidentModalStatusError;
         }
-        _userInstructionText = errorMessage;
+        _userInstructionText = errorMessage; // errorMessage should already be localized by the caller
       });
     }
   }
 
-  // --- Audio Methods (Step 1) ---
   Future<void> _handleStartRecording() async {
+    if (_localizations == null) return;
     _clearAllMediaData(clearAudioProcessingResults: true, clearImageProcessingResults: true, updateState: false);
-    
+
     if (!_hasMicPermission) {
-      _handleError("Microphone permission not granted. Cannot record audio.");
-      await _initializeModal(); // Attempt to re-check/re-ask for permissions
+      _handleError(_localizations!.incidentModalErrorMicNotGranted);
+      await _initializeModal();
       return;
     }
     if (_generativeModel == null) {
-        _handleError("Harki AI is not ready. Cannot process audio.");
-        await _initializeModal(); // Attempt to re-initialize
-        return;
+      _handleError(_localizations!.incidentModalErrorHarkiNotReadyAudio);
+      await _initializeModal();
+      return;
     }
 
     _recordedAudioPath = await _deviceMediaHandler.getTemporaryFilePath("m4a");
@@ -190,11 +207,12 @@ class _IncidentVoiceDescriptionModalState
       }
     } else {
       _recordedAudioPath = null;
-      _handleError("Could not start recording. Please ensure microphone is available.");
+      _handleError(_localizations!.incidentModalErrorCouldNotStartRecording);
     }
   }
 
   Future<void> _handleStopRecording() async {
+    if (_localizations == null) return;
     final path = await _deviceMediaHandler.stopRecording();
     if (path != null) {
       _recordedAudioPath = path;
@@ -206,11 +224,9 @@ class _IncidentVoiceDescriptionModalState
         });
       }
     } else {
-      _recordedAudioPath = null; // Clear path if stopping failed or recording was invalid
+      _recordedAudioPath = null;
       if (mounted) _micAnimationController.reverse();
-      _handleError( "Audio recording seems empty or was not saved correctly. Please try again.");
-      // Stay in a state where user can retry, perhaps idle or error.
-      // Forcing back to idle to allow another attempt.
+      _handleError(_localizations!.incidentModalErrorAudioEmptyNotSaved);
       if (mounted) {
         setState(() {
           _currentInputState = MediaInputState.idle;
@@ -221,8 +237,11 @@ class _IncidentVoiceDescriptionModalState
   }
 
   Future<void> _handleSendAudioToGemini() async {
+    if (_localizations == null) return;
     if (_recordedAudioPath == null || _generativeModel == null) {
-      _handleError("No audio recorded or Harki AI not ready.", isGeminiError: _generativeModel == null);
+      _handleError(
+          _localizations!.incidentModalErrorNoAudioOrHarkiNotReady,
+          isGeminiError: _generativeModel == null);
       return;
     }
     if (mounted) {
@@ -241,11 +260,11 @@ class _IncidentVoiceDescriptionModalState
       final text = await _mediaServices.analyzeAudioWithGemini(
         model: _generativeModel!,
         audioBytes: audioBytes,
-        audioMimeType: "audio/aac", // Mime type for .m4a is typically audio/mp4 or audio/aac
+        audioMimeType: "audio/aac",
         incidentTypeName: incidentTypeName,
       );
 
-      _geminiAudioProcessedText = text ?? "Harki AI couldn't process the audio.";
+      _geminiAudioProcessedText = text ?? _localizations!.incidentModalErrorHarkiAudioProcessingFailed(""); // Provide a generic part
 
       if (mounted) {
         if (text != null && text.isNotEmpty) {
@@ -256,29 +275,30 @@ class _IncidentVoiceDescriptionModalState
               _updateStatusAndInstructionText();
             });
           } else if (text.startsWith("MISMATCH:") || text.startsWith("UNCLEAR:")) {
-            _handleError(_geminiAudioProcessedText,
+            _handleError(_geminiAudioProcessedText, // This text is from Gemini, potentially not localized by ARB
                 isMismatch: text.startsWith("MISMATCH:"),
                 isUnclear: text.startsWith("UNCLEAR:"));
           } else {
             _handleError(
-                "Harki AI audio response format was unexpected: $_geminiAudioProcessedText. Please review or retry.",
+                _localizations!.incidentModalErrorHarkiAudioResponseFormatUnexpected(_geminiAudioProcessedText),
                 isGeminiError: true);
           }
         } else {
-          _handleError("Harki AI returned no actionable text for audio.",
+          _handleError(_localizations!.incidentModalErrorHarkiNoActionableTextAudio,
               isGeminiError: true);
         }
       }
     } catch (e) {
-      _handleError("Harki AI audio processing failed: ${e.toString()}",
+      _handleError(_localizations!.incidentModalErrorHarkiAudioProcessingFailed(e.toString()),
           isGeminiError: true);
     }
   }
 
   void _handleConfirmAudioAndProceed() {
+    if (_localizations == null) return;
     if (_geminiAudioProcessedText.isNotEmpty) {
       _confirmedAudioDescription = _geminiAudioProcessedText;
-      _geminiAudioProcessedText = ''; // Clear the raw Gemini text
+      _geminiAudioProcessedText = ''; 
       if (mounted) {
         setState(() {
           _currentInputState = MediaInputState.displayingConfirmedAudio;
@@ -286,28 +306,20 @@ class _IncidentVoiceDescriptionModalState
         });
       }
     } else {
-      _handleError("No audio description to confirm.");
+      _handleError(_localizations!.incidentModalErrorNoAudioToConfirm);
     }
   }
 
-  // --- Image Methods (Step 2) ---
   Future<void> _handleCaptureImage() async {
-    _clearImageData(updateState: false); // Clear only image related data before capturing new one
+    if (_localizations == null) return;
+    _clearImageData(updateState: false);
 
     if (_generativeModel == null) {
-        _handleError("Harki AI is not ready. Cannot process image.");
-        await _initializeModal(); // Attempt to re-initialize
-        return;
+      _handleError(_localizations!.incidentModalErrorHarkiNotReadyImage);
+      await _initializeModal();
+      return;
     }
     
-    // Indicate to user that camera is being launched
-    if (mounted) {
-        // setState(() {
-        //     _currentInputState = MediaInputState.awaitingImageCapture; // This state can be implied
-        //     _updateStatusAndInstructionText();
-        // });
-    }
-
     final File? capturedFile = await _deviceMediaHandler.captureImageFromCamera(
         maxWidth: 1024, imageQuality: 70);
 
@@ -322,7 +334,6 @@ class _IncidentVoiceDescriptionModalState
           _updateStatusAndInstructionText();
         });
       } else {
-        // User cancelled picker, go back to decision state
         setState(() {
           _currentInputState = MediaInputState.displayingConfirmedAudio;
           _updateStatusAndInstructionText();
@@ -332,8 +343,9 @@ class _IncidentVoiceDescriptionModalState
   }
 
   Future<void> _handleSendImageToGemini() async {
+    if (_localizations == null) return;
     if (_capturedImageFile == null || _generativeModel == null) {
-      _handleError("No image captured or Harki AI not ready.", isGeminiError: _generativeModel == null);
+      _handleError(_localizations!.incidentModalErrorNoImageOrHarkiNotReady, isGeminiError: _generativeModel == null);
       return;
     }
     if (mounted) {
@@ -356,21 +368,21 @@ class _IncidentVoiceDescriptionModalState
         incidentTypeName: incidentTypeName,
       );
 
-      _geminiImageAnalysisResultText = text ?? "Harki AI couldn't process the image.";
+      _geminiImageAnalysisResultText = text ?? _localizations!.incidentModalErrorHarkiImageProcessingFailed("");
       debugPrint("Gemini Image Response: $_geminiImageAnalysisResultText");
 
       if (mounted) {
         if (text != null && text.isNotEmpty) {
           if (text.startsWith("MATCH:")) {
             _isImageApprovedByGemini = true;
-            _geminiImageAnalysisResultText = "Image approved by Harki AI.";
-          } else { // INAPPROPRIATE, UNCLEAR, MISMATCH, or unexpected
+            // _geminiImageAnalysisResultText already set
+          } else { 
             _isImageApprovedByGemini = false;
-            // _geminiImageAnalysisResultText is already Gemini's response
+            // _geminiImageAnalysisResultText already set
           }
         } else {
           _isImageApprovedByGemini = false;
-          _geminiImageAnalysisResultText = "Harki AI returned no actionable text for image.";
+          _geminiImageAnalysisResultText = _localizations!.incidentModalErrorHarkiNoActionableTextImage;
         }
         setState(() {
           _currentInputState = MediaInputState.imageAnalyzed;
@@ -378,14 +390,13 @@ class _IncidentVoiceDescriptionModalState
         });
       }
     } catch (e) {
-      _isImageApprovedByGemini = false; // Ensure not approved on error
-      _handleError("Harki AI image processing failed: ${e.toString()}", isGeminiError: true);
+      _isImageApprovedByGemini = false;
+      _handleError(_localizations!.incidentModalErrorHarkiImageProcessingFailed(e.toString()), isGeminiError: true);
     }
   }
 
   void _handleRemoveImageAndGoBackToDecision() {
-    _clearImageData(updateState: false); // Clear image data
-    // No need to delete _capturedImageFile here, as it's a temp file from picker, OS handles it or it's overwritten.
+    _clearImageData(updateState: false);
     if (mounted) {
       setState(() {
         _currentInputState = MediaInputState.displayingConfirmedAudio;
@@ -394,35 +405,31 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-  // --- Data Clearing and Final Submission ---
   void _clearImageData({bool updateState = true}) {
     if (mounted) {
-      _capturedImageFile = null; 
+      _capturedImageFile = null;
       _geminiImageAnalysisResultText = '';
       _isImageApprovedByGemini = false;
       _uploadedImageUrl = null;
       if (updateState) {
-          setState(() {
-            // Logic to determine next state after clearing image data
-            if (_currentInputState.name.startsWith("image") || _currentInputState == MediaInputState.displayingConfirmedAudio) {
-                 _currentInputState = MediaInputState.displayingConfirmedAudio; // Go back to image decision point
-            } else {
-                 _currentInputState = MediaInputState.idle; // Or appropriate fallback
-            }
-            _updateStatusAndInstructionText();
-          });
+        setState(() {
+          if (_currentInputState.name.startsWith("image") || _currentInputState == MediaInputState.displayingConfirmedAudio) {
+            _currentInputState = MediaInputState.displayingConfirmedAudio;
+          } else {
+            _currentInputState = MediaInputState.idle;
+          }
+          _updateStatusAndInstructionText();
+        });
       }
     }
   }
 
   void _clearAllMediaData({bool clearAudioProcessingResults = true, bool clearImageProcessingResults = true, bool updateState = true}) {
     if (mounted) {
-      // Delete recorded audio if it exists
       if (_recordedAudioPath != null) {
         _deviceMediaHandler.deleteTemporaryFile(_recordedAudioPath);
         _recordedAudioPath = null;
       }
-      // Clear image data (without deleting file, as explained in _clearImageData)
       _capturedImageFile = null;
       _uploadedImageUrl = null;
 
@@ -436,48 +443,46 @@ class _IncidentVoiceDescriptionModalState
       }
       if (updateState) {
         setState(() {
-            _currentInputState = MediaInputState.idle;
-            _updateStatusAndInstructionText();
+          _currentInputState = MediaInputState.idle;
+          _updateStatusAndInstructionText();
         });
       }
     }
   }
 
   Future<void> _handleFinalSubmitIncident() async {
+    if (_localizations == null) return;
     if (_currentUser?.uid == null) {
-      _handleError("User not logged in. Cannot submit incident.");
-       // Go back to a state where user can decide further actions or simply show error.
-      if(mounted) setState(() { _currentInputState = _capturedImageFile != null && _isImageApprovedByGemini ? MediaInputState.imageAnalyzed : MediaInputState.displayingConfirmedAudio; _updateStatusAndInstructionText();});
+      _handleError(_localizations!.incidentModalErrorUserNotLoggedIn);
+      if (mounted) setState(() { _currentInputState = _capturedImageFile != null && _isImageApprovedByGemini ? MediaInputState.imageAnalyzed : MediaInputState.displayingConfirmedAudio; _updateStatusAndInstructionText();});
       return;
     }
 
-    // Image Upload if an approved image exists and hasn't been uploaded
     if (_capturedImageFile != null && _isImageApprovedByGemini && _uploadedImageUrl == null) {
       if (mounted) {
         setState(() { _currentInputState = MediaInputState.uploadingMedia; _updateStatusAndInstructionText(); });
       }
       _uploadedImageUrl = await _mediaServices.uploadIncidentImage(
-          storageService: _storageService, // Pass the instance
+          storageService: _storageService,
           imageFile: _capturedImageFile!,
           userId: _currentUser!.uid,
-          incidentType: widget.markerType.name); // Pass the original enum name string
+          incidentType: widget.markerType.name);
 
       if (_uploadedImageUrl == null && mounted) {
-        _handleError("Failed to upload image. Please try again or submit without image.");
+        _handleError(_localizations!.incidentModalErrorFailedToUploadImage);
         setState(() { _currentInputState = MediaInputState.imageAnalyzed; _updateStatusAndInstructionText();});
         return;
       }
     }
 
-    // Final check: must have confirmed audio description. Image is optional.
     if (_confirmedAudioDescription.isNotEmpty) {
       if (mounted) {
         debugPrint("Submitting: Audio='$_confirmedAudioDescription', ImageUrl='$_uploadedImageUrl'");
         Navigator.pop(context, {'description': _confirmedAudioDescription, 'imageUrl': _uploadedImageUrl});
       }
     } else {
-      _handleError("No confirmed audio description available. Please complete audio step first.");
-      if(mounted) setState(() { _currentInputState = MediaInputState.idle; _updateStatusAndInstructionText();});
+      _handleError(_localizations!.incidentModalErrorNoConfirmedAudioDescription);
+      if (mounted) setState(() { _currentInputState = MediaInputState.idle; _updateStatusAndInstructionText();});
     }
   }
 
@@ -490,104 +495,104 @@ class _IncidentVoiceDescriptionModalState
 
   Future<void> _handleRetryFullProcess() async {
     await _deleteRecordedAudioFile();
-    _clearAllMediaData(updateState: false); // Clears everything including confirmed audio
+    _clearAllMediaData(updateState: false);
     
-    // Re-initialize permissions and Gemini if they were problematic
     if (!_hasMicPermission || _generativeModel == null) {
-        await _initializeModal(); // This will also call _updateStatusAndInstructionText
+      await _initializeModal();
     } else if (mounted) {
-        setState(() {
-          _currentInputState = MediaInputState.idle;
-          _updateStatusAndInstructionText();
-        });
+      setState(() {
+        _currentInputState = MediaInputState.idle;
+        _updateStatusAndInstructionText();
+      });
     }
   }
 
   Future<void> _handleCancelInput() async {
     if (await _deviceMediaHandler.isAudioRecording()) {
-      await _deviceMediaHandler.stopRecording(); // Stop recording if active
+      await _deviceMediaHandler.stopRecording();
     }
     await _deleteRecordedAudioFile();
-    _clearAllMediaData(updateState: false); // Clear all data without UI update yet
+    _clearAllMediaData(updateState: false);
     if (mounted) {
-      Navigator.pop(context, null); // Pop the dialog
+      Navigator.pop(context, null);
     }
   }
-  
+
   void _onTapMicHintOrPermissionRecheck() {
-      if (!_hasMicPermission || _generativeModel == null) {
-          _initializeModal(); // Attempt to re-check permissions or re-initialize Gemini
-      }
-      // If it has permission and model, the SnackBar hint is shown by the UI builder's onTap
+    if (!_hasMicPermission || _generativeModel == null) {
+      _initializeModal();
+    }
   }
 
-
   void _updateStatusAndInstructionText() {
-    final markerDetails = getMarkerInfo(widget.markerType);
+    if (_localizations == null) { // Guard against null localizations
+        _statusText = "Loading..."; // Non-localized fallback
+        _userInstructionText = "Please wait.";
+        if(mounted) setState(() {});
+        return;
+    }
+    
+    final markerDetails = getMarkerInfo(widget.markerType, _localizations!);
     final incidentName =
-        markerDetails?.title ?? widget.markerType.name.capitalizeAllWords();
+        markerDetails?.title ?? widget.markerType.name.capitalizeAllWords(); // title is now localized from getMarkerInfo
 
     switch (_currentInputState) {
       case MediaInputState.idle:
-        _statusText = 'Step 1: Report Audio for $incidentName';
-        _userInstructionText = 'Hold Mic to record audio description.';
-        if (!_hasMicPermission) _userInstructionText = 'Mic permission needed. Tap Mic to check/grant or grant in settings.';
-        if (_generativeModel == null && _hasMicPermission) _userInstructionText = "Harki AI is initializing. Please wait or tap Mic to retry.";
-        if(!_hasMicPermission && _generativeModel == null) _userInstructionText = "Mic permission needed & Harki AI initializing. Tap Mic to proceed.";
+        _statusText = _localizations!.incidentModalStep1ReportAudioTitle(incidentName);
+        _userInstructionText = _localizations!.incidentModalInstructionHoldMic;
+        if (!_hasMicPermission) _userInstructionText = _localizations!.incidentModalInstructionMicPermissionNeeded;
+        if (_generativeModel == null && _hasMicPermission) _userInstructionText = _localizations!.incidentModalInstructionHarkiInitializing;
+        if (!_hasMicPermission && _generativeModel == null) _userInstructionText = _localizations!.incidentModalInstructionMicPermAndHarkiInit;
         break;
       case MediaInputState.recordingAudio:
-        _statusText = 'Recording Audio...';
-        _userInstructionText = 'Release Mic to stop.';
+        _statusText = _localizations!.incidentModalStatusRecordingAudio;
+        _userInstructionText = _localizations!.incidentModalInstructionReleaseMic;
         break;
       case MediaInputState.audioRecordedReadyToSend:
-        _statusText = 'Audio Recorded!';
-        _userInstructionText = 'Tap "Send Audio to Harki" for analysis.';
+        _statusText = _localizations!.incidentModalStatusAudioRecorded;
+        _userInstructionText = _localizations!.incidentModalInstructionSendAudioToHarki;
         break;
       case MediaInputState.sendingAudioToGemini:
-        _statusText = 'Harki Analyzing Audio...';
-        _userInstructionText = 'Please wait.';
+        _statusText = _localizations!.incidentModalStatusSendingAudioToHarki;
+        _userInstructionText = _localizations!.incidentModalInstructionPleaseWait;
         break;
       case MediaInputState.audioDescriptionReadyForConfirmation:
-        _statusText = 'Confirm Audio Description:';
-        _userInstructionText =
-            'Harki suggests: "$_geminiAudioProcessedText".\nIs this correct?';
+        _statusText = _localizations!.incidentModalStatusConfirmAudioDescription;
+        _userInstructionText = _localizations!.incidentModalInstructionConfirmAudio(_geminiAudioProcessedText);
         break;
       case MediaInputState.displayingConfirmedAudio:
-        _statusText = 'Step 2: Add Image (Optional)';
-        _userInstructionText =
-            'Confirmed Audio: "$_confirmedAudioDescription"\nAdd an image or submit with audio only.';
+        _statusText = _localizations!.incidentModalStatusStep2AddImage;
+        _userInstructionText = _localizations!.incidentModalInstructionAddImageOrSubmit(_confirmedAudioDescription);
         break;
-      case MediaInputState.awaitingImageCapture:
-        _statusText = 'Step 2: Capturing Image...';
-        _userInstructionText = 'Please use the camera to capture an image.';
+      case MediaInputState.awaitingImageCapture: // This state might be brief or implicit
+        _statusText = _localizations!.incidentModalStatusCapturingImage;
+        _userInstructionText = _localizations!.incidentModalInstructionUseCamera;
         break;
       case MediaInputState.imagePreview:
-        _statusText = 'Step 2: Image Preview';
-        _userInstructionText =
-            'Analyze this image with Harki, retake it, or remove it to proceed with audio only.';
-        // Prepending confirmed audio is handled by the UI builder if needed
+        _statusText = _localizations!.incidentModalStatusImagePreview;
+        _userInstructionText = _localizations!.incidentModalInstructionAnalyzeRetakeRemoveImage;
         break;
       case MediaInputState.sendingImageToGemini:
-        _statusText = 'Harki Analyzing Image...';
-        _userInstructionText = 'Please wait.';
+        _statusText = _localizations!.incidentModalStatusSendingImageToHarki;
+        _userInstructionText = _localizations!.incidentModalInstructionPleaseWait;
         break;
       case MediaInputState.imageAnalyzed:
-        _statusText = 'Step 2: Image Analyzed';
+        _statusText = _localizations!.incidentModalStatusImageAnalyzed;
+        String imageAnalysisFeedback = _geminiImageAnalysisResultText.isNotEmpty 
+                                    ? _geminiImageAnalysisResultText 
+                                    : _localizations!.incidentModalImageHarkiAnalysisComplete;
         if (_isImageApprovedByGemini) {
-          _userInstructionText = "Image approved by Harki!\n";
+            _userInstructionText = "${_localizations!.incidentModalImageHarkiLooksGood}\n${_localizations!.incidentModalInstructionImageApproved.split('\n').sublist(1).join('\n')}";
         } else {
-          _userInstructionText =
-              "Image Feedback from Harki: $_geminiImageAnalysisResultText\n";
+            _userInstructionText = "${_localizations!.incidentModalImageHarkiFeedback(imageAnalysisFeedback)}\n${_localizations!.incidentModalInstructionImageFeedback("").split('\n').sublist(1).join('\n')}";
         }
-        _userInstructionText +=
-            "Submit with current details, retake image, or remove image.";
         break;
       case MediaInputState.uploadingMedia:
-        _statusText = "Submitting Incident...";
-        _userInstructionText = "Uploading media, please wait.";
+        _statusText = _localizations!.incidentModalStatusSubmittingIncident;
+        _userInstructionText = _localizations!.incidentModalInstructionUploadingMedia;
         break;
       case MediaInputState.error:
-        // Status and instruction text already set by _handleError
+        // Status and instruction text are set by _handleError using localized strings
         break;
     }
     if (mounted) setState(() {});
@@ -596,14 +601,25 @@ class _IncidentVoiceDescriptionModalState
   @override
   void dispose() {
     _micAnimationController.dispose();
-    _deviceMediaHandler.disposeAudioRecorder(); // Dispose recorder via handler
-    _deleteRecordedAudioFile(); // Clean up any lingering temp audio file
+    _deviceMediaHandler.disposeAudioRecorder();
+    _deleteRecordedAudioFile();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final MarkerInfo? markerDetails = getMarkerInfo(widget.markerType);
+    // Ensure _localizations is initialized, if not, show loading or error
+    if (_localizations == null) {
+      _localizations = AppLocalizations.of(context); // Try to get it here if not already set
+      if (_localizations == null) {
+        return const Dialog(child: Center(child: CircularProgressIndicator(semanticsLabel: "Loading localization",)));
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if(mounted) _updateStatusAndInstructionText();
+      });
+    }
+
+    final MarkerInfo? markerDetails = getMarkerInfo(widget.markerType, _localizations!);
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
 
     bool isProcessingAny = _currentInputState == MediaInputState.sendingAudioToGemini ||
@@ -616,25 +632,21 @@ class _IncidentVoiceDescriptionModalState
         _currentInputState == MediaInputState.sendingAudioToGemini ||
         _currentInputState == MediaInputState.audioDescriptionReadyForConfirmation;
     
-    // Simplified check for Step 2 UI elements visibility
     bool showStep2ImageRelatedUI = _currentInputState == MediaInputState.displayingConfirmedAudio ||
                                   _currentInputState == MediaInputState.imagePreview ||
                                   _currentInputState == MediaInputState.sendingImageToGemini ||
                                   _currentInputState == MediaInputState.imageAnalyzed;
 
-
     return PopScope(
       canPop: !isProcessingAny && _currentInputState != MediaInputState.recordingAudio,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-        if (isProcessingAny || _currentInputState == MediaInputState.recordingAudio) {
-          // Prevent popping
-        } else {
+        if (!(isProcessingAny || _currentInputState == MediaInputState.recordingAudio)) {
           _handleCancelInput();
         }
       },
       child: Dialog(
-        backgroundColor: const Color(0xFF001F3F), // Navy blue background
+        backgroundColor: const Color(0xFF001F3F),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
             side: BorderSide(color: accentColor, width: 2)),
@@ -644,12 +656,13 @@ class _IncidentVoiceDescriptionModalState
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                _statusText,
+                _statusText, // Already localized
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: (_currentInputState == MediaInputState.error &&
-                            !(_statusText == "Type Mismatch" || _statusText == "Input Unclear/Invalid"))
+                            !(_statusText == _localizations!.incidentModalStatusTypeMismatch || 
+                              _statusText == _localizations!.incidentModalStatusInputUnclearInvalid))
                         ? Colors.redAccent
                         : accentColor),
                 textAlign: TextAlign.center,
@@ -657,7 +670,7 @@ class _IncidentVoiceDescriptionModalState
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(_userInstructionText,
+                child: Text(_userInstructionText, // Already localized
                     style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withAlpha((0.8 * 255).toInt())),
@@ -669,6 +682,7 @@ class _IncidentVoiceDescriptionModalState
                 shouldShow: showStep2ImageRelatedUI || _currentInputState == MediaInputState.imagePreview,
                 confirmedAudioDescription: _confirmedAudioDescription,
                 accentColor: accentColor,
+                localizations: _localizations!,
               ),
 
               IncidentModalUiBuilders.buildImagePreviewArea(
@@ -679,6 +693,7 @@ class _IncidentVoiceDescriptionModalState
                 geminiImageAnalysisResultText: _geminiImageAnalysisResultText,
                 accentColor: accentColor,
                 onRemoveImage: _handleRemoveImageAndGoBackToDecision,
+                localizations: _localizations!,
               ),
               
               const SizedBox(height: 10),
@@ -686,16 +701,18 @@ class _IncidentVoiceDescriptionModalState
               if (isProcessingAny)
                 IncidentModalUiBuilders.buildProcessingIndicator(
                     accentColor: accentColor,
-                    userInstructionText: _userInstructionText)
+                    userInstructionText: _userInstructionText) // Already localized
               else if (_currentInputState == MediaInputState.error)
                 IncidentModalUiBuilders.buildErrorControls(
                     accentColor: accentColor,
-                    userInstructionText: _userInstructionText,
-                    onRetryFullProcess: _handleRetryFullProcess)
+                    userInstructionText: _userInstructionText, // Already localized
+                    onRetryFullProcess: _handleRetryFullProcess,
+                    localizations: _localizations!,
+                )
               else
                 Column(
                   children: [
-                    if (isStep1Active) // Mic only visible in step 1 states
+                    if (isStep1Active)
                       IncidentModalUiBuilders.buildMicInputControl(
                           context: context,
                           canRecordAudio: _hasMicPermission && _generativeModel != null && _currentInputState == MediaInputState.idle,
@@ -705,17 +722,19 @@ class _IncidentVoiceDescriptionModalState
                           onLongPressStart: _handleStartRecording,
                           onLongPressEnd: _handleStopRecording,
                           onTapHint: _onTapMicHintOrPermissionRecheck,
+                          localizations: _localizations!,
                         ),
                     
-                    if (showStep2ImageRelatedUI && // Show camera button in relevant step 2 states
+                    if (showStep2ImageRelatedUI &&
                         _currentInputState != MediaInputState.sendingImageToGemini &&
                         _currentInputState != MediaInputState.uploadingMedia)
                       Padding(
-                        padding: const EdgeInsets.only(top: 15.0), // Add some space if mic is not shown
+                        padding: const EdgeInsets.only(top: 15.0),
                         child: IncidentModalUiBuilders.buildCameraInputControl(
                             capturedImageFile: _capturedImageFile,
                             accentColor: accentColor,
                             onPressedCapture: _handleCaptureImage,
+                            localizations: _localizations!,
                         ),
                       ),
                     const SizedBox(height: 20),
@@ -732,13 +751,14 @@ class _IncidentVoiceDescriptionModalState
                       onRemoveImageAndGoBackToDecision: _handleRemoveImageAndGoBackToDecision,
                       onSubmitWithAudioAndImage: _handleFinalSubmitIncident,
                       onSubmitAudioOnlyFromImageAnalyzed: () {
-                          _clearImageData(updateState:false); // Clear image, keep audio
+                          _clearImageData(updateState:false);
                           _handleFinalSubmitIncident();
                       },
                       onClearImageDataAndSubmitAudioOnlyFromAnalyzed: () {
-                          _clearImageData(updateState:false); // Clear image, keep audio
+                          _clearImageData(updateState:false);
                           _handleFinalSubmitIncident();
-                      }
+                      },
+                      localizations: _localizations!,
                     ),
                   ],
                 ),
@@ -747,8 +767,8 @@ class _IncidentVoiceDescriptionModalState
               if (!isProcessingAny && _currentInputState != MediaInputState.recordingAudio)
                 TextButton(
                   onPressed: _handleCancelInput,
-                  child: const Text('Cancel Report',
-                      style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  child: Text(_localizations!.incidentModalButtonCancelReport,
+                      style: const TextStyle(color: Colors.grey, fontSize: 15)),
                 ),
             ],
           ),
@@ -758,21 +778,19 @@ class _IncidentVoiceDescriptionModalState
   }
 }
 
-// The helper function to show the dialog
 Future<Map<String, String?>?> showIncidentVoiceDescriptionDialog({
   required BuildContext context,
   required MakerType markerType,
 }) async {
   return await showDialog<Map<String, String?>?>(
     context: context,
-    barrierDismissible: false, // Controlled by PopScope and explicit cancel
+    barrierDismissible: false,
     builder: (BuildContext dialogContext) {
       return IncidentVoiceDescriptionModal(markerType: markerType);
     },
   );
 }
 
-// String extension remains here
 extension StringExtension on String {
   String capitalizeAllWords() {
     if (isEmpty) return this;

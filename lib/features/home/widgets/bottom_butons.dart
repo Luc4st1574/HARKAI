@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import '../../chatbot/screens/chatbot.dart'; // For ChatBotScreen
 import '../utils/markers.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
+
 
 /// A widget that displays the main action buttons at the bottom of the screen.
 class BottomActionButtonsWidget extends StatelessWidget {
@@ -30,8 +32,11 @@ class BottomActionButtonsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the MarkerInfo for the dedicated emergency button
-    final MarkerInfo? emergencyMarkerDetails = markerInfoMap[MakerType.emergency];
+    final localizations = AppLocalizations.of(context)!; // Get localizations instance
+
+    // Get the MarkerInfo for the dedicated emergency button, now requiring localizations
+    final MarkerInfo? emergencyMarkerDetails = getMarkerInfo(MakerType.emergency, localizations);
+
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0), // Ensure this padding is enough for shadows

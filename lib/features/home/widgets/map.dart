@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../utils/markers.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// A widget that displays the Google Map with markers and user interaction.
 class MapDisplayWidget extends StatefulWidget {
@@ -69,19 +70,21 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Get AppLocalizations instance
+    final localizations = AppLocalizations.of(context)!;
     final double screenHeight = MediaQuery.of(context).size.height;
     const double mapHeightFactor = 0.40;
 
     if (widget.initialLatitude == null || widget.initialLongitude == null) {
       return SizedBox(
         height: screenHeight * mapHeightFactor,
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 10),
-              Text("Loading map data..."),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 10),
+              Text(localizations.homeMapLoadingText), // Changed to use localization key
             ],
           ),
         ),

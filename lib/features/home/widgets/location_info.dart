@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// A widget that displays location information prominently.
 class LocationInfoWidget extends StatelessWidget {
@@ -13,6 +14,9 @@ class LocationInfoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get AppLocalizations instance
+    final localizations = AppLocalizations.of(context)!;
+
     return Padding(
       // Consistent padding as in the original _buildLocationInfo method
       padding: const EdgeInsets.all(16.0),
@@ -21,7 +25,7 @@ class LocationInfoWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            locationText,
+            locationText, // This is dynamic, passed from map_location_manager
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 22,
@@ -31,10 +35,10 @@ class LocationInfoWidget extends StatelessWidget {
           ),
           const SizedBox(height: 4),
 
-          const Text(
-            'This is happening in your area',
+          Text(
+            localizations.homeScreenLocationInfoText, // Changed to use localization key
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               color: Color(0xFF57D463),
             ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:harkai/l10n/app_localizations.dart';
 
 // Services
 import '../../../core/services/location_service.dart';
@@ -33,22 +34,27 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  // Service Instances
   final LocationService _locationService = LocationService();
-  final FirestoreService _firestoreService = FirestoreService(); // Used by MarkerManager
+  final FirestoreService _firestoreService = FirestoreService();
   final PhoneService _phoneService = PhoneService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final SpeechPermissionService _speechPermissionService = SpeechPermissionService();
 
-  // Managers
   late final MarkerManager _dataEventManager;
   late final MapLocationManager _mapLocationManager;
   late final UserSessionManager _userSessionManager;
   GoogleMapController? _mapController;
+  AppLocalizations? _localizations;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _localizations = AppLocalizations.of(context)!;
 
     _userSessionManager = UserSessionManager(
       firebaseAuthInstance: _firebaseAuth,
@@ -60,29 +66,36 @@ class _HomeState extends State<Home> {
 
     _mapLocationManager = MapLocationManager(
       locationService: _locationService,
-      onStateChange: () { if (mounted) setState(() {}); },
+      onStateChange: () {
+        if (mounted) setState(() {});
+      },
       getMapController: () => _mapController,
       setMapController: (controller) {
         if (mounted) {
           if (_mapController != controller) {
-              _mapController = controller;
+            _mapController = controller;
           }
         }
       },
+      // Removed localizations: _localizations! from constructor
     );
-    
+
     _dataEventManager = MarkerManager(
-      firestoreService: _firestoreService, // Pass the instance
-      onStateChange: () { if (mounted) setState(() {}); },
+      firestoreService: _firestoreService,
+      onStateChange: () {
+        if (mounted) setState(() {});
+      },
     );
 
     _initializeScreenData();
   }
 
   Future<void> _initializeScreenData() async {
+    if (_localizations == null) return; // Should not happen if called after didChangeDependencies
+
     _userSessionManager.initialize();
-    await _mapLocationManager.initializeManager();
-    await _dataEventManager.initialize(); // Initializes MarkerManager
+    await _mapLocationManager.initializeManager(_localizations!); // Pass localizations here
+    await _dataEventManager.initialize(_localizations!);
     bool speechReady = await _speechPermissionService.ensurePermissionsAndInitializeService(openSettingsOnError: true);
     debugPrint("Home: Speech service ready: $speechReady");
   }
@@ -95,18 +108,16 @@ class _HomeState extends State<Home> {
     _mapController?.dispose();
     super.dispose();
   }
-  
-  // Method to prepare markers for the map, including custom onTap for image markers
+
   Set<Marker> _prepareMapMarkers() {
-    // Use the raw IncidenceData list from MarkerManager
-    return _dataEventManager.incidences 
-        .map((incidence) => createMarkerFromIncidence( // from incidences.dart
+    if (_localizations == null) return {};
+    return _dataEventManager.incidences
+        .map((incidence) => createMarkerFromIncidence(
               incidence,
-              onImageMarkerTapped: (tappedIncidence) { 
-                // This callback is passed to createMarkerFromIncidence
-                // It will be set as the onTap for markers that have an imageUrl
+              _localizations!,
+              onImageMarkerTapped: (tappedIncidence) {
                 showDialog(
-                  context: context, // Use the Home screen's context
+                  context: context,
                   builder: (_) => IncidentImageDisplayModal(incidence: tappedIncidence),
                 );
               },
@@ -115,8 +126,7 @@ class _HomeState extends State<Home> {
   }
 
   Set<Marker> _getDisplayMarkers() {
-    Set<Marker> displayMarkers = _prepareMapMarkers(); // Uses the new method
-
+    Set<Marker> displayMarkers = _prepareMapMarkers();
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -127,8 +137,8 @@ class _HomeState extends State<Home> {
           markerId: const MarkerId('target_location_pin'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          zIndex: 2.0, // Ensure target pin is on top of other markers if needed
-          anchor: const Offset(0.5, 0.4), // Adjust anchor as needed
+          zIndex: 2.0,
+          anchor: const Offset(0.5, 0.4),
         ),
       );
     }
@@ -136,13 +146,11 @@ class _HomeState extends State<Home> {
   }
 
   Set<Marker> _getMarkersForBigMapModal() {
-    // For the big map, InfoWindow is usually enough.
-    // If you want the image modal here too, use _prepareMapMarkers.
-    // Otherwise, a simpler marker creation is fine.
+    if (_localizations == null) return {};
     Set<Marker> markers = _dataEventManager.incidences
-        .map((incidence) => createMarkerFromIncidence(incidence)) // Default marker, will show InfoWindow
+        .map((incidence) => createMarkerFromIncidence(incidence, _localizations!))
         .toSet();
-        
+
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -153,7 +161,8 @@ class _HomeState extends State<Home> {
           markerId: const MarkerId('target_location_pin_big_map'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          infoWindow: const InfoWindow(title: 'Selected Incident Location'),
+          // Example of localizing InfoWindow title for the target pin in the big map
+          infoWindow: InfoWindow(title: _localizations!.targetLocationNotSet), // You'll need to add this key
           zIndex: 2,
           anchor: const Offset(0.5, 0.4),
         ),
@@ -163,38 +172,47 @@ class _HomeState extends State<Home> {
   }
 
   Set<Circle> _getCirclesForDisplay() {
-    // Directly use the circles prepared by MarkerManager
-    return _dataEventManager.incidentCircles;
+    if (_localizations == null) return {};
+    return _dataEventManager.incidences
+        .map((incidence) => createCircleFromIncidence(incidence, _localizations!))
+        .toSet();
   }
 
   Set<Circle> _getCirclesForBigMapModal() {
-    // Directly use the circles prepared by MarkerManager
-    return _dataEventManager.incidentCircles;
+    if (_localizations == null) return {};
+    return _dataEventManager.incidences
+        .map((incidence) => createCircleFromIncidence(incidence, _localizations!))
+        .toSet();
   }
 
   Future<void> _handleIncidentButtonPressed(MakerType markerType) async {
-    if (!mounted) return;
-    // Use the updated processing method in MarkerManager
+    if (!mounted || _localizations == null) return;
     await _dataEventManager.processIncidentReporting(
-        context: context,
-        newMarkerToSelect: markerType,
-        targetLatitude: _mapLocationManager.targetLatitude,
-        targetLongitude: _mapLocationManager.targetLongitude,
+      context: context,
+      localizations: _localizations!,
+      newMarkerToSelect: markerType,
+      targetLatitude: _mapLocationManager.targetLatitude,
+      targetLongitude: _mapLocationManager.targetLongitude,
     );
   }
 
   Future<void> _handleEmergencyButtonPressed() async {
-    if (!mounted) return;
-      await _dataEventManager.processEmergencyReporting(
-        context: context,
-        targetLatitude: _mapLocationManager.targetLatitude,
-        targetLongitude: _mapLocationManager.targetLongitude,
+    if (!mounted || _localizations == null) return;
+    await _dataEventManager.processEmergencyReporting(
+      context: context,
+      localizations: _localizations!,
+      targetLatitude: _mapLocationManager.targetLatitude,
+      targetLongitude: _mapLocationManager.targetLongitude,
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
+    _localizations ??= AppLocalizations.of(context)!;
+    if (_localizations == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final LatLng? initialMapCenter = _mapLocationManager.initialCameraPosition;
 
     return Scaffold(
@@ -207,39 +225,40 @@ class _HomeState extends State<Home> {
               child: Container(
                 margin: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white, // Background for the scrollable content area
-                  borderRadius: BorderRadius.circular(20.0),
-                  boxShadow: [ // Optional: add shadow for depth
-                    BoxShadow(
-                      color: Colors.black.withAlpha((0.1 * 255).toInt()),
-                      spreadRadius: 0,
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha((0.1 * 255).toInt()),
+                        spreadRadius: 0,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]),
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          LocationInfoWidget(locationText: _mapLocationManager.locationText),
+                          // CORRECTED: Call the new method on MapLocationManager
+                          LocationInfoWidget(locationText: _mapLocationManager.getLocalizedLocationText(_localizations!)),
                           MapDisplayWidget(
                             key: ValueKey('mapDisplay_${_mapLocationManager.initialCameraPosition?.latitude}_${_mapLocationManager.initialCameraPosition?.longitude}'),
                             initialLatitude: initialMapCenter?.latitude,
                             initialLongitude: initialMapCenter?.longitude,
-                            markers: _getDisplayMarkers(), 
-                            circles: _getCirclesForDisplay(), // Pass circles to the map
+                            markers: _getDisplayMarkers(),
+                            circles: _getCirclesForDisplay(),
                             selectedMarker: _dataEventManager.selectedIncident,
                             onMapTappedWithMarker: _mapLocationManager.handleMapTapped,
                             onMapLongPressed: (cameraPosition) =>
                                 _mapLocationManager.handleMapLongPressed(
-                                  context: context,
-                                  currentCameraPosition: cameraPosition,
-                                  markersForBigMap: _getMarkersForBigMapModal(),
-                                  circlesForBigMap: _getCirclesForBigMapModal(),
-                                ),
+                              context: context,
+                              currentCameraPosition: cameraPosition,
+                              markersForBigMap: _getMarkersForBigMapModal(),
+                              circlesForBigMap: _getCirclesForBigMapModal(),
+                            ),
                             onMapCreated: _mapLocationManager.onMapCreated,
+                            // CORRECTED: Call resetTargetToUserLocation with only context
                             onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),
                             onCameraMove: _mapLocationManager.handleCameraMove,
                           ),
@@ -248,22 +267,23 @@ class _HomeState extends State<Home> {
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0), // Spacing around incident buttons
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: _handleIncidentButtonPressed,
                         ),
                       ),
                     ),
-                    SliverFillRemaining( // To push bottom buttons to the actual bottom
-                      hasScrollBody: false, // False if content above might not fill the screen
+                    SliverFillRemaining(
+                      hasScrollBody: false,
                       child: Align(
                         alignment: Alignment.bottomCenter,
                         child: BottomActionButtonsWidget(
-                          currentServiceName: getCallButtonServiceName(_dataEventManager.selectedIncident),
+                          currentServiceName: getCallButtonServiceName(_dataEventManager.selectedIncident, _localizations!),
                           onEmergencyPressed: _handleEmergencyButtonPressed,
                           onPhonePressed: () => _userSessionManager.makePhoneCall(
                             context: context,
+                            localizations: _localizations!,
                             selectedIncident: _dataEventManager.selectedIncident,
                           ),
                         ),

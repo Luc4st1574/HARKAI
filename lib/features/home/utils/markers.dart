@@ -1,5 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart' show BitmapDescriptor;
 import 'package:flutter/material.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// Enum representing the different types of alerts the user can create or see.
 enum MakerType {
@@ -13,9 +14,9 @@ enum MakerType {
 
 /// Class holding display information and emergency contact details for each alert type.
 class MarkerInfo {
-  final String title;
+  final String title; // This will now hold the localized title
   final String emergencyNumber;
-  final String agent;
+  final String agent; // This will now hold the localized agent name
   final Color? color;
   final String? iconPath;
 
@@ -29,49 +30,52 @@ class MarkerInfo {
   });
 }
 
-// Global map to easily access AlertInfo for a given AlertType.
-final Map<MakerType, MarkerInfo> markerInfoMap = {
-  MakerType.fire: MarkerInfo(
-    title: 'Fire Alert',
-    emergencyNumber: '(044) 226495',
-    agent: 'Firefighters',
-    color: Colors.orange,
-    iconPath: 'assets/images/fire.png',
-  ),
-  MakerType.crash: MarkerInfo(
-    title: 'Crash Alert',
-    emergencyNumber: '(044) 484242',
-    agent: 'Serenazgo',
-    color: Colors.blue,
-    iconPath: 'assets/images/car.png',
-  ),
-  MakerType.theft: MarkerInfo(
-    title: 'Theft Alert',
-    emergencyNumber: '(044) 250664',
-    agent: 'Police',
-    color: Colors.purple,
-    iconPath: 'assets/images/theft.png',
-  ),
-  MakerType.pet: MarkerInfo(
-    title: 'Pet Alert',
-    emergencyNumber: '913684363',
-    agent: 'Shelter',
-    color: Colors.green,
-    iconPath: 'assets/images/dog.png',
-  ),
-  MakerType.emergency: MarkerInfo(
-    title: 'Emergency',
-    emergencyNumber: '911',
-    agent: 'Emergencies',
-    color: Colors.red.shade900,
-    iconPath: 'assets/images/alert.png'
-  ),
-};
+// Changed: markerInfoMap is now a function that returns a localized map
+Map<MakerType, MarkerInfo> getLocalizedMarkerInfoMap(AppLocalizations localizations) {
+  return {
+    MakerType.fire: MarkerInfo(
+      title: localizations.homeFireAlertButtonTitle, // Localized
+      emergencyNumber: '(044) 226495',
+      agent: localizations.agentFirefighters, // Localized
+      color: Colors.orange,
+      iconPath: 'assets/images/fire.png',
+    ),
+    MakerType.crash: MarkerInfo(
+      title: localizations.homeCrashAlertButtonTitle, // Localized
+      emergencyNumber: '(044) 484242',
+      agent: localizations.agentSerenazgo, // Localized
+      color: Colors.blue,
+      iconPath: 'assets/images/car.png',
+    ),
+    MakerType.theft: MarkerInfo(
+      title: localizations.homeTheftAlertButtonTitle, // Localized
+      emergencyNumber: '(044) 250664',
+      agent: localizations.agentPolice, // Localized
+      color: Colors.purple,
+      iconPath: 'assets/images/theft.png',
+    ),
+    MakerType.pet: MarkerInfo(
+      title: localizations.homePetAlertButtonTitle, // Localized
+      emergencyNumber: '913684363',
+      agent: localizations.agentShelter, // Localized
+      color: Colors.green,
+      iconPath: 'assets/images/dog.png',
+    ),
+    MakerType.emergency: MarkerInfo(
+      title: localizations.homeCallEmergenciesButton, // Using a general "Emergencies" title, or create a specific one
+      emergencyNumber: '911',
+      agent: localizations.agentEmergencies, // Localized
+      color: Colors.red.shade900,
+      iconPath: 'assets/images/alert.png'
+    ),
+  };
+}
 
-/// Utility function to safely get [MarkerInfo] from the [markerInfoMap].
-MarkerInfo? getMarkerInfo(MakerType type) {
+/// Utility function to safely get [MarkerInfo] using AppLocalizations.
+/// Requires context or AppLocalizations instance to be passed where it's called.
+MarkerInfo? getMarkerInfo(MakerType type, AppLocalizations localizations) {
   if (type == MakerType.none) return null;
-  return markerInfoMap[type];
+  return getLocalizedMarkerInfoMap(localizations)[type];
 }
 
 /// Utility functions related to map display and operations.
@@ -92,21 +96,26 @@ double getMarkerHue(MakerType type) {
   }
 }
 
-/// Gets the service name for the call button based on the selected alert.
-String getCallButtonServiceName(MakerType selectedAlert) {
+/// Gets the localized service name for the call button based on the selected alert.
+/// Requires AppLocalizations instance.
+String getCallButtonServiceName(MakerType selectedAlert, AppLocalizations localizations) {
+  final MarkerInfo? alertInfo;
   if (selectedAlert == MakerType.none) {
-    final emergencyInfo = getMarkerInfo(MakerType.emergency);
-    return emergencyInfo != null ? 'Call ${emergencyInfo.agent}' : 'Call Emergencies';
+    alertInfo = getMarkerInfo(MakerType.emergency, localizations);
+    // Fallback to a generic "Emergencies" if specific emergency agent info isn't ideal for button
+    return localizations.homeCallAgentButton(alertInfo?.agent ?? localizations.agentEmergencies);
   }
 
-  final alertInfo = getMarkerInfo(selectedAlert);
-  return alertInfo != null ? 'Call ${alertInfo.agent}' : 'Call Emergencies';
+  alertInfo = getMarkerInfo(selectedAlert, localizations);
+  // Use the agent name from the localized MarkerInfo
+  return localizations.homeCallAgentButton(alertInfo?.agent ?? localizations.agentEmergencies);
 }
 
 /// Gets the emergency number for the call button based on the selected alert.
-String getCallButtonEmergencyNumber(MakerType selectedAlert) {
+/// This doesn't require localization for the number itself, but AppLocalizations is needed for getMarkerInfo.
+String getCallButtonEmergencyNumber(MakerType selectedAlert, AppLocalizations localizations) {
   if (selectedAlert == MakerType.none || selectedAlert == MakerType.emergency) {
-    return getMarkerInfo(MakerType.emergency)?.emergencyNumber ?? '911'; // Fallback
+    return getMarkerInfo(MakerType.emergency, localizations)?.emergencyNumber ?? '911'; // Fallback
   }
-  return getMarkerInfo(selectedAlert)?.emergencyNumber ?? '911'; // Fallback
+  return getMarkerInfo(selectedAlert, localizations)?.emergencyNumber ?? '911'; // Fallback
 }

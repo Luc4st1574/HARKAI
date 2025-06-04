@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helloWorld => 'Hello World!';
 
   @override
-  String welcomeMessage(Object name) {
+  String welcomeMessage(String name) {
     return 'Welcome, $name!';
   }
 
@@ -206,4 +206,423 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSenderNameUserFallback => 'You';
+
+  @override
+  String get homeScreenLocationInfoText => 'This is happening in your area';
+
+  @override
+  String get homeMapLoadingText => 'Loading map data...';
+
+  @override
+  String get homeFireAlertButtonTitle => 'Fire Alert';
+
+  @override
+  String get homeCrashAlertButtonTitle => 'Crash Alert';
+
+  @override
+  String get homeTheftAlertButtonTitle => 'Theft Alert';
+
+  @override
+  String get homePetAlertButtonTitle => 'Pet Alert';
+
+  @override
+  String homeCallAgentButton(String agent) {
+    return 'Call $agent';
+  }
+
+  @override
+  String get homeCallEmergenciesButton => 'Call Emergencies';
+
+  @override
+  String get agentFirefighters => 'Firefighters';
+
+  @override
+  String get agentSerenazgo => 'Serenazgo';
+
+  @override
+  String get agentPolice => 'Police';
+
+  @override
+  String get agentShelter => 'Shelter';
+
+  @override
+  String get agentEmergencies => 'Emergencies';
+
+  @override
+  String get mapLoadingLocation => 'Loading location...';
+
+  @override
+  String get mapFetchingLocation => 'Fetching location...';
+
+  @override
+  String mapYouAreIn(String location) {
+    return 'You are in $location';
+  }
+
+  @override
+  String get mapCouldNotFetchAddress => 'Could not fetch address';
+
+  @override
+  String get mapFailedToGetInitialLocation => 'Failed to get initial location';
+
+  @override
+  String get mapLocationServicesDisabled => 'Location services are disabled.';
+
+  @override
+  String get mapLocationPermissionDenied => 'Location permission denied.';
+
+  @override
+  String mapErrorFetchingLocation(String error) {
+    return 'Error fetching location: $error';
+  }
+
+  @override
+  String get mapCurrentUserLocationNotAvailable =>
+      'Current user location not available.';
+
+  @override
+  String incidentReportedSuccess(String incidentTitle) {
+    return '$incidentTitle incident reported!';
+  }
+
+  @override
+  String incidentReportFailed(String incidentTitle) {
+    return 'Failed to report $incidentTitle incident.';
+  }
+
+  @override
+  String get targetLocationNotSet =>
+      'Target location not set. Tap on map or use compass.';
+
+  @override
+  String get emergencyReportLocationUnknown =>
+      'Unable to report emergency: Target location unknown.';
+
+  @override
+  String get enlargedMapDataUnavailable =>
+      'Map data is currently unavailable. Please try again.';
+
+  @override
+  String incidentModalStep1ReportAudioTitle(String incidentName) {
+    return 'Step 1: Report Audio for $incidentName';
+  }
+
+  @override
+  String get incidentModalStatusInitializing => 'Initializing...';
+
+  @override
+  String get incidentModalStatusRecordingAudio => 'Recording Audio...';
+
+  @override
+  String get incidentModalStatusAudioRecorded => 'Audio Recorded!';
+
+  @override
+  String get incidentModalStatusSendingAudioToHarki =>
+      'Harki Analyzing Audio...';
+
+  @override
+  String get incidentModalStatusConfirmAudioDescription =>
+      'Confirm Audio Description:';
+
+  @override
+  String get incidentModalStatusStep2AddImage => 'Step 2: Add Image (Optional)';
+
+  @override
+  String get incidentModalStatusCapturingImage => 'Step 2: Capturing Image...';
+
+  @override
+  String get incidentModalStatusImagePreview => 'Step 2: Image Preview';
+
+  @override
+  String get incidentModalStatusSendingImageToHarki =>
+      'Harki Analyzing Image...';
+
+  @override
+  String get incidentModalStatusImageAnalyzed => 'Step 2: Image Analyzed';
+
+  @override
+  String get incidentModalStatusSubmittingIncident => 'Submitting Incident...';
+
+  @override
+  String get incidentModalStatusError => 'Error';
+
+  @override
+  String get incidentModalStatusTypeMismatch => 'Type Mismatch';
+
+  @override
+  String get incidentModalStatusInputUnclearInvalid => 'Input Unclear/Invalid';
+
+  @override
+  String get incidentModalStatusHarkiProcessingError =>
+      'Harki Processing Error';
+
+  @override
+  String get incidentModalInstructionHoldMic =>
+      'Hold Mic to record audio description.';
+
+  @override
+  String get incidentModalInstructionMicPermissionNeeded =>
+      'Mic permission needed. Tap Mic to check/grant or grant in settings.';
+
+  @override
+  String get incidentModalInstructionHarkiInitializing =>
+      'Harki AI is initializing. Please wait or tap Mic to retry.';
+
+  @override
+  String get incidentModalInstructionMicPermAndHarkiInit =>
+      'Mic permission needed & Harki AI initializing. Tap Mic to proceed.';
+
+  @override
+  String get incidentModalInstructionReleaseMic => 'Release Mic to stop.';
+
+  @override
+  String get incidentModalInstructionSendAudioToHarki =>
+      'Tap \"Send Audio to Harki\" for analysis.';
+
+  @override
+  String get incidentModalInstructionPleaseWait => 'Please wait.';
+
+  @override
+  String incidentModalInstructionConfirmAudio(String audioDescription) {
+    return 'Harki suggests: \"$audioDescription\".\nIs this correct?';
+  }
+
+  @override
+  String incidentModalInstructionAddImageOrSubmit(
+      String confirmedAudioDescription) {
+    return 'Confirmed Audio: \"$confirmedAudioDescription\"\nAdd an image or submit with audio only.';
+  }
+
+  @override
+  String get incidentModalInstructionUseCamera =>
+      'Please use the camera to capture an image.';
+
+  @override
+  String get incidentModalInstructionAnalyzeRetakeRemoveImage =>
+      'Analyze this image with Harki, retake it, or remove it to proceed with audio only.';
+
+  @override
+  String get incidentModalInstructionImageApproved =>
+      'Image approved by Harki!\nSubmit with current details, retake image, or remove image.';
+
+  @override
+  String incidentModalInstructionImageFeedback(String imageFeedback) {
+    return 'Image Feedback from Harki: $imageFeedback\nSubmit with current details, retake image, or remove image.';
+  }
+
+  @override
+  String get incidentModalInstructionUploadingMedia =>
+      'Uploading media, please wait.';
+
+  @override
+  String get incidentModalErrorMicPermissionRequired =>
+      'Microphone permission is required for audio recording. Please grant it in settings or restart the report process.';
+
+  @override
+  String get incidentModalErrorFailedToInitHarki =>
+      'Failed to initialize Harki AI. Media processing unavailable.';
+
+  @override
+  String get incidentModalErrorMicNotGranted =>
+      'Microphone permission not granted. Cannot record audio.';
+
+  @override
+  String get incidentModalErrorHarkiNotReadyAudio =>
+      'Harki AI is not ready. Cannot process audio.';
+
+  @override
+  String get incidentModalErrorCouldNotStartRecording =>
+      'Could not start recording. Please ensure microphone is available.';
+
+  @override
+  String get incidentModalErrorAudioEmptyNotSaved =>
+      'Audio recording seems empty or was not saved correctly. Please try again.';
+
+  @override
+  String get incidentModalErrorNoAudioOrHarkiNotReady =>
+      'No audio recorded or Harki AI not ready.';
+
+  @override
+  String incidentModalErrorHarkiAudioResponseFormatUnexpected(
+      String responseText) {
+    return 'Harki AI audio response format was unexpected: $responseText. Please review or retry.';
+  }
+
+  @override
+  String get incidentModalErrorHarkiNoActionableTextAudio =>
+      'Harki AI returned no actionable text for audio.';
+
+  @override
+  String incidentModalErrorHarkiAudioProcessingFailed(String error) {
+    return 'Harki AI audio processing failed: $error';
+  }
+
+  @override
+  String get incidentModalErrorNoAudioToConfirm =>
+      'No audio description to confirm.';
+
+  @override
+  String get incidentModalErrorHarkiNotReadyImage =>
+      'Harki AI is not ready. Cannot process image.';
+
+  @override
+  String get incidentModalErrorNoImageOrHarkiNotReady =>
+      'No image captured or Harki AI not ready.';
+
+  @override
+  String get incidentModalErrorHarkiNoActionableTextImage =>
+      'Harki AI returned no actionable text for image.';
+
+  @override
+  String incidentModalErrorHarkiImageProcessingFailed(String error) {
+    return 'Harki AI image processing failed: $error';
+  }
+
+  @override
+  String get incidentModalErrorUserNotLoggedIn =>
+      'User not logged in. Cannot submit incident.';
+
+  @override
+  String get incidentModalErrorFailedToUploadImage =>
+      'Failed to upload image. Please try again or submit without image.';
+
+  @override
+  String get incidentModalErrorNoConfirmedAudioDescription =>
+      'No confirmed audio description available. Please complete audio step first.';
+
+  @override
+  String get incidentModalButtonHoldToRecordReleaseToStop =>
+      'Hold to record, release to stop.';
+
+  @override
+  String get incidentModalButtonSendAudioToHarki => 'Send Audio to Harki';
+
+  @override
+  String get incidentModalButtonConfirmAudioAndProceed =>
+      'Confirm Audio & Proceed';
+
+  @override
+  String get incidentModalButtonRerecordAudio => 'Re-record Audio';
+
+  @override
+  String get incidentModalButtonSubmitWithAudioOnly => 'Submit with Audio Only';
+
+  @override
+  String get incidentModalButtonAddPicture => 'Add Picture';
+
+  @override
+  String get incidentModalButtonRetakePicture => 'Retake Picture';
+
+  @override
+  String get incidentModalButtonAnalyzeImageWithHarki =>
+      'Analyze Image with Harki';
+
+  @override
+  String get incidentModalButtonUseAudioOnlyRemoveImage =>
+      'Use Audio Only (Remove Image)';
+
+  @override
+  String get incidentModalButtonSubmitWithAudioAndImage =>
+      'Submit with Audio & Image';
+
+  @override
+  String get incidentModalButtonSubmitAudioOnlyInstead =>
+      'Submit Audio Only Instead';
+
+  @override
+  String get incidentModalButtonTryAgainFromStart => 'Try Again from Start';
+
+  @override
+  String get incidentModalButtonCancelReport => 'Cancel Report';
+
+  @override
+  String get incidentModalImageForIncident => 'Image for Incident:';
+
+  @override
+  String get incidentModalImageRemoveTooltip => 'Remove Image';
+
+  @override
+  String get incidentModalImageHarkiLooksGood => 'Harki: Image looks good!';
+
+  @override
+  String incidentModalImageHarkiFeedback(String feedback) {
+    return 'Harki: $feedback';
+  }
+
+  @override
+  String get incidentModalImageHarkiAnalysisComplete =>
+      'Harki: Analysis complete.';
+
+  @override
+  String get incidentModalAudioConfirmedAudio => 'Confirmed Audio:';
+
+  @override
+  String get incidentImageModalDescriptionLabel => 'Description:';
+
+  @override
+  String get incidentImageModalNoImage => 'No image for this incident.';
+
+  @override
+  String get incidentImageModalNoAdditionalDescription =>
+      'No additional description provided for the image.';
+
+  @override
+  String get incidentImageModalCloseButton => 'Close';
+
+  @override
+  String get incidentImageModalImageUnavailable => 'Image unavailable';
+
+  @override
+  String get locationServiceDisabled => 'Location services are disabled.';
+
+  @override
+  String get locationServicePermissionDenied => 'Location permission denied.';
+
+  @override
+  String get locationServicePermissionPermanentlyDenied =>
+      'Location permissions are permanently denied. Please enable them in app settings.';
+
+  @override
+  String locationServiceFailedToGetLocation(String error) {
+    return 'Failed to get location: $error';
+  }
+
+  @override
+  String locationServiceGeocodingApiError(String status, String errorMessage) {
+    return 'Error from Geocoding API: $status - $errorMessage';
+  }
+
+  @override
+  String get locationServiceGeocodingFailedDefault =>
+      'Failed to fetch address (API status not OK)';
+
+  @override
+  String get locationServiceGeocodingNoResults =>
+      'No address results found for the given coordinates.';
+
+  @override
+  String locationServiceGeocodingLocationLatLonNoAddress(
+      String latitude, String longitude) {
+    return 'Location: $latitude, $longitude (No address found)';
+  }
+
+  @override
+  String locationServiceGeocodingLocationLatLonComponentsNotFound(
+      String latitude, String longitude) {
+    return 'Location: $latitude, $longitude (Address components not found)';
+  }
+
+  @override
+  String locationServiceGeocodingErrorGeneric(String error) {
+    return 'Geocoding error: $error';
+  }
+
+  @override
+  String get phoneServicePermissionDenied =>
+      'Permission denied to make calls. Please enable it in settings.';
+
+  @override
+  String phoneServiceCouldNotLaunchDialer(String error) {
+    return 'Could not launch dialer: $error';
+  }
 }

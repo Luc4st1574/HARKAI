@@ -4,9 +4,7 @@ import 'dart:io'; // For File operations
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:permission_handler/permission_handler.dart';
-// Assuming storage_service.dart is in lib/core/services/
 import 'package:harkai/core/services/storage_service.dart';
-// Assuming speech_service.dart is in lib/core/services/
 import 'package:harkai/core/services/speech_service.dart';
 
 class IncidentMediaServices {
