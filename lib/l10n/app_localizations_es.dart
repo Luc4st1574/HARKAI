@@ -672,4 +672,35 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get incidentMapViewIncidentExpired =>
       'Este reporte de incidente ha expirado o ya no está visible.';
+
+  @override
+  String get placesScreenTitle => 'Lugares';
+
+  @override
+  String get addPlaceButtonTitle => 'Lugar';
+
+  @override
+  String get placeMarkerName => 'Lugar';
+
+  @override
+  String paymentRequiredMessage(String amount) {
+    return 'Se requiere un pago de $amount para añadir este lugar.';
+  }
+
+  @override
+  String get paymentProcessingMessage => 'Procesando pago...';
+
+  @override
+  String get paymentSuccessfulMessage => '¡Pago exitoso! Lugar añadido.';
+
+  @override
+  String get paymentFailedMessage =>
+      'El pago falló. Por favor, inténtalo de nuevo.';
+
+  @override
+  String get photoRequiredMessage =>
+      'Una foto es obligatoria para añadir un lugar.';
+
+  @override
+  String get placesIncidentFeedTitle => 'Lugares Cercanos';
 }

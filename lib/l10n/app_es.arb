@@ -366,5 +366,23 @@
       }
     }
   },
-  "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible."
+  "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible.",
+
+  "placesScreenTitle": "Lugares",
+    "addPlaceButtonTitle": "Lugar",
+    "placeMarkerName": "Lugar",
+    "paymentRequiredMessage": "Se requiere un pago de {amount} para añadir este lugar.",
+    "@paymentRequiredMessage": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "example": "$1.00"
+            }
+        }
+    },
+    "paymentProcessingMessage": "Procesando pago...",
+    "paymentSuccessfulMessage": "¡Pago exitoso! Lugar añadido.",
+    "paymentFailedMessage": "El pago falló. Por favor, inténtalo de nuevo.",
+    "photoRequiredMessage": "Una foto es obligatoria para añadir un lugar.",
+    "placesIncidentFeedTitle": "Lugares Cercanos"
 }

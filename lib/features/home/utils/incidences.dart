@@ -222,6 +222,14 @@ class FirestoreService {
       }
       WriteBatch batch = FirebaseFirestore.instance.batch();
       for (var doc in querySnapshot.docs) {
+        final String typeString = (doc.data() as Map<String, dynamic>)['type'] as String? ?? '';
+        final MakerType incidenceType = MakerType.values.firstWhere(
+          (e) => e.name == typeString,
+          orElse: () => MakerType.none
+        );
+        if (incidenceType == MakerType.place) {
+          continue; // Skip 'place' markers from being marked invisible
+        }
         batch.update(doc.reference, {'isVisible': false});
         updatedCount++;
         if (updatedCount % 499 == 0 && updatedCount > 0) {

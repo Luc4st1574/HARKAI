@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart'; // For User object
 import 'package:flutter/material.dart';
 import '../../profile/screens/profile.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Added import
+import '../utils/markers.dart';
+import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
+import 'package:harkai/features/places/screens/places_screen.dart';
+
 
 /// A widget that displays the header section of the home screen.
 class HomeHeaderWidget extends StatelessWidget {
@@ -33,15 +37,34 @@ class HomeHeaderWidget extends StatelessWidget {
         children: [
           // App Logo
           // Ensure 'assets/images/logo.png' is in your pubspec.yaml and the path is correct.
-          Image.asset(
-            'assets/images/logo.png',
-            height: 50, // Standardized height
-            errorBuilder: (context, error, stackTrace) {
-              // Fallback in case the logo asset fails to load
-              print("Error loading logo asset: $error");
-              return const Icon(Icons.broken_image,
-                  size: 50, color: Colors.grey);
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PlacesScreen()), // Your new screen
+              );
             },
+            onLongPress: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => IncidentScreen( // Or your PlaceIncidentFeedScreen
+                    incidentType: MakerType.place,
+                    currentUser: currentUser, // Pass the current user
+                  ),
+                ),
+              );
+            },
+            child: Image.asset(
+              'assets/images/logo.png',
+              height: 50, // Standardized height
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback in case the logo asset fails to load
+                print("Error loading logo asset: $error");
+                return const Icon(Icons.broken_image,
+                    size: 50, color: Colors.grey);
+              },
+            ),
           ),
 
           // User Profile Section

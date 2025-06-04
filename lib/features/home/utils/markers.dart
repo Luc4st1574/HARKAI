@@ -9,6 +9,7 @@ enum MakerType {
   theft,
   pet,
   emergency, 
+  place,
   none,
 }
 
@@ -68,6 +69,13 @@ Map<MakerType, MarkerInfo> getLocalizedMarkerInfoMap(AppLocalizations localizati
       color: Colors.red.shade900,
       iconPath: 'assets/images/alert.png'
     ),
+    MakerType.place: MarkerInfo(
+      title: localizations.addPlaceButtonTitle, // Or a more generic "Place"
+      emergencyNumber: '', // Not applicable for places
+      agent: localizations.placeMarkerName, // e.g., "Place" or "Business"
+      color: Colors.yellow.shade700, // A nice yellow
+      iconPath: 'assets/images/place_icon.png',
+    ),
   };
 }
 
@@ -91,6 +99,9 @@ double getMarkerHue(MakerType type) {
     case MakerType.pet:
       return BitmapDescriptor.hueGreen;
     case MakerType.emergency:
+      return BitmapDescriptor.hueRed; // Emergency is red
+    case MakerType.place:
+      return BitmapDescriptor.hueYellow;
     case MakerType.none: // Default or unknown type
       return BitmapDescriptor.hueRed;
   }

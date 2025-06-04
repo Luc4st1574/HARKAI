@@ -1181,6 +1181,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This incident report has expired or is no longer visible.'**
   String get incidentMapViewIncidentExpired;
+
+  /// No description provided for @placesScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Places'**
+  String get placesScreenTitle;
+
+  /// No description provided for @addPlaceButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get addPlaceButtonTitle;
+
+  /// No description provided for @placeMarkerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get placeMarkerName;
+
+  /// No description provided for @paymentRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A \${amount} payment is required to add this place.'**
+  String paymentRequiredMessage(String amount);
+
+  /// No description provided for @paymentProcessingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing payment...'**
+  String get paymentProcessingMessage;
+
+  /// No description provided for @paymentSuccessfulMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment successful! Place added.'**
+  String get paymentSuccessfulMessage;
+
+  /// No description provided for @paymentFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. Please try again.'**
+  String get paymentFailedMessage;
+
+  /// No description provided for @photoRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A photo is mandatory to add a place.'**
+  String get photoRequiredMessage;
+
+  /// No description provided for @placesIncidentFeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Places'**
+  String get placesIncidentFeedTitle;
 }
 
 class _AppLocalizationsDelegate
