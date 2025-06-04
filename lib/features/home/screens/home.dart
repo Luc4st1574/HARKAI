@@ -55,47 +55,48 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _localizations = AppLocalizations.of(context)!;
+    if (_localizations == null) { // Initialize only once
+      _localizations = AppLocalizations.of(context)!;
 
-    _userSessionManager = UserSessionManager(
-      firebaseAuthInstance: _firebaseAuth,
-      phoneService: _phoneService,
-      onAuthChangedCallback: (User? user) {
-        if (mounted) setState(() {});
-      },
-    );
+      _userSessionManager = UserSessionManager(
+        firebaseAuthInstance: _firebaseAuth,
+        phoneService: _phoneService,
+        onAuthChangedCallback: (User? user) {
+          if (mounted) setState(() {});
+        },
+      );
 
-    _mapLocationManager = MapLocationManager(
-      locationService: _locationService,
-      onStateChange: () {
-        if (mounted) setState(() {});
-      },
-      getMapController: () => _mapController,
-      setMapController: (controller) {
-        if (mounted) {
-          if (_mapController != controller) {
-            _mapController = controller;
+      _mapLocationManager = MapLocationManager(
+        locationService: _locationService,
+        onStateChange: () {
+          if (mounted) setState(() {});
+        },
+        getMapController: () => _mapController,
+        setMapController: (controller) {
+          if (mounted) {
+            if (_mapController != controller) {
+              _mapController = controller;
+            }
           }
-        }
-      },
-      // Removed localizations: _localizations! from constructor
-    );
+        },
+      );
 
-    _dataEventManager = MarkerManager(
-      firestoreService: _firestoreService,
-      onStateChange: () {
-        if (mounted) setState(() {});
-      },
-    );
+      _dataEventManager = MarkerManager(
+        firestoreService: _firestoreService,
+        onStateChange: () {
+          if (mounted) setState(() {});
+        },
+      );
 
-    _initializeScreenData();
+      _initializeScreenData();
+    }
   }
 
   Future<void> _initializeScreenData() async {
-    if (_localizations == null) return; // Should not happen if called after didChangeDependencies
+    if (_localizations == null) return; 
 
     _userSessionManager.initialize();
-    await _mapLocationManager.initializeManager(_localizations!); // Pass localizations here
+    await _mapLocationManager.initializeManager(_localizations!); 
     await _dataEventManager.initialize(_localizations!);
     bool speechReady = await _speechPermissionService.ensurePermissionsAndInitializeService(openSettingsOnError: true);
     debugPrint("Home: Speech service ready: $speechReady");
@@ -162,8 +163,7 @@ class _HomeState extends State<Home> {
           markerId: const MarkerId('target_location_pin_big_map'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          // Example of localizing InfoWindow title for the target pin in the big map
-          infoWindow: InfoWindow(title: _localizations!.targetLocationNotSet), // You'll need to add this key
+          infoWindow: InfoWindow(title: _localizations!.targetLocationNotSet), 
           zIndex: 2,
           anchor: const Offset(0.5, 0.4),
         ),
@@ -186,6 +186,7 @@ class _HomeState extends State<Home> {
         .toSet();
   }
 
+  // Handler for incident button taps (existing)
   Future<void> _handleIncidentButtonPressed(MakerType markerType) async {
     if (!mounted || _localizations == null) return;
     await _dataEventManager.processIncidentReporting(
@@ -196,15 +197,16 @@ class _HomeState extends State<Home> {
       targetLongitude: _mapLocationManager.targetLongitude,
     );
   }
-
+  
+  // Handler for incident button long presses (existing, now also used for emergency button long press)
   void _handleIncidentButtonLongPressed(MakerType markerType) {
-    if (!mounted || _userSessionManager.currentUser == null) return;
+    if (!mounted || _userSessionManager.currentUser == null || _localizations == null) return;
     
-    print("Incident button long pressed: ${markerType.name}. Navigating to IncidentScreen.");
+    debugPrint("Button long pressed: ${markerType.name}. Navigating to IncidentScreen.");
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => IncidentScreen(
+        builder: (context) => IncidentScreen( // Ensure IncidentScreen is the full-page version
           incidentType: markerType,
           currentUser: _userSessionManager.currentUser,
         ),
@@ -212,8 +214,10 @@ class _HomeState extends State<Home> {
     );
   }
 
+
   Future<void> _handleEmergencyButtonPressed() async {
     if (!mounted || _localizations == null) return;
+    // This handles the TAP on the emergency button
     await _dataEventManager.processEmergencyReporting(
       context: context,
       localizations: _localizations!,
@@ -229,10 +233,8 @@ class _HomeState extends State<Home> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final String? currentCity = _mapLocationManager.currentCityName; // Get current city
-
+    final String? currentCity = _mapLocationManager.currentCityName; 
     final LatLng? initialMapCenter = _mapLocationManager.initialCameraPosition;
-
 
     return Scaffold(
       backgroundColor: const Color(0xFF001F3F),
@@ -259,7 +261,6 @@ class _HomeState extends State<Home> {
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          // CORRECTED: Call the new method on MapLocationManager
                           LocationInfoWidget(locationText: _mapLocationManager.getLocalizedLocationText(_localizations!)),
                           MapDisplayWidget(
                             key: ValueKey('mapDisplay_${_mapLocationManager.initialCameraPosition?.latitude}_${_mapLocationManager.initialCameraPosition?.longitude}'),
@@ -277,7 +278,6 @@ class _HomeState extends State<Home> {
                               circlesForBigMap: _getCirclesForBigMapModal(),
                             ),
                             onMapCreated: _mapLocationManager.onMapCreated,
-                            // CORRECTED: Call resetTargetToUserLocation with only context
                             onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),
                             onCameraMove: _mapLocationManager.handleCameraMove,
                           ),
@@ -290,7 +290,7 @@ class _HomeState extends State<Home> {
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: _handleIncidentButtonPressed,
-                          onIncidentButtonLongPressed: _handleIncidentButtonLongPressed,
+                          onIncidentButtonLongPressed: _handleIncidentButtonLongPressed, 
                         ),
                       ),
                     ),
@@ -301,17 +301,16 @@ class _HomeState extends State<Home> {
                         child: BottomActionButtonsWidget(
                           currentServiceName: getCallButtonServiceName(
                               _dataEventManager.selectedIncident, _localizations!),
-                          onEmergencyPressed: _handleEmergencyButtonPressed,
+                          onEmergencyPressed: _handleEmergencyButtonPressed, // Tap action
+                          onLongPressEmergency: () => _handleIncidentButtonLongPressed(MakerType.emergency),
                           onPhonePressed: () {
-                            // Ensure context is available and localizations are not null
                             if (!mounted || _localizations == null) return;
-                            
                             _userSessionManager.makePhoneCall(
                               context: context,
                               localizations: _localizations!,
                               selectedIncident: _dataEventManager.selectedIncident,
-                              cityName: currentCity, // Pass the city name here
-                              firestoreService: _firestoreService, // Pass FirestoreService instance
+                              cityName: currentCity, 
+                              firestoreService: _firestoreService, 
                             );
                           },
                         ),

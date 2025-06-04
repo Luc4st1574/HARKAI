@@ -72,11 +72,14 @@ class IncidentMediaServices {
     final audioUserInstruction =
         "Incident Type: '$incidentTypeName'. Process the following audio. "
         "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary please be conscious of this and if it as a theft incident do always a good check. "
+        "On the crash incident type, this includes all kinds of car accidents, motorcycle accidents, and pedestrian accidents. "
+        "On the fire incident type, this includes all kinds of fires, explosions, or smoke. "
+        "On the emergency incident type, this includes all kinds of emergencies, like medical emergencies, natural disasters, or other urgent situations, lesions and all related this is a incident type that must be open to a lot of posible thing so be conscius of all kind of possible emergencies. "
         "Expected response formats: 'MATCH: [Short summary, max 15 words, of the audio content related to the incident type.]', "
         "'MISMATCH: This audio seems to describe a [Correct Incident Type] incident. Please confirm this type or re-record for the $incidentTypeName incident.', "
         "'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'"
         "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' that must be in English."
-        "Only the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' must be in English, the rest of the response must be in Spanish."
+        "Only the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' must be in English, the rest of the response must be in Spanish do not omit this part at all cost do not omit it please."
         "Do not translate the response to English if Spanish was the used language by the user.";
 
     try {
@@ -111,7 +114,7 @@ class IncidentMediaServices {
         "IF MISMATCH (but valid other type like Fire, Crash, Theft, Pet, Emergency): Respond EXACTLY 'MISMATCH: This image looks more like a [Correct Incident Type] alert. Please confirm this type or retake image for $incidentTypeName incident.'. "
         "IF IRRELEVANT/UNCLEAR: Respond EXACTLY 'UNCLEAR: The image is not clear enough or does not seem to describe a reportable incident for '$incidentTypeName'. Please try retaking the picture.'."
         "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' that must be in English."
-        "Only the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' must be in English, the rest of the response must be in Spanish."
+        "Only the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' must be in English, the rest of the response must be in Spanish do not omit this part at all cost do not omit it please."
         "Do not translate the response to English if Spanish was the used language by the user.";
 
     try {

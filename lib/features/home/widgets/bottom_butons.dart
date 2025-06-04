@@ -5,11 +5,11 @@ import '../../chatbot/screens/chatbot.dart'; // For ChatBotScreen
 import '../utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
-
 /// A widget that displays the main action buttons at the bottom of the screen.
 class BottomActionButtonsWidget extends StatelessWidget {
   final String currentServiceName;
-  final VoidCallback onEmergencyPressed;
+  final VoidCallback onEmergencyPressed; // For regular tap
+  final VoidCallback? onLongPressEmergency; // New: For long press on emergency button
   final VoidCallback onPhonePressed;
 
   /// Creates a [BottomActionButtonsWidget].
@@ -17,29 +17,26 @@ class BottomActionButtonsWidget extends StatelessWidget {
     super.key,
     required this.currentServiceName,
     required this.onEmergencyPressed,
+    this.onLongPressEmergency, // Added to constructor
     required this.onPhonePressed,
   });
 
   // --- Size control variables ---
-  // For Alert Button
-  static const double buttonDiameterAlert = 62.0; // Total diameter of the alert button
-  static const double imageSizeAlert = 34.0;      // Size of the image/icon inside the alert button
+  static const double buttonDiameterAlert = 62.0; 
+  static const double imageSizeAlert = 34.0;      
 
-  // For Bot Button
-  static const double buttonDiameterBot = 62.0;   // Total diameter of the bot button
-  static const double imageSizeBot = 40.0;        // Size of the image/icon inside the bot button
+  static const double buttonDiameterBot = 62.0;   
+  static const double imageSizeBot = 40.0;        
   // --- End of Size control variables ---
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!; // Get localizations instance
+    final localizations = AppLocalizations.of(context)!; 
 
-    // Get the MarkerInfo for the dedicated emergency button, now requiring localizations
     final MarkerInfo? emergencyMarkerDetails = getMarkerInfo(MakerType.emergency, localizations);
 
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0), // Ensure this padding is enough for shadows
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0), 
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -49,7 +46,8 @@ class BottomActionButtonsWidget extends StatelessWidget {
             width: buttonDiameterAlert,
             height: buttonDiameterAlert,
             child: ElevatedButton(
-              onPressed: onEmergencyPressed,
+              onPressed: onEmergencyPressed, // Existing tap action
+              onLongPress: onLongPressEmergency, // MODIFIED: Added long press action
               style: ElevatedButton.styleFrom(
                 backgroundColor: emergencyMarkerDetails?.color ?? Colors.red.shade900,
                 shape: const CircleBorder(),
@@ -118,7 +116,7 @@ class BottomActionButtonsWidget extends StatelessWidget {
           // Chatbot Button (Right side)
           Stack(
             alignment: Alignment.topLeft,
-            clipBehavior: Clip.none, // <--- *** KEY CHANGE: Allow shadow to draw outside Stack bounds ***
+            clipBehavior: Clip.none, 
             children: [
               SizedBox(
                 width: buttonDiameterBot,
@@ -136,8 +134,8 @@ class BottomActionButtonsWidget extends StatelessWidget {
                     backgroundColor: Colors.white,
                     shape: const CircleBorder(),
                     padding: EdgeInsets.zero,
-                    elevation: 12, // Keep this for visual prominence on white
-                    shadowColor: Colors.black.withAlpha((0.45 * 255).toInt()), // Keep for darker shadow on white
+                    elevation: 12, 
+                    shadowColor: Colors.black.withAlpha((0.45 * 255).toInt()), 
                     side: BorderSide(color: Colors.grey.shade300, width: 1),
                   ),
                   child: Center(
