@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart' show Position;
+import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/services/location_service.dart';
 import '../modals/enlarged_map.dart';
-import 'package:harkai/l10n/app_localizations.dart'; // Added
+import 'package:harkai/l10n/app_localizations.dart';
 
 class MapLocationManager {
   final LocationService _locationService;
@@ -12,19 +12,22 @@ class MapLocationManager {
   final GoogleMapController? Function() _getMapController;
   final Function(GoogleMapController) _setMapController;
 
-  // _locationText will now store raw data (like "City, Country") or a status/error key
-  String _locationData = ''; // Stores actual location string or a key for status
-  bool _isErrorOrStatus = false; // Flag to know if _locationData is a key or actual data
+  String _locationData = '';
+  bool _isErrorOrStatus = false;
 
   double? _latitude;
   double? _longitude;
   double? _targetLatitude;
   double? _targetLongitude;
 
+  // For dynamic address updates
+  double? _lastGeocodedLatitude;
+  double? _lastGeocodedLongitude;
+  // Threshold in meters to trigger a new address lookup
+  static const double _addressUpdateDistanceThreshold = 500.0; // 500 meters
+
   StreamSubscription<Position>? _positionStreamSubscription;
   BitmapDescriptor? _targetPinDot;
-
-  // String get locationText => _locationText; // Deprecated, use getLocalizedLocationText
 
   double? get latitude => _latitude;
   double? get longitude => _longitude;
@@ -35,21 +38,25 @@ class MapLocationManager {
       ? LatLng(_targetLatitude!, _targetLongitude!)
       : (_latitude != null && _longitude != null ? LatLng(_latitude!, _longitude!) : null);
 
+  String? get currentCityName {
+    if (!_isErrorOrStatus && _locationData.isNotEmpty) {
+      return _locationData.split(',').first.trim();
+    }
+    return null;
+  }
+  
   MapLocationManager({
     required LocationService locationService,
     required VoidCallback onStateChange,
     required GoogleMapController? Function() getMapController,
     required Function(GoogleMapController) setMapController,
-    // Removed AppLocalizations from constructor, it will be passed to methods or obtained from context
   })  : _locationService = locationService,
         _onStateChange = onStateChange,
         _getMapController = getMapController,
         _setMapController = setMapController;
 
-  // New method to get the localized display text
   String getLocalizedLocationText(AppLocalizations localizations) {
     if (_isErrorOrStatus) {
-      // _locationData holds a key
       switch (_locationData) {
         case 'loading':
           return localizations.mapLoadingLocation;
@@ -63,25 +70,20 @@ class MapLocationManager {
           return localizations.mapFailedToGetInitialLocation;
         case 'could_not_fetch_address':
           return localizations.mapCouldNotFetchAddress;
-        // Add more cases for specific error messages if _locationData stores error details
         default:
-          // If _locationData contains a formatted error message from a service
           if (_locationData.startsWith("Error:") || _locationData.startsWith("Failed:")) {
-             // return localizations.mapErrorFetchingLocation(_locationData); // If you have a generic error key
-             return _locationData; // Or just return the raw error if it's already descriptive
+            return _locationData; 
           }
-          return localizations.mapCouldNotFetchAddress; // Generic fallback
+          return localizations.mapCouldNotFetchAddress;
       }
     }
-    // _locationData holds "City, Country"
     return localizations.mapYouAreIn(_locationData.isNotEmpty ? _locationData : localizations.mapCouldNotFetchAddress);
   }
-
 
   Future<void> initializeManager(AppLocalizations localizations) async {
     await _loadCustomTargetIcon();
     await _locationService.requestLocationPermission(openSettingsOnError: true);
-    await _fetchInitialLocationAndAddress(localizations);
+    await _fetchInitialLocationAndAddress(localizations); // This will also set initial _lastGeocodedLatitude/Longitude
     _setupLocationUpdatesListener(localizations);
   }
 
@@ -98,41 +100,54 @@ class MapLocationManager {
     _onStateChange();
   }
 
-  Future<void> _fetchInitialLocationAndAddress(AppLocalizations localizations) async {
-    _locationData = 'fetching'; // Key for "Fetching location..."
-    _isErrorOrStatus = true;
-    _onStateChange();
+  Future<void> _fetchInitialLocationAndAddress(AppLocalizations localizations, {bool isUpdate = false}) async {
+    if (!isUpdate) { // Only show "fetching" on initial load, not on background updates
+        _locationData = localizations.mapFetchingLocation; // Use key directly for getLocalizedLocationText
+        _isErrorOrStatus = true;
+        _onStateChange();
+    }
 
-    final initialPosResult = await _locationService.getInitialPosition();
+    final initialPosResult = await _locationService.getInitialPosition(); // Gets current position
 
     if (initialPosResult.success && initialPosResult.data != null) {
       _latitude = initialPosResult.data!.latitude;
       _longitude = initialPosResult.data!.longitude;
-      _targetLatitude = _latitude;
-      _targetLongitude = _longitude;
+      if (!isUpdate) { // Only set target on initial load, not on background address updates
+          _targetLatitude = _latitude;
+          _targetLongitude = _longitude;
+      }
 
       final addressResult = await _locationService.getAddressFromCoordinates(_latitude!, _longitude!);
       if (addressResult.success && addressResult.data != null) {
-        _locationData = addressResult.data!; // Store "City, Country"
+        _locationData = addressResult.data!;
         _isErrorOrStatus = false;
+        // Store the location for which we successfully got an address
+        _lastGeocodedLatitude = _latitude;
+        _lastGeocodedLongitude = _longitude;
       } else {
-        _locationData = 'could_not_fetch_address'; // Key for error
-        _isErrorOrStatus = true;
-        debugPrint(addressResult.errorMessage);
+        // If fetching address fails, keep the old valid address if this is an update,
+        // or set error if initial fetch.
+        if (!isUpdate) {
+            _locationData = localizations.mapCouldNotFetchAddress;
+            _isErrorOrStatus = true;
+        }
+        debugPrint("getAddressFromCoordinates failed: ${addressResult.errorMessage}");
       }
-      _animateMapToTarget(zoom: 16.0);
+      if (!isUpdate) _animateMapToTarget(zoom: 16.0);
     } else {
-      _locationData = initialPosResult.errorMessage ?? 'failed_initial'; // Store error or key
-      _isErrorOrStatus = true;
-      debugPrint(initialPosResult.errorMessage);
+      if (!isUpdate) {
+        _locationData = initialPosResult.errorMessage ?? localizations.mapFailedToGetInitialLocation;
+        _isErrorOrStatus = true;
+      }
+      debugPrint("getInitialPosition failed: ${initialPosResult.errorMessage}");
     }
-    _onStateChange();
+    _onStateChange(); // Update UI with new address or status
   }
 
   void _setupLocationUpdatesListener(AppLocalizations localizations) async {
     bool serviceEnabled = await _locationService.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      _locationData = 'services_disabled'; // Key
+      _locationData = localizations.mapLocationServicesDisabled;
       _isErrorOrStatus = true;
       _latitude = null; _longitude = null;
       _onStateChange();
@@ -140,23 +155,47 @@ class MapLocationManager {
     }
     bool permGranted = await _locationService.requestLocationPermission();
     if (!permGranted) {
-      _locationData = 'permission_denied'; // Key
+      _locationData = localizations.mapLocationPermissionDenied;
       _isErrorOrStatus = true;
       _latitude = null; _longitude = null;
       _onStateChange();
       return;
     }
 
+    _positionStreamSubscription?.cancel(); // Cancel any existing subscription
     _positionStreamSubscription =
-        _locationService.getPositionStream().listen((Position position) {
+        _locationService.getPositionStream().listen((Position position) async { // Mark as async
       _latitude = position.latitude;
       _longitude = position.longitude;
-      _onStateChange();
+
+      bool shouldUpdateAddress = false;
+      if (_lastGeocodedLatitude == null || _lastGeocodedLongitude == null) {
+        shouldUpdateAddress = true; // No address fetched yet or last attempt failed
+      } else {
+        double distanceMoved = Geolocator.distanceBetween(
+          _lastGeocodedLatitude!,
+          _lastGeocodedLongitude!,
+          position.latitude,
+          position.longitude,
+        );
+        if (distanceMoved > _addressUpdateDistanceThreshold) {
+          shouldUpdateAddress = true;
+        }
+      }
+
+      if (shouldUpdateAddress) {
+        debugPrint("MapLocationManager: User moved significantly. Re-fetching address...");
+        // Fetch new address. Pass isUpdate=true to avoid resetting target or showing "Fetching..."
+        await _fetchInitialLocationAndAddress(localizations, isUpdate: true);
+      } else {
+        // If address isn't updated, still call _onStateChange to reflect lat/lng changes if any other part of UI uses them directly.
+        _onStateChange();
+      }
+
     }, onError: (error) {
       _latitude = null; _longitude = null;
-      _locationData = localizations.mapErrorFetchingLocation(error.toString()); // Use localized string with param
-      _isErrorOrStatus = true;
-      _onStateChange();
+      debugPrint("Error in location stream: $error");
+      _onStateChange(); // Still update UI to reflect potential error state if needed
     });
   }
 
@@ -177,19 +216,12 @@ class MapLocationManager {
   void handleMapTapped(LatLng position) {
     _targetLatitude = position.latitude;
     _targetLongitude = position.longitude;
-    _onStateChange(); // This will trigger a rebuild, and getLocalizedLocationText will be called
+    _onStateChange();
     _animateMapToTarget();
   }
 
   void handleCameraMove(CameraPosition position) {
     debugPrint("Camera moved to: Target: ${position.target}, Zoom: ${position.zoom}");
-  }
-
-  String? get currentCityName {
-    if (!_isErrorOrStatus && _locationData.isNotEmpty) {
-      return _locationData.split(',').first.trim();
-    }
-    return null;
   }
 
   Future<void> handleMapLongPressed({
@@ -198,10 +230,8 @@ class MapLocationManager {
     required Set<Marker> markersForBigMap,
     required Set<Circle> circlesForBigMap,
   }) async {
-    // ... (implementation remains the same)
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -223,27 +253,27 @@ class MapLocationManager {
     );
   }
 
-  Future<void> resetTargetToUserLocation(BuildContext context) async { // No longer takes AppLocalizations here
-    final localizations = AppLocalizations.of(context)!; // Get localizations from context
-
+  Future<void> resetTargetToUserLocation(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
     if (_latitude != null && _longitude != null) {
       _targetLatitude = _latitude;
       _targetLongitude = _longitude;
-      // If _fetchInitialLocationAndAddress is called, it will update _locationData
-      // For simplicity, if you just want to recenter and potentially re-fetch address:
-      await _fetchInitialLocationAndAddress(localizations); // This will update _locationData and call _onStateChange
-      // _onStateChange(); // Already called by _fetchInitialLocationAndAddress
-      _animateMapToTarget(zoom: 16.0);
+      // Re-fetch address for the current user location and update display
+      await _fetchInitialLocationAndAddress(localizations, isUpdate: true); // Pass isUpdate to prevent full reset
+      _animateMapToTarget(zoom: 16.0); // Also animate map to this location
     } else {
       if (ScaffoldMessenger.of(context).mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.mapCurrentUserLocationNotAvailable)), // Localized
+          SnackBar(content: Text(localizations.mapCurrentUserLocationNotAvailable)),
         );
       }
+       // Attempt to fetch initial location again if current lat/lng are null
+      await _fetchInitialLocationAndAddress(localizations);
     }
   }
 
   void dispose() {
     _positionStreamSubscription?.cancel();
+    debugPrint("MapLocationManager disposed and position stream cancelled.");
   }
 }

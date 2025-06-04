@@ -1,9 +1,10 @@
+import 'dart:async'; // Required for StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:harkai/features/home/utils/incidences.dart';
 import 'package:harkai/features/home/utils/markers.dart';
-import 'package:harkai/features/home/widgets/header.dart'; // Reusing your existing header
+import 'package:harkai/features/home/widgets/header.dart';
 import 'package:harkai/core/services/location_service.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import '../widgets/incident_tile.dart';
@@ -26,10 +27,14 @@ class IncidentScreen extends StatefulWidget {
 class _IncidentScreenState extends State<IncidentScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final LocationService _locationService = LocationService();
+  
   List<IncidenceData> _incidents = [];
   Position? _currentPosition;
-  bool _isLoading = true;
+  bool _isLoadingInitialData = true; // For initial load
   String _error = '';
+
+  StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<List<IncidenceData>>? _incidentsStreamSubscription;
 
   AppLocalizations get localizations => AppLocalizations.of(context)!;
 
@@ -37,140 +42,163 @@ class _IncidentScreenState extends State<IncidentScreen> {
   void initState() {
     super.initState();
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _initializeScreen();
-  }
-
-  Future<void> _initializeScreen() async {
-    await _fetchCurrentUserLocation();
-    if (_currentPosition != null) {
-      _fetchIncidents();
+    // Initialize only once
+    if (_incidentsStreamSubscription == null && _positionStreamSubscription == null) {
+      _initializeScreenData();
     }
   }
 
-  Future<void> _fetchCurrentUserLocation() async {
+  Future<void> _initializeScreenData() async {
+    await _fetchInitialUserLocation(); // Get initial location first
+    _listenToIncidents();       // Then start listening to incidents
+    _startListeningToLocationUpdates(); // And start listening to location updates
+  }
+
+  Future<void> _fetchInitialUserLocation() async {
     if (!mounted) return;
     setState(() {
-      _isLoading = true;
+      _isLoadingInitialData = true; // Still true until incidents are also loaded
       _error = '';
     });
     try {
       final locationResult = await _locationService.getInitialPosition();
       if (!mounted) return;
       if (locationResult.success && locationResult.data != null) {
-        setState(() {
-          _currentPosition = locationResult.data;
-        });
+        _currentPosition = locationResult.data; 
       } else {
-        setState(() {
-          _error = locationResult.errorMessage ?? localizations.mapCurrentUserLocationNotAvailable;
-          _isLoading = false;
-        });
+        _currentPosition = null; // Ensure it's null if fetch failed
+        _error = locationResult.errorMessage ?? localizations.mapCurrentUserLocationNotAvailable;
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = localizations.mapErrorFetchingLocation(e.toString());
-        _isLoading = false;
-      });
+      _currentPosition = null;
+      _error = localizations.mapErrorFetchingLocation(e.toString());
     }
+    // No setState here, _listenToIncidents will handle initial loading state for UI
   }
 
-  void _fetchIncidents() {
-    if (_currentPosition == null) {
-      if (mounted) {
-        setState(() {
-          _error = localizations.mapCurrentUserLocationNotAvailable;
-          _isLoading = false;
-        });
-      }
-      return;
+  void _listenToIncidents() {
+    if (!mounted) return;
+    _incidentsStreamSubscription?.cancel();
+
+    if (_currentPosition != null && _incidents.isEmpty) {
+      setState(() { _isLoadingInitialData = true; });
     }
 
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _error = '';
-    });
 
-    _firestoreService.getIncidencesStreamByType(widget.incidentType).listen(
+    _incidentsStreamSubscription = _firestoreService
+        .getIncidencesStreamByType(widget.incidentType)
+        .listen(
       (incidentsOfType) {
         if (!mounted) return;
-        List<IncidenceData> processedIncidents = List.from(incidentsOfType);
-        if (_currentPosition != null) {
-          for (var incident in processedIncidents) {
-            incident.distance = Geolocator.distanceBetween(
-              _currentPosition!.latitude,
-              _currentPosition!.longitude,
-              incident.latitude,
-              incident.longitude,
-            );
-          }
-          processedIncidents.sort((a, b) =>
-              (a.distance ?? double.maxFinite)
-                  .compareTo(b.distance ?? double.maxFinite));
-        }
-        if (widget.incidentType == MakerType.pet) {
-          final now = DateTime.now();
-          final startOfToday = DateTime(now.year, now.month, now.day);
-          processedIncidents.removeWhere((incident) {
-            return incident.timestamp.toDate().isBefore(startOfToday);
-          });
-        }
-        setState(() {
-          _incidents = processedIncidents;
-          _isLoading = false;
-        });
+        _processIncidentsUpdate(incidentsOfType);
+        setState(() { _isLoadingInitialData = false; }); // Data loaded (or empty)
       },
       onError: (error) {
         if (!mounted) return;
         setState(() {
-          _error = localizations.incidentReportFailed("incidents"); 
-          _isLoading = false;
+          _error = localizations.incidentReportFailed("incidents");
+          _incidents = [];
+          _isLoadingInitialData = false;
         });
       },
     );
   }
+  
+  void _startListeningToLocationUpdates() {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = _locationService.getPositionStream(
+    ).listen(
+      (Position newPosition) {
+        if (mounted) {
+          _currentPosition = newPosition;
+          _processIncidentsUpdate(List.from(_incidents));
+        }
+      },
+      onError: (error) {
+        debugPrint("Error in IncidentScreen location stream: $error");
+      },
+    );
+  }
 
-  // Updated method to show the map modal
+  void _processIncidentsUpdate(List<IncidenceData> newIncidents) {
+    if (!mounted) return;
+
+    List<IncidenceData> processedIncidents = List.from(newIncidents);
+
+    if (_currentPosition != null) {
+      for (var incident in processedIncidents) {
+        incident.distance = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          incident.latitude,
+          incident.longitude,
+        );
+      }
+      processedIncidents.sort((a, b) =>
+          (a.distance ?? double.maxFinite)
+              .compareTo(b.distance ?? double.maxFinite));
+    }
+
+    if (widget.incidentType == MakerType.pet) {
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+      processedIncidents.removeWhere((incident) {
+        return incident.timestamp.toDate().isBefore(startOfToday);
+      });
+    }
+    
+    bool listChanged = _incidents.length != processedIncidents.length ||
+                      (_incidents.isNotEmpty && processedIncidents.isNotEmpty && _incidents.first.id != processedIncidents.first.id) ||
+                      true; 
+
+    if (listChanged) {
+      setState(() {
+        _incidents = processedIncidents;
+      });
+    }
+  }
+
   void _navigateToIncidentMap(IncidenceData incident) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    // localizations are available via the getter
 
     showDialog(
       context: context,
-      // barrierDismissible: false, // Consider if you want this
       builder: (BuildContext dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)), // Rounded corners for the dialog
-          backgroundColor: Colors.transparent, // Make dialog background transparent
-          elevation: 0, // No elevation for the dialog itself
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           insetPadding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05, // 5% padding horizontally
-            vertical: screenHeight * 0.1,   // 10% padding vertically
+            horizontal: screenWidth * 0.05,
+            vertical: screenHeight * 0.1,
           ),
-          child: SizedBox( // Constrain the size of the modal content
+          child: SizedBox(
             width: screenWidth * 0.9,
-            height: screenHeight * 0.7, // Adjust height as needed
-            child: Stack( // Use Stack to overlay close button
+            height: screenHeight * 0.7,
+            child: Stack(
               children: [
-                ClipRRect( // Clip the map content to the dialog's rounded corners
+                ClipRRect(
                   borderRadius: BorderRadius.circular(15.0),
                   child: IncidentMapViewContent( 
                     incident: incident,
                     incidentTypeForExpiry: widget.incidentType,
                   ),
                 ),
-                Positioned( // Position the close button
+                // Positioned Close Button - MODIFIED HERE
+                Positioned(
                   top: 8.0,
-                  right: 8.0,
-                  child: Material( // Material for InkWell splash effect
-                    color: Colors.black.withOpacity(0.5), // Semi-transparent background for button
+                  left: 8.0, // Changed from right: 8.0 to left: 8.0
+                  child: Material(
+                    color: Colors.black.withOpacity(0.6),
                     shape: const CircleBorder(),
-                    elevation: 2.0,
+                    elevation: 4.0,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20.0),
                       onTap: () => Navigator.of(dialogContext).pop(),
@@ -243,10 +271,10 @@ class _IncidentScreenState extends State<IncidentScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoading && _incidents.isEmpty) { 
+    if (_isLoadingInitialData && _incidents.isEmpty) { 
       return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
     }
-    if (_error.isNotEmpty) {
+    if (_error.isNotEmpty && _incidents.isEmpty) { // Show error only if no incidents to display
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -254,7 +282,7 @@ class _IncidentScreenState extends State<IncidentScreen> {
         ),
       );
     }
-    if (_incidents.isEmpty) {
+    if (_incidents.isEmpty) { // Handles case after loading, but list is empty (and no error)
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -282,5 +310,12 @@ class _IncidentScreenState extends State<IncidentScreen> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _positionStreamSubscription?.cancel();
+    _incidentsStreamSubscription?.cancel();
+    super.dispose();
   }
 }
