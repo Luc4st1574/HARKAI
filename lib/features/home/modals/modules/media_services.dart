@@ -71,7 +71,7 @@ class IncidentMediaServices {
     // This user instruction for audio is taken directly from your original code.
     final audioUserInstruction =
         "Incident Type: '$incidentTypeName'. Process the following audio. "
-        "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary. "
+        "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary please be conscious of this and if it as a theft incident do always a good check. "
         "Expected response formats: 'MATCH: [Short summary, max 15 words, of the audio content related to the incident type.]', "
         "'MISMATCH: This audio seems to describe a [Correct Incident Type] incident. Please confirm this type or re-record for the $incidentTypeName incident.', "
         "'UNCLEAR: The audio was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try recording again with more details.'"
