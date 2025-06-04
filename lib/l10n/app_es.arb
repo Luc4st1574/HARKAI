@@ -103,6 +103,7 @@
       }
     }
   },
+  "mapinitialFetchingLocation": "Obteniendo ubicación inicial...",
   "mapCouldNotFetchAddress": "No se pudo obtener la dirección",
   "mapFailedToGetInitialLocation": "Error al obtener la ubicación inicial",
   "mapLocationServicesDisabled": "Servicios de ubicación desactivados.",
@@ -315,7 +316,7 @@
       "error": { "type": "String" }
     }
   },
-  "incidentScreenTitle": "Incidentes {incidentType} Cercanas",
+  "incidentScreenTitle": "{incidentType} cerca a ti",
   "@incidentScreenTitle": {
     "description": "Título para la pantalla de listado de incidentes, toma el nombre del tipo de incidente.",
     "placeholders": {
@@ -369,7 +370,7 @@
   "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible.",
 
   "placesScreenTitle": "Lugares",
-    "addPlaceButtonTitle": "Lugar",
+    "addPlaceButtonTitle": "Lugares interesantes",
     "placeMarkerName": "Lugar",
     "paymentRequiredMessage": "Se requiere un pago de {amount} para añadir este lugar.",
     "@paymentRequiredMessage": {

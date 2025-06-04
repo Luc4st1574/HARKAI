@@ -260,6 +260,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mapinitialFetchingLocation => 'Initial location fetching...';
+
+  @override
   String get mapCouldNotFetchAddress => 'Could not fetch address';
 
   @override

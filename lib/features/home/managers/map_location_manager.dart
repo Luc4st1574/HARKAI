@@ -102,7 +102,7 @@ class MapLocationManager {
 
   Future<void> _fetchInitialLocationAndAddress(AppLocalizations localizations, {bool isUpdate = false}) async {
     if (!isUpdate) { // Only show "fetching" on initial load, not on background updates
-        _locationData = localizations.mapFetchingLocation; // Use key directly for getLocalizedLocationText
+        _locationData = localizations.mapinitialFetchingLocation;
         _isErrorOrStatus = true;
         _onStateChange();
     }
@@ -125,8 +125,6 @@ class MapLocationManager {
         _lastGeocodedLatitude = _latitude;
         _lastGeocodedLongitude = _longitude;
       } else {
-        // If fetching address fails, keep the old valid address if this is an update,
-        // or set error if initial fetch.
         if (!isUpdate) {
             _locationData = localizations.mapCouldNotFetchAddress;
             _isErrorOrStatus = true;

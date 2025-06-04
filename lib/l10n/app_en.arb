@@ -103,6 +103,7 @@
       }
     }
   },
+  "mapinitialFetchingLocation": "Initial location fetching...",
   "mapCouldNotFetchAddress": "Could not fetch address",
   "mapFailedToGetInitialLocation": "Failed to get initial location",
   "mapLocationServicesDisabled": "Location services are disabled.",

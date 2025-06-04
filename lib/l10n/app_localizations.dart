@@ -566,6 +566,12 @@ abstract class AppLocalizations {
   /// **'You are in {location}'**
   String mapYouAreIn(String location);
 
+  /// No description provided for @mapinitialFetchingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial location fetching...'**
+  String get mapinitialFetchingLocation;
+
   /// No description provided for @mapCouldNotFetchAddress.
   ///
   /// In en, this message translates to:

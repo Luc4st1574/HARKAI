@@ -265,6 +265,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get mapinitialFetchingLocation => 'Obteniendo ubicación inicial...';
+
+  @override
   String get mapCouldNotFetchAddress => 'No se pudo obtener la dirección';
 
   @override

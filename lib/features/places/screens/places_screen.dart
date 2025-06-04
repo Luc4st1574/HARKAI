@@ -7,8 +7,8 @@ import 'package:harkai/l10n/app_localizations.dart';
 
 // Services
 import 'package:harkai/core/services/location_service.dart';
-import 'package:harkai/core/services/phone_service.dart';
 import 'package:harkai/core/services/payment_service.dart'; // Your new payment service
+import 'package:harkai/core/services/phone_service.dart'; // Added for UserSessionManager
 
 // Utils & Managers (from home feature, ensure paths are correct)
 import 'package:harkai/features/home/utils/incidences.dart';
@@ -19,7 +19,6 @@ import 'package:harkai/features/home/managers/user_session_manager.dart';
 
 // Widgets (from home feature)
 import 'package:harkai/features/home/widgets/header.dart';
-import 'package:harkai/features/home/widgets/location_info.dart';
 import 'package:harkai/features/home/widgets/map.dart';
 
 // Modals (from home feature - to be adapted)
@@ -41,7 +40,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   final LocationService _locationService = LocationService();
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final PaymentService _paymentService = PaymentService(); // Instance of your payment service
+  final PaymentService _paymentService = PaymentService();
 
   late final MarkerManager _markerManager;
   late final MapLocationManager _mapLocationManager;
@@ -50,12 +49,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
   AppLocalizations? _localizations;
   User? _currentUser;
 
-  bool _isAddingPlace = false; // To show loading indicator during payment/add process
+  bool _isAddingPlace = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialization will occur in didChangeDependencies after localizations are available
   }
 
   @override
@@ -101,7 +99,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
     _userSessionManager.initialize();
     await _mapLocationManager.initializeManager(_localizations!);
     await _markerManager.initialize(_localizations!);
-    // Any other initial data fetching for places screen specifically can go here
   }
 
   @override
@@ -135,7 +132,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (targetLat != null && targetLng != null && targetPin != null) {
       displayMarkers.add(
         Marker(
-          markerId: const MarkerId('target_location_pin_places'), // Unique ID
+          markerId: const MarkerId('target_location_pin_places'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
           zIndex: 2.0,
@@ -169,20 +166,19 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (!mounted) return;
     setState(() => _isAddingPlace = true);
 
-    // 1. Show payment required message and ask to proceed
     bool proceedToPayment = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(_localizations!.addPlaceButtonTitle),
-            content: Text(_localizations!.paymentRequiredMessage("\$1.00")), // Hardcoding $1.00 for now
+            content: Text(_localizations!.paymentRequiredMessage("\$1.00")),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(_localizations!.profileDialogNo), // Reusing "No"
+                child: Text(_localizations!.profileDialogNo),
               ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(_localizations!.profileDialogYes), // Reusing "Yes"
+                child: Text(_localizations!.profileDialogYes),
               ),
             ],
           ),
@@ -199,9 +195,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
         );
     }
 
-    // 2. Initiate Payment
     bool paymentSuccess = await _paymentService.initiateAndProcessPayment(
-      context: context, // Pass context for messages within payment service
+      context: context,
       amount: 1.00,
       currency: "USD",
       userDescription: "Add new place to Harkai: ${_currentUser!.displayName ?? _currentUser!.email}",
@@ -210,47 +205,38 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (!paymentSuccess) {
       if (mounted) {
         setState(() => _isAddingPlace = false);
-        // Error message is usually shown by PaymentService itself
       }
       return;
     }
     
-    if (!mounted) { // Check mounted again after async payment
+    if (!mounted) {
       setState(() => _isAddingPlace = false);
       return;
     }
     
-    // 3. If payment successful, show the details modal
-    // IMPORTANT: You need to adapt showIncidentVoiceDescriptionDialog or create a new one
-    // that enforces mandatory photo and collects place-specific details.
     final result = await showIncidentVoiceDescriptionDialog(
       context: context,
-      markerType: MakerType.place, // Pass the place type
+      markerType: MakerType.place,
     );
 
     if (result != null) {
-      final String? description = result['description']; // This might be place name + description
+      final String? description = result['description'];
       final String? imageUrl = result['imageUrl'];
 
-      // Ensure photo is provided (adapt modal to enforce this and return it)
       if (imageUrl == null || imageUrl.isEmpty) {
           if (mounted) {
-            if (mounted) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(_localizations!.photoRequiredMessage)),
-                );
-              }
-            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_localizations!.photoRequiredMessage)),
+            );
           }
-      } else if (description != null) { // imageUrl will be mandatory
+      } else if (description != null) {
         if (mounted) {
           await _markerManager.addMarkerAndShowNotification(
-            context: context, // For localizations and ScaffoldMessenger
+            context: context,
             makerType: MakerType.place,
             latitude: targetLat,
             longitude: targetLng,
-            description: description, // This should be place name/description
+            description: description,
             imageUrl: imageUrl,
           );
           ScaffoldMessenger.of(context).showSnackBar(
@@ -259,7 +245,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
         }
       }
     }
-    // Reset loading state regardless of modal outcome after successful payment
     if (mounted) setState(() => _isAddingPlace = false);
   }
 
@@ -278,7 +263,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _localizations ??= AppLocalizations.of(context)!; // Ensure localizations
+    _localizations ??= AppLocalizations.of(context)!;
     if (_localizations == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -290,7 +275,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            HomeHeaderWidget(currentUser: _currentUser),
+            HomeHeaderWidget(currentUser: _currentUser), //
             Expanded(
               child: Container(
                 margin: const EdgeInsets.all(16.0),
@@ -306,18 +291,17 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     ),
                   ],
                 ),
-                child: Column( // Using Column instead of CustomScrollView for simplicity here
+                child: Column(
                   children: [
-                    LocationInfoWidget(
-                        locationText: _mapLocationManager.getLocalizedLocationText(_localizations!)),
-                    Expanded( // Map needs to be expanded to take available space
-                      child: MapDisplayWidget(
+                    const SizedBox(height: 16.0), // Optional: Adjust spacing as needed
+                    Expanded(
+                      child: MapDisplayWidget( //
                         key: ValueKey('mapDisplay_places_${initialMapCenter?.latitude}_${initialMapCenter?.longitude}'),
                         initialLatitude: initialMapCenter?.latitude,
                         initialLongitude: initialMapCenter?.longitude,
                         markers: _getDisplayMarkers(),
                         circles: _getCirclesForDisplay(),
-                        selectedMarker: MakerType.none, // Not selecting an incident type on this map for highlighting
+                        selectedMarker: MakerType.none,
                         onMapTappedWithMarker: _mapLocationManager.handleMapTapped,
                         onMapCreated: _mapLocationManager.onMapCreated,
                         onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),
@@ -326,8 +310,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                                 _mapLocationManager.handleMapLongPressed(
                               context: context,
                               currentCameraPosition: cameraPosition,
-                              markersForBigMap: _getDisplayMarkers(), // Can reuse display markers
-                              circlesForBigMap: _getCirclesForDisplay(), // Can reuse display circles
+                              markersForBigMap: _getDisplayMarkers(),
+                              circlesForBigMap: _getCirclesForDisplay(),
                             ),
                       ),
                     ),
@@ -342,11 +326,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
                                   'assets/images/place_icon.png',
                                   width: 24,
                                   height: 24,
-                                  color: Colors.white
+                                  color: Colors.white, 
                                 ),
                                 label: Text(
                                   _localizations!.addPlaceButtonTitle,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.yellow.shade700,
