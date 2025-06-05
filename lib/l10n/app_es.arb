@@ -74,10 +74,10 @@
 
   "homeScreenLocationInfoText": "Esto está sucediendo en tu área",
   "homeMapLoadingText": "Cargando datos del mapa...",
-  "homeFireAlertButtonTitle": "Fuego",
-  "homeCrashAlertButtonTitle": "Choque",
-  "homeTheftAlertButtonTitle": "Robo",
-  "homePetAlertButtonTitle": "Mascota",
+  "homeFireAlertButtonTitle": "Fuegos",
+  "homeCrashAlertButtonTitle": "Choques",
+  "homeTheftAlertButtonTitle": "Robos",
+  "homePetAlertButtonTitle": "Mascotas",
   "homeCallAgentButton": "{agent}",
   "@homeCallAgentButton": {
     "placeholders": {
@@ -386,5 +386,7 @@
     "paymentFailedMessage": "El pago falló. Por favor, inténtalo de nuevo.",
     "photoRequiredMessage": "Una foto es obligatoria para añadir un lugar.",
     "placesIncidentFeedTitle": "Lugares Cercanos",
-    "buttonAddPlace": "Añadir Lugar"
+    "buttonAddPlace": "Añadir Lugar",
+    "hintSearch": "Busca por descripcion...",
+    "searchNoResults": "Ninguna descripcion encontrada."
 }

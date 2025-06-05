@@ -219,16 +219,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeMapLoadingText => 'Cargando datos del mapa...';
 
   @override
-  String get homeFireAlertButtonTitle => 'Fuego';
+  String get homeFireAlertButtonTitle => 'Fuegos';
 
   @override
-  String get homeCrashAlertButtonTitle => 'Choque';
+  String get homeCrashAlertButtonTitle => 'Choques';
 
   @override
-  String get homeTheftAlertButtonTitle => 'Robo';
+  String get homeTheftAlertButtonTitle => 'Robos';
 
   @override
-  String get homePetAlertButtonTitle => 'Mascota';
+  String get homePetAlertButtonTitle => 'Mascotas';
 
   @override
   String homeCallAgentButton(String agent) {
@@ -709,4 +709,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get buttonAddPlace => 'Añadir Lugar';
+
+  @override
+  String get hintSearch => 'Busca por descripcion...';
+
+  @override
+  String get searchNoResults => 'Ninguna descripcion encontrada.';
 }

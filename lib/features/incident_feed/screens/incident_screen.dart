@@ -28,40 +28,55 @@ class _IncidentScreenState extends State<IncidentScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final LocationService _locationService = LocationService();
   
-  List<IncidenceData> _incidents = [];
+  List<IncidenceData> _allFetchedIncidents = [];
+  List<IncidenceData> _displayedIncidents = [];
   Position? _currentPosition;
-  bool _isLoadingInitialData = true; // For initial load
+  bool _isLoadingInitialData = true;
   String _error = '';
 
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<List<IncidenceData>>? _incidentsStreamSubscription;
+
+  // New state for search functionality
+  final TextEditingController _searchController = TextEditingController();
+  String _searchTerm = '';
+
+  // Maximum distance for incidents to be displayed (in meters)
+  static const double _maxDistanceInMeters = 100000; // 100km
 
   AppLocalizations get localizations => AppLocalizations.of(context)!;
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      if (mounted) {
+        setState(() {
+          _searchTerm = _searchController.text;
+          _processIncidentsUpdate(_allFetchedIncidents); 
+        });
+      }
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize only once
     if (_incidentsStreamSubscription == null && _positionStreamSubscription == null) {
       _initializeScreenData();
     }
   }
 
   Future<void> _initializeScreenData() async {
-    await _fetchInitialUserLocation(); // Get initial location first
-    _listenToIncidents();       // Then start listening to incidents
-    _startListeningToLocationUpdates(); // And start listening to location updates
+    await _fetchInitialUserLocation(); 
+    _listenToIncidents();       
+    _startListeningToLocationUpdates(); 
   }
 
   Future<void> _fetchInitialUserLocation() async {
     if (!mounted) return;
     setState(() {
-      _isLoadingInitialData = true; // Still true until incidents are also loaded
+      _isLoadingInitialData = true; 
       _error = '';
     });
     try {
@@ -70,7 +85,7 @@ class _IncidentScreenState extends State<IncidentScreen> {
       if (locationResult.success && locationResult.data != null) {
         _currentPosition = locationResult.data; 
       } else {
-        _currentPosition = null; // Ensure it's null if fetch failed
+        _currentPosition = null; 
         _error = locationResult.errorMessage ?? localizations.mapCurrentUserLocationNotAvailable;
       }
     } catch (e) {
@@ -78,31 +93,33 @@ class _IncidentScreenState extends State<IncidentScreen> {
       _currentPosition = null;
       _error = localizations.mapErrorFetchingLocation(e.toString());
     }
-    // No setState here, _listenToIncidents will handle initial loading state for UI
+    // Do not set _isLoadingInitialData to false here yet, wait for incidents.
   }
 
   void _listenToIncidents() {
     if (!mounted) return;
     _incidentsStreamSubscription?.cancel();
 
-    if (_currentPosition != null && _incidents.isEmpty) {
+    // Show loading indicator if we are still fetching the initial position or if incidents are empty
+    if (_currentPosition == null || (_isLoadingInitialData && _allFetchedIncidents.isEmpty)) {
       setState(() { _isLoadingInitialData = true; });
     }
-
 
     _incidentsStreamSubscription = _firestoreService
         .getIncidencesStreamByType(widget.incidentType)
         .listen(
       (incidentsOfType) {
         if (!mounted) return;
-        _processIncidentsUpdate(incidentsOfType);
-        setState(() { _isLoadingInitialData = false; }); // Data loaded (or empty)
+        _allFetchedIncidents = incidentsOfType; // Store all fetched incidents
+        _processIncidentsUpdate(_allFetchedIncidents); // Process them
+        setState(() { _isLoadingInitialData = false; }); 
       },
       onError: (error) {
         if (!mounted) return;
         setState(() {
-          _error = localizations.incidentReportFailed("incidents");
-          _incidents = [];
+          _error = localizations.incidentReportFailed("incidents"); // Consider a more generic error for fetching
+          _allFetchedIncidents = [];
+          _displayedIncidents = [];
           _isLoadingInitialData = false;
         });
       },
@@ -111,54 +128,105 @@ class _IncidentScreenState extends State<IncidentScreen> {
   
   void _startListeningToLocationUpdates() {
     _positionStreamSubscription?.cancel();
-    _positionStreamSubscription = _locationService.getPositionStream(
-    ).listen(
+    _positionStreamSubscription = _locationService.getPositionStream().listen(
       (Position newPosition) {
         if (mounted) {
+          final bool positionChangedSignificantly = _currentPosition == null ||
+              Geolocator.distanceBetween(
+                    _currentPosition!.latitude,
+                    _currentPosition!.longitude,
+                    newPosition.latitude,
+                    newPosition.longitude,
+                  ) > 50; // Update if moved more than 50 meters for recalculation
+
           _currentPosition = newPosition;
-          _processIncidentsUpdate(List.from(_incidents));
+          if (positionChangedSignificantly) {
+            _processIncidentsUpdate(List.from(_allFetchedIncidents)); // Re-process with new location
+          }
         }
       },
       onError: (error) {
         debugPrint("Error in IncidentScreen location stream: $error");
+        if (mounted) {
+          setState(() {
+            _error = localizations.mapErrorFetchingLocation(error.toString());
+            // Potentially clear _currentPosition if location updates fail consistently
+          });
+        }
       },
     );
   }
 
-  void _processIncidentsUpdate(List<IncidenceData> newIncidents) {
+  void _processIncidentsUpdate(List<IncidenceData> allIncidents) {
     if (!mounted) return;
 
-    List<IncidenceData> processedIncidents = List.from(newIncidents);
+    List<IncidenceData> filteredIncidents = List.from(allIncidents);
 
+    // 1. Filter by distance (max 100km)
     if (_currentPosition != null) {
-      for (var incident in processedIncidents) {
-        incident.distance = Geolocator.distanceBetween(
+      filteredIncidents.removeWhere((incident) {
+        final distance = Geolocator.distanceBetween(
           _currentPosition!.latitude,
           _currentPosition!.longitude,
           incident.latitude,
           incident.longitude,
         );
+        incident.distance = distance; // Store distance for sorting and display
+        return distance > _maxDistanceInMeters;
+      });
+    } else {
+      for (var incident in filteredIncidents) {
+          incident.distance = null; 
       }
-      processedIncidents.sort((a, b) =>
-          (a.distance ?? double.maxFinite)
-              .compareTo(b.distance ?? double.maxFinite));
     }
 
+    // 2. Filter by search term (if any) - case-insensitive
+    if (_searchTerm.isNotEmpty) {
+      filteredIncidents.removeWhere((incident) =>
+          !incident.description.toLowerCase().contains(_searchTerm.toLowerCase()));
+    }
+
+    // 3. Apply incident-specific expiry rules (e.g., Pet incidents)
     if (widget.incidentType == MakerType.pet) {
       final now = DateTime.now();
       final twentyFourHoursAgo = now.subtract(const Duration(days: 1));
-      processedIncidents.removeWhere((incident) {
+      filteredIncidents.removeWhere((incident) {
         return incident.timestamp.toDate().isBefore(twentyFourHoursAgo);
       });
+    } else if (widget.incidentType != MakerType.place) { // Places don't expire
+        final now = DateTime.now();
+        final oneHourAgo = now.subtract(const Duration(hours: 1)); // Default 1 hour expiry
+        filteredIncidents.removeWhere((incident) {
+            return incident.timestamp.toDate().isBefore(oneHourAgo);
+        });
     }
-    
-    bool listChanged = _incidents.length != processedIncidents.length ||
-                      (_incidents.isNotEmpty && processedIncidents.isNotEmpty && _incidents.first.id != processedIncidents.first.id) ||
-                      true; 
+
+
+    // 4. Sort by distance (incidents without distance or if current position is null will be at the end)
+    if (_currentPosition != null) {
+        filteredIncidents.sort((a, b) =>
+            (a.distance ?? double.maxFinite)
+                .compareTo(b.distance ?? double.maxFinite));
+    }
+
+
+    // Check if the displayed list actually changed to avoid unnecessary setState calls
+    bool listChanged = true; // Assume changed by default, or implement a more thorough check if performance is an issue
+    // Basic check:
+    if (_displayedIncidents.length == filteredIncidents.length) {
+        listChanged = false;
+        for (int i = 0; i < _displayedIncidents.length; i++) {
+            if (_displayedIncidents[i].id != filteredIncidents[i].id) {
+                listChanged = true;
+                break;
+            }
+        }
+    }
+
 
     if (listChanged) {
       setState(() {
-        _incidents = processedIncidents;
+        _displayedIncidents = filteredIncidents;
       });
     }
   }
@@ -166,7 +234,6 @@ class _IncidentScreenState extends State<IncidentScreen> {
   void _navigateToIncidentMap(IncidenceData incident) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    // localizations are available via the getter
 
     showDialog(
       context: context,
@@ -191,10 +258,9 @@ class _IncidentScreenState extends State<IncidentScreen> {
                     incidentTypeForExpiry: widget.incidentType,
                   ),
                 ),
-                // Positioned Close Button - MODIFIED HERE
                 Positioned(
                   top: 8.0,
-                  left: 8.0, // Changed from right: 8.0 to left: 8.0
+                  left: 8.0, 
                   child: Material(
                     color: Colors.black.withOpacity(0.6),
                     shape: const CircleBorder(),
@@ -246,9 +312,42 @@ class _IncidentScreenState extends State<IncidentScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: localizations.hintSearch,
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: const BorderSide(color: Color(0xFF57D463)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                  suffixIcon: _searchTerm.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.white.withOpacity(0.7)),
+                          onPressed: () {
+                            _searchController.clear();
+                            // _searchTerm will be updated by the listener
+                          },
+                        )
+                      : null,
+                ),
+              ),
+            ),
             Expanded(
               child: Container(
-                margin: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 20.0), 
+                margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 20.0), // Reduced top margin
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20.0),
@@ -271,10 +370,10 @@ class _IncidentScreenState extends State<IncidentScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoadingInitialData && _incidents.isEmpty) { 
+    if (_isLoadingInitialData && _displayedIncidents.isEmpty) { 
       return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
     }
-    if (_error.isNotEmpty && _incidents.isEmpty) { // Show error only if no incidents to display
+    if (_error.isNotEmpty && _displayedIncidents.isEmpty) { 
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -282,14 +381,16 @@ class _IncidentScreenState extends State<IncidentScreen> {
         ),
       );
     }
-    if (_incidents.isEmpty) { // Handles case after loading, but list is empty (and no error)
+    if (_displayedIncidents.isEmpty) { 
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(
-            localizations.incidentFeedNoIncidentsFound(
-              getMarkerInfo(widget.incidentType, localizations)?.title ?? widget.incidentType.name.capitalizeAllWords()
-            ),
+            _searchTerm.isNotEmpty 
+                ? localizations.searchNoResults + _searchTerm
+                : localizations.incidentFeedNoIncidentsFound(
+                    getMarkerInfo(widget.incidentType, localizations)?.title ?? widget.incidentType.name.capitalizeAllWords()
+                  ),
             style: const TextStyle(fontSize: 16, color: Colors.grey),
             textAlign: TextAlign.center,
           ),
@@ -299,9 +400,9 @@ class _IncidentScreenState extends State<IncidentScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(8.0),
-      itemCount: _incidents.length,
+      itemCount: _displayedIncidents.length,
       itemBuilder: (context, index) {
-        final incident = _incidents[index];
+        final incident = _displayedIncidents[index];
         return IncidentTile(
           incident: incident,
           distance: incident.distance, 
@@ -314,6 +415,15 @@ class _IncidentScreenState extends State<IncidentScreen> {
 
   @override
   void dispose() {
+    _searchController.removeListener(() {
+       if (mounted) {
+        setState(() {
+          _searchTerm = _searchController.text;
+           _processIncidentsUpdate(_allFetchedIncidents);
+        });
+      }
+    });
+    _searchController.dispose();
     _positionStreamSubscription?.cancel();
     _incidentsStreamSubscription?.cancel();
     super.dispose();

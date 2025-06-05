@@ -214,16 +214,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeMapLoadingText => 'Loading map data...';
 
   @override
-  String get homeFireAlertButtonTitle => 'Fire Alert';
+  String get homeFireAlertButtonTitle => 'Fires';
 
   @override
-  String get homeCrashAlertButtonTitle => 'Crash Alert';
+  String get homeCrashAlertButtonTitle => 'Crashes';
 
   @override
-  String get homeTheftAlertButtonTitle => 'Theft Alert';
+  String get homeTheftAlertButtonTitle => 'Thefts';
 
   @override
-  String get homePetAlertButtonTitle => 'Pet Alert';
+  String get homePetAlertButtonTitle => 'Pets';
 
   @override
   String homeCallAgentButton(String agent) {
@@ -631,7 +631,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String incidentScreenTitle(String incidentType) {
-    return '$incidentType Incidents Near You';
+    return '$incidentType Near You';
   }
 
   @override
@@ -692,4 +692,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get buttonAddPlace => 'Add Place';
+
+  @override
+  String get hintSearch => 'Search by description...';
+
+  @override
+  String get searchNoResults => 'No description match your search';
 }

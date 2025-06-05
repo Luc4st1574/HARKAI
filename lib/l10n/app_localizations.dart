@@ -485,25 +485,25 @@ abstract class AppLocalizations {
   /// No description provided for @homeFireAlertButtonTitle.
   ///
   /// In en, this message translates to:
-  /// **'Fire Alert'**
+  /// **'Fires'**
   String get homeFireAlertButtonTitle;
 
   /// No description provided for @homeCrashAlertButtonTitle.
   ///
   /// In en, this message translates to:
-  /// **'Crash Alert'**
+  /// **'Crashes'**
   String get homeCrashAlertButtonTitle;
 
   /// No description provided for @homeTheftAlertButtonTitle.
   ///
   /// In en, this message translates to:
-  /// **'Theft Alert'**
+  /// **'Thefts'**
   String get homeTheftAlertButtonTitle;
 
   /// No description provided for @homePetAlertButtonTitle.
   ///
   /// In en, this message translates to:
-  /// **'Pet Alert'**
+  /// **'Pets'**
   String get homePetAlertButtonTitle;
 
   /// No description provided for @homeCallAgentButton.
@@ -1149,7 +1149,7 @@ abstract class AppLocalizations {
   /// Title for the incident feed screen, takes incident type name.
   ///
   /// In en, this message translates to:
-  /// **'{incidentType} Incidents Near You'**
+  /// **'{incidentType} Near You'**
   String incidentScreenTitle(String incidentType);
 
   /// Message shown when no incidents of a specific type are found.
@@ -1247,6 +1247,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Place'**
   String get buttonAddPlace;
+
+  /// No description provided for @hintSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by description...'**
+  String get hintSearch;
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No description match your search'**
+  String get searchNoResults;
 }
 
 class _AppLocalizationsDelegate

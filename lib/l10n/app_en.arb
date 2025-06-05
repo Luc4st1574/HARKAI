@@ -73,10 +73,10 @@
   "chatSenderNameUserFallback": "You",
   "homeScreenLocationInfoText": "This is happening in your area",
   "homeMapLoadingText": "Loading map data...",
-  "homeFireAlertButtonTitle": "Fire Alert",
-  "homeCrashAlertButtonTitle": "Crash Alert",
-  "homeTheftAlertButtonTitle": "Theft Alert",
-  "homePetAlertButtonTitle": "Pet Alert",
+  "homeFireAlertButtonTitle": "Fires",
+  "homeCrashAlertButtonTitle": "Crashes",
+  "homeTheftAlertButtonTitle": "Thefts",
+  "homePetAlertButtonTitle": "Pets",
   "homeCallAgentButton": "Call {agent}",
   "@homeCallAgentButton": {
     "placeholders": {
@@ -327,7 +327,7 @@
       }
     }
   },
-  "incidentScreenTitle": "{incidentType} Incidents Near You",
+  "incidentScreenTitle": "{incidentType} Near You",
   "@incidentScreenTitle": {
     "description": "Title for the incident feed screen, takes incident type name.",
     "placeholders": {
@@ -397,5 +397,7 @@
       "paymentFailedMessage": "Payment failed. Please try again.",
       "photoRequiredMessage": "A photo is mandatory to add a place.",
       "placesIncidentFeedTitle": "Nearby Places",
-      "buttonAddPlace": "Add Place"
+      "buttonAddPlace": "Add Place",
+      "hintSearch": "Search by description...",
+      "searchNoResults": "No description match your search"
 }
