@@ -74,7 +74,7 @@ class IncidentMediaServices {
         "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary please be conscious of this and if it as a theft incident do always a good check. "
         "On the crash incident type, this includes all kinds of car accidents, motorcycle accidents, and pedestrian accidents. "
         "On the fire incident type, this includes all kinds of fires, explosions, or smoke. "
-        "On the places incident type, this is for addding businesses, stores and so to the mpap, this is not for incidents but for adding places to the map so be conscious of this and do not use it for incidents. "
+        "On the places incident type, this is for addding businesses, stores and so to the mpap, this is not for incidents but for adding places to the map so be conscious of this and do not use it for incidents, here just add what the user tells you do not try to give it more context or description cause it will look weird. "
         "On the emergency incident type, this includes all kinds of emergencies, like medical emergencies, natural disasters, or other urgent situations, lesions and all related this is a incident type that must be open to a lot of posible thing so be conscius of all kind of possible emergencies. "
         "Expected response formats: 'MATCH: [Short summary, max 15 words, of the audio content related to the incident type.]', "
         "'MISMATCH: This audio seems to describe a [Correct Incident Type] incident. Please confirm this type or re-record for the $incidentTypeName incident.', "

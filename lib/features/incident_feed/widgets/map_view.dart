@@ -69,8 +69,9 @@ class _IncidentMapViewContentState extends State<IncidentMapViewContent> {
     bool shouldBeVisible = true;
 
     if (widget.incidentTypeForExpiry == MakerType.pet) {
-      final startOfToday = DateTime(now.year, now.month, now.day);
-      if (widget.incident.timestamp.toDate().isBefore(startOfToday)) {
+      // **FIXED LOGIC HERE**
+      final twentyFourHoursAgo = now.subtract(const Duration(days: 1));
+      if (widget.incident.timestamp.toDate().isBefore(twentyFourHoursAgo)) {
         shouldBeVisible = false;
       }
     } else {

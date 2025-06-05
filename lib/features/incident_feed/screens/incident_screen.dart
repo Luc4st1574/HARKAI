@@ -416,10 +416,10 @@ class _IncidentScreenState extends State<IncidentScreen> {
   @override
   void dispose() {
     _searchController.removeListener(() {
-       if (mounted) {
+      if (mounted) {
         setState(() {
           _searchTerm = _searchController.text;
-           _processIncidentsUpdate(_allFetchedIncidents);
+          _processIncidentsUpdate(_allFetchedIncidents);
         });
       }
     });
