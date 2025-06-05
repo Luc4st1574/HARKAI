@@ -206,49 +206,83 @@ class FirestoreService {
     });
   }
 
+  /// Marks all expired incidences as invisible based on the provided expiry duration.
   Future<int> markExpiredIncidencesAsInvisible(
-      {Duration expiryDuration = const Duration(hours: 1)}) async {
-    final DateTime cutoffTime = DateTime.now().subtract(expiryDuration);
-    final Timestamp cutoffTimestamp = Timestamp.fromDate(cutoffTime);
-    int updatedCount = 0;
+      {Duration expiryDuration = const Duration(hours: 1)}) async { // Default for general incidents
+    final DateTime now = DateTime.now();
+    // Cutoff for general incidents (e.g., 1 hour ago)
+    final Timestamp generalCutoffTimestamp = Timestamp.fromDate(now.subtract(expiryDuration));
+    // Cutoff for pet incidents (24 hours ago)
+    final Timestamp petExpiryTimestamp = Timestamp.fromDate(now.subtract(const Duration(days: 1)));
+
+    int totalUpdatedCount = 0;
+
     try {
-      final QuerySnapshot querySnapshot = await _heatPointsCollection
-          .where('timestamp', isLessThan: cutoffTimestamp)
+      QuerySnapshot querySnapshot = await _heatPointsCollection
           .where('isVisible', isEqualTo: true)
+          .where('timestamp', isLessThan: generalCutoffTimestamp) // Older than general expiry duration
           .get();
-      if (querySnapshot.docs.isEmpty) {
-        debugPrint("No expired incidences found to mark as invisible.");
-        return 0;
-      }
+      
+      List<DocumentSnapshot> documentsToProcess = querySnapshot.docs.toList(); // Make mutable if needed or process directly
+
       WriteBatch batch = FirebaseFirestore.instance.batch();
-      for (var doc in querySnapshot.docs) {
-        final String typeString = (doc.data() as Map<String, dynamic>)['type'] as String? ?? '';
+      int currentBatchOperations = 0;
+
+      for (var doc in documentsToProcess) {
+        final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        final String typeString = data['type'] as String? ?? '';
         final MakerType incidenceType = MakerType.values.firstWhere(
           (e) => e.name == typeString,
-          orElse: () => MakerType.none
+          orElse: () => MakerType.none,
         );
+        final Timestamp docTimestamp = data['timestamp'] as Timestamp? ?? Timestamp.now();
+
         if (incidenceType == MakerType.place) {
-          continue; // Skip 'place' markers from being marked invisible
+          continue; // Places are never automatically marked invisible by this process
         }
-        batch.update(doc.reference, {'isVisible': false});
-        updatedCount++;
-        if (updatedCount % 499 == 0 && updatedCount > 0) {
-          await batch.commit();
-          debugPrint("Committed a batch of $updatedCount expired incidences.");
-          batch = FirebaseFirestore.instance.batch();
+
+        bool shouldMarkInvisible = false;
+        if (incidenceType == MakerType.pet) {
+          if (docTimestamp.compareTo(petExpiryTimestamp) < 0) {
+            shouldMarkInvisible = true;
+          }
+        } else {
+          shouldMarkInvisible = true;
+        }
+
+        if (shouldMarkInvisible) {
+          batch.update(doc.reference, {'isVisible': false});
+          totalUpdatedCount++;
+          currentBatchOperations++;
+          if (currentBatchOperations >= 499) { // Firestore batch write limit
+            await batch.commit();
+            batch = FirebaseFirestore.instance.batch(); // Start a new batch
+            currentBatchOperations = 0;
+            debugPrint("Committed a batch of ~499 incidences being marked invisible.");
+          }
         }
       }
-      if (updatedCount > 0 && (updatedCount % 499 != 0 || querySnapshot.docs.length < 499) ) {
+      
+      // Commit any remaining operations in the batch
+      if (currentBatchOperations > 0) {
         await batch.commit();
-        debugPrint("Committed the final batch of expired incidences. Total updated: $updatedCount");
+        debugPrint("Committed the final batch of $currentBatchOperations incidences being marked invisible.");
       }
-      return updatedCount;
+      
+      if (totalUpdatedCount > 0) {
+        debugPrint("Total $totalUpdatedCount incidences marked as invisible in this run.");
+      } else {
+        debugPrint("No incidences needed to be marked as invisible in this run based on current rules.");
+      }
+
+      return totalUpdatedCount;
     } catch (e) {
-      debugPrint('Error marking expired incidences: $e');
+      debugPrint('Error in markExpiredIncidencesAsInvisible: $e');
       return 0;
     }
   }
 
+  /// Fetches emergency numbers for a given city name from Firestore.
   Future<Map<String, String>?> getEmergencyNumbersForCity(String cityName) async {
     if (cityName.isEmpty) {
       debugPrint('City name is empty, cannot fetch numbers.');

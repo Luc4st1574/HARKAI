@@ -146,9 +146,9 @@ class _IncidentScreenState extends State<IncidentScreen> {
 
     if (widget.incidentType == MakerType.pet) {
       final now = DateTime.now();
-      final startOfToday = DateTime(now.year, now.month, now.day);
+      final twentyFourHoursAgo = now.subtract(const Duration(days: 1));
       processedIncidents.removeWhere((incident) {
-        return incident.timestamp.toDate().isBefore(startOfToday);
+        return incident.timestamp.toDate().isBefore(twentyFourHoursAgo);
       });
     }
     
