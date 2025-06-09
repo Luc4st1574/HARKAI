@@ -73,4 +73,5 @@ flutter:
   - assets/icon/icon.png
   - assets/images/tap_position_marker.png
   - assets/images/place_icon.png
+  - assets/images/incident_buttons.jpg
   - .env

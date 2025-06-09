@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../home/screens/home.dart';
-import '../../auth/screens/login_screen.dart';
-
-// Import the generated localizations file
+import '../../auth/services/auth_wrapper.dart';  // Import the new AuthWrapper
 import '../../../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -22,7 +18,6 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Initialize the animation controller
     _controller = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -30,33 +25,21 @@ class _SplashScreenState extends State<SplashScreen>
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
 
-    // Navigate based on authentication state
-    _navigateBasedOnAuthState();
+    _navigateToAuthWrapper();
   }
 
-  Future<void> _navigateBasedOnAuthState() async {
+  Future<void> _navigateToAuthWrapper() async {
     // Wait for the splash animation to finish
     await Future.delayed(const Duration(seconds: 3));
 
-    // Check if the widget is still mounted before navigating
+    // Ensure the widget is still mounted before navigating
     if (!mounted) return;
 
-    // Check if a user is already signed in
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      // User is signed in, navigate to the Home screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Home()),
-      );
-    } else {
-      // No user signed in, navigate to the Login screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Login()),
-      );
-    }
+    // Navigate to the AuthWrapper, which will handle the logic
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const AuthWrapper()),
+    );
   }
 
   @override
@@ -68,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final AppLocalizations? localizations = AppLocalizations.of(context);
-    final String welcomeText = localizations?.splashWelcome ?? "WELCOME"; // Fallback text
+    final String welcomeText = localizations?.splashWelcome ?? "WELCOME";
 
     return Scaffold(
       backgroundColor: const Color(0xFF001F3F),
@@ -78,7 +61,6 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
               Image.asset(
                 'assets/images/logo.png',
                 width: 150,

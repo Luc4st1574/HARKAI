@@ -135,7 +135,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
           markerId: const MarkerId('target_location_pin_places'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          zIndex: 2,
           anchor: const Offset(0.5, 0.4),
         ),
       );

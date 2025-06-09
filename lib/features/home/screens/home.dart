@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:harkai/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../onboarding/screens/onboarding_tutorial.dart';
 
 // Services
 import '../../../core/services/location_service.dart';
@@ -92,6 +94,7 @@ class _HomeState extends State<Home> {
       );
 
       _initializeScreenData();
+      _checkFirstLaunch();
     }
   }
 
@@ -105,6 +108,24 @@ class _HomeState extends State<Home> {
     debugPrint("Home: Speech service ready: $speechReady");
   }
 
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool('is_first_launch') ?? false;
+
+    if (isFirstLaunch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const OnboardingTutorial(),
+        ).then((_) {
+          // After the tutorial is dismissed, set the flag to false
+          prefs.setBool('is_first_launch', false);
+        });
+      });
+    }
+  }
+  
   @override
   void dispose() {
     _userSessionManager.dispose();

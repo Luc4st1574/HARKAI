@@ -702,4 +702,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mapMarkerTooFar =>
       'The marker is too far from your current location.';
+
+  @override
+  String get onboardingWelcomeTitle => 'Welcome to Harkai!';
+
+  @override
+  String get onboardingWelcomeDescription =>
+      'Meet Harki, your personal AI assistant. Harki can help you with safety tips and guide you through the app\'s features.';
+
+  @override
+  String get onboardingIncidentsTitle => 'Reporting Incidents';
+
+  @override
+  String get onboardingIncidentsDescription =>
+      'Tap an incident button (like \'Fire\' or \'Theft\') to report something at a specific location. Long-press the button to see a feed of recent, nearby incidents of that type.';
+
+  @override
+  String get onboardingMapTitle => 'Pinpointing Locations';
+
+  @override
+  String get onboardingMapDescription =>
+      'To report an incident, first tap on the map to place the target marker precisely where the event is happening. You can also tap the compass icon to center it on your current location.';
+
+  @override
+  String get onboardingGotIt => 'Got it!';
+
+  @override
+  String get onboardingNext => 'Next';
 }

@@ -1,3 +1,4 @@
+// lib/features/auth/services/auth_service.dart
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:harkai/features/home/screens/home.dart';
 import 'package:harkai/features/auth/screens/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 
 
 class AuthService {
@@ -29,6 +31,9 @@ class AuthService {
         await user.reload(); // Refresh the user to reflect changes
         user = FirebaseAuth.instance.currentUser; // Reload the user data
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_first_launch', true);
 
       // Add a short delay before navigating to home
       await Future.delayed(const Duration(seconds: 1));
@@ -143,5 +148,4 @@ class AuthService {
       );
     }
   }
-
 }

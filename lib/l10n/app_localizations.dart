@@ -1265,6 +1265,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The marker is too far from your current location.'**
   String get mapMarkerTooFar;
+
+  /// No description provided for @onboardingWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Harkai!'**
+  String get onboardingWelcomeTitle;
+
+  /// No description provided for @onboardingWelcomeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet Harki, your personal AI assistant. Harki can help you with safety tips and guide you through the app\'s features.'**
+  String get onboardingWelcomeDescription;
+
+  /// No description provided for @onboardingIncidentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting Incidents'**
+  String get onboardingIncidentsTitle;
+
+  /// No description provided for @onboardingIncidentsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an incident button (like \'Fire\' or \'Theft\') to report something at a specific location. Long-press the button to see a feed of recent, nearby incidents of that type.'**
+  String get onboardingIncidentsDescription;
+
+  /// No description provided for @onboardingMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinpointing Locations'**
+  String get onboardingMapTitle;
+
+  /// No description provided for @onboardingMapDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'To report an incident, first tap on the map to place the target marker precisely where the event is happening. You can also tap the compass icon to center it on your current location.'**
+  String get onboardingMapDescription;
+
+  /// No description provided for @onboardingGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get onboardingGotIt;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
 }
 
 class _AppLocalizationsDelegate

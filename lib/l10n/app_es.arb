@@ -389,5 +389,13 @@
     "buttonAddPlace": "Añadir Lugar",
     "hintSearch": "Busca por descripcion...",
     "searchNoResults": "Ninguna descripcion encontrada.",
-    "mapMarkerTooFar": "El marcador está demasiado lejos de tu ubicación actual."
+    "mapMarkerTooFar": "El marcador está demasiado lejos de tu ubicación actual.",
+    "onboardingWelcomeTitle": "¡Bienvenido a Harkai!",
+    "onboardingWelcomeDescription": "Conoce a Harki, tu asistente personal de IA. Harki puede ayudarte con consejos de seguridad y guiarte a través de las funciones de la aplicación.",
+    "onboardingIncidentsTitle": "Reportando Incidentes",
+    "onboardingIncidentsDescription": "Toca un botón de incidente (como 'Incendio' o 'Robo') para reportar algo en una ubicación específica. Mantén presionado el botón para ver una lista de incidentes recientes y cercanos de ese tipo.",
+    "onboardingMapTitle": "Ubicaciones Precisas",
+    "onboardingMapDescription": "Para reportar un incidente, primero toca en el mapa para colocar el marcador de objetivo precisamente donde está ocurriendo el evento. También puedes tocar el ícono de la brújula para centrarlo en tu ubicación actual.",
+    "onboardingGotIt": "¡Entendido!",
+    "onboardingNext": "Siguiente"
 }
