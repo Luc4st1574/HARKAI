@@ -14,7 +14,7 @@ class MapDisplayWidget extends StatefulWidget {
   final Set<Marker> markers;
   final Set<Circle> circles;
   final MakerType selectedMarker;
-  final Function(LatLng) onMapTappedWithMarker;
+  final Function(LatLng) onMapTappedWithMarker; // MODIFIED: Correct signature
   final Function(GoogleMapController)? onMapCreated;
   final Function(CameraPosition)? onMapLongPressed;
   final VoidCallback? onResetTargetPressed;
@@ -122,13 +122,13 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
             width: double.infinity,
             child: Stack(
               children: [
-                Listener( // **** WRAP GoogleMap with Listener ****
+                Listener( 
                   onPointerDown: (PointerDownEvent event) {
                     if (!mounted) return;
                     setState(() {
                       _activeMapPointers++;
                     });
-                    if (_activeMapPointers == 1) { // Lock when the first finger touches the map
+                    if (_activeMapPointers == 1) { 
                       widget.onMapInteractionStart?.call();
                       debugPrint("Map Listener: First pointer DOWN - LOCKING scroll. Active pointers: $_activeMapPointers");
                     } else {
@@ -140,7 +140,7 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
                     setState(() {
                       _activeMapPointers--;
                     });
-                    if (_activeMapPointers == 0) { // Unlock when the last finger leaves the map
+                    if (_activeMapPointers == 0) {
                       widget.onMapInteractionEnd?.call();
                       debugPrint("Map Listener: Last pointer UP - UNLOCKING scroll. Active pointers: $_activeMapPointers");
                     } else {
@@ -150,18 +150,17 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
                   onPointerCancel: (PointerCancelEvent event) {
                     if (!mounted) return;
                     setState(() {
-                       // Treat cancel like pointer up for locking logic, ensure counter is decremented
                       _activeMapPointers--; 
                     });
-                     if (_activeMapPointers <= 0) { // Use <= 0 to be safe on cancel
-                        _activeMapPointers = 0; // Normalize
+                    if (_activeMapPointers <= 0) {
+                        _activeMapPointers = 0;
                         widget.onMapInteractionEnd?.call();
                         debugPrint("Map Listener: Pointer CANCEL - UNLOCKING scroll. Active pointers: $_activeMapPointers");
                     } else {
                         debugPrint("Map Listener: Pointer CANCEL, but others potentially still down. Active pointers: $_activeMapPointers");
                     }
                   },
-                  behavior: HitTestBehavior.translucent, // Allows map to receive gestures too
+                  behavior: HitTestBehavior.translucent,
                   child: GoogleMap(
                     key: widget.key, 
                     initialCameraPosition: cameraPosForMap,
@@ -169,9 +168,9 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
                     circles: widget.circles, 
                     mapType: MapType.terrain,
                     myLocationEnabled: true,
-                    myLocationButtonEnabled: true, // This button is part of GoogleMap native view
+                    myLocationButtonEnabled: true,
                     zoomGesturesEnabled: true,
-                    zoomControlsEnabled: true, // These are GoogleMap's native zoom buttons
+                    zoomControlsEnabled: true,
                     scrollGesturesEnabled: true,
                     rotateGesturesEnabled: true,
                     tiltGesturesEnabled: true,

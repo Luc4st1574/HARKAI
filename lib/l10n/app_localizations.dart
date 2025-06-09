@@ -1259,6 +1259,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No description match your search'**
   String get searchNoResults;
+
+  /// No description provided for @mapMarkerTooFar.
+  ///
+  /// In en, this message translates to:
+  /// **'The marker is too far from your current location.'**
+  String get mapMarkerTooFar;
 }
 
 class _AppLocalizationsDelegate

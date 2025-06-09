@@ -275,7 +275,6 @@ class _HomeState extends State<Home> {
                       ),
                     ]),
                 child: CustomScrollView(
-                  // Apply physics based on the lock state
                   physics: _isScrollViewLocked
                       ? const NeverScrollableScrollPhysics()
                       : const AlwaysScrollableScrollPhysics(), // Or your preferred default
@@ -293,7 +292,7 @@ class _HomeState extends State<Home> {
                             selectedMarker: _dataEventManager.selectedIncident,
                             onMapTappedWithMarker: (LatLng position) {
                               _unlockScrollView();
-                              _mapLocationManager.handleMapTapped(position);
+                              _mapLocationManager.handleMapTapped(position, context);
                             },
                             onMapLongPressed: (cameraPosition) {
                                 _unlockScrollView(); // Also unlock on long press if needed

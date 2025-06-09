@@ -219,7 +219,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeMapLoadingText => 'Cargando datos del mapa...';
 
   @override
-  String get homeFireAlertButtonTitle => 'Fuegos';
+  String get homeFireAlertButtonTitle => 'Incendios';
 
   @override
   String get homeCrashAlertButtonTitle => 'Choques';
@@ -715,4 +715,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get searchNoResults => 'Ninguna descripcion encontrada.';
+
+  @override
+  String get mapMarkerTooFar =>
+      'El marcador está demasiado lejos de tu ubicación actual.';
 }

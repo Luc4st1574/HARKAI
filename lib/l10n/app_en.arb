@@ -399,5 +399,6 @@
       "placesIncidentFeedTitle": "Nearby Places",
       "buttonAddPlace": "Add Place",
       "hintSearch": "Search by description...",
-      "searchNoResults": "No description match your search"
+      "searchNoResults": "No description match your search",
+      "mapMarkerTooFar": "The marker is too far from your current location."
 }

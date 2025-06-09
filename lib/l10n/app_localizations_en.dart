@@ -698,4 +698,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNoResults => 'No description match your search';
+
+  @override
+  String get mapMarkerTooFar =>
+      'The marker is too far from your current location.';
 }

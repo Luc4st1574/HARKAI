@@ -74,7 +74,7 @@
 
   "homeScreenLocationInfoText": "Esto está sucediendo en tu área",
   "homeMapLoadingText": "Cargando datos del mapa...",
-  "homeFireAlertButtonTitle": "Fuegos",
+  "homeFireAlertButtonTitle": "Incendios",
   "homeCrashAlertButtonTitle": "Choques",
   "homeTheftAlertButtonTitle": "Robos",
   "homePetAlertButtonTitle": "Mascotas",
@@ -388,5 +388,6 @@
     "placesIncidentFeedTitle": "Lugares Cercanos",
     "buttonAddPlace": "Añadir Lugar",
     "hintSearch": "Busca por descripcion...",
-    "searchNoResults": "Ninguna descripcion encontrada."
+    "searchNoResults": "Ninguna descripcion encontrada.",
+    "mapMarkerTooFar": "El marcador está demasiado lejos de tu ubicación actual."
 }
