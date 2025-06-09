@@ -25,7 +25,7 @@ class MapLocationManager {
   double? _lastGeocodedLongitude;
   // Threshold in meters to trigger a new address lookup
   static const double _addressUpdateDistanceThreshold = 500.0; // 500 meters
-  static const double maxMarkerMoveDistance = 2000.0; // 2 kilometers, you can change this value
+  static const double maxMarkerMoveDistance = 300.0;
 
   StreamSubscription<geolocator.Position>? _positionStreamSubscription;
   BitmapDescriptor? _targetPinDot;
