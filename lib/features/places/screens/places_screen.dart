@@ -7,8 +7,8 @@ import 'package:harkai/l10n/app_localizations.dart';
 
 // Services
 import 'package:harkai/core/services/location_service.dart';
-import 'package:harkai/core/services/payment_service.dart'; // Your new payment service
-import 'package:harkai/core/services/phone_service.dart'; // Added for UserSessionManager
+import 'package:harkai/core/services/payment_service.dart';
+import 'package:harkai/core/services/phone_service.dart';
 
 // Utils & Managers (from home feature, ensure paths are correct)
 import 'package:harkai/features/home/utils/incidences.dart';
@@ -24,10 +24,10 @@ import 'package:harkai/features/home/widgets/map.dart';
 // Modals (from home feature - to be adapted)
 import 'package:harkai/features/home/modals/incident_description.dart';
 import 'package:harkai/features/home/modals/incident_image.dart';
+import 'package:harkai/features/home/screens/home.dart';
 
 // Incident Feed Screen (reused)
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
-
 
 class PlacesScreen extends StatefulWidget {
   const PlacesScreen({super.key});
@@ -274,7 +274,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            HomeHeaderWidget(currentUser: _currentUser),
+            HomeHeaderWidget(
+              currentUser: _currentUser,
+              onLogoTap: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const Home()),
+                    (Route<dynamic> route) => false);
+              },
+              isLongPressEnabled: true,
+            ),
             Expanded(
               child: Container(
                 margin: const EdgeInsets.all(16.0),

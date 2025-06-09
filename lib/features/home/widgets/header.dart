@@ -8,15 +8,18 @@ import '../utils/markers.dart';
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
 import 'package:harkai/features/places/screens/places_screen.dart';
 
-
 /// A widget that displays the header section of the home screen.
 class HomeHeaderWidget extends StatelessWidget {
   /// The current authenticated user. Can be null if no user is logged in.
   final User? currentUser;
+  final VoidCallback? onLogoTap;
+  final bool isLongPressEnabled;
 
   const HomeHeaderWidget({
     super.key,
     this.currentUser,
+    this.onLogoTap,
+    this.isLongPressEnabled = true,
   });
 
   @override
@@ -38,23 +41,26 @@ class HomeHeaderWidget extends StatelessWidget {
           // App Logo
           // Ensure 'assets/images/logo.png' is in your pubspec.yaml and the path is correct.
           GestureDetector(
-            onTap: () {
+            onTap: onLogoTap ?? () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const PlacesScreen()), // Your new screen
               );
             },
-            onLongPress: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => IncidentScreen( // Or your PlaceIncidentFeedScreen
-                    incidentType: MakerType.place,
-                    currentUser: currentUser, // Pass the current user
-                  ),
-                ),
-              );
-            },
+            onLongPress: isLongPressEnabled
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IncidentScreen(
+                          // Or your PlaceIncidentFeedScreen
+                          incidentType: MakerType.place,
+                          currentUser: currentUser, // Pass the current user
+                        ),
+                      ),
+                    );
+                  }
+                : null,
             child: Image.asset(
               'assets/images/logo.png',
               height: 50, // Standardized height

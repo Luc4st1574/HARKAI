@@ -6,9 +6,10 @@ import 'package:harkai/features/home/utils/incidences.dart';
 import 'package:harkai/features/home/utils/markers.dart';
 import 'package:harkai/features/home/widgets/header.dart';
 import 'package:harkai/core/services/location_service.dart';
+import 'package:harkai/features/home/screens/home.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import '../widgets/incident_tile.dart';
-import '../widgets/map_view.dart'; // To show map on tile tap
+import '../widgets/map_view.dart'; 
 
 class IncidentScreen extends StatefulWidget {
   final MakerType incidentType;
@@ -299,7 +300,15 @@ class _IncidentScreenState extends State<IncidentScreen> {
       body: SafeArea( 
         child: Column(
           children: [
-            HomeHeaderWidget(currentUser: widget.currentUser),
+            HomeHeaderWidget(
+              currentUser: widget.currentUser,
+              onLogoTap: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const Home()),
+                    (Route<dynamic> route) => false);
+              },
+              isLongPressEnabled: false,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
               child: Text(

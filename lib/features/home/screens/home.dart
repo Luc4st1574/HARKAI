@@ -278,7 +278,10 @@ class _HomeState extends State<Home> {
       body: SafeArea(
         child: Column(
           children: [
-            HomeHeaderWidget(currentUser: _userSessionManager.currentUser),
+            HomeHeaderWidget(
+              currentUser: _userSessionManager.currentUser,
+              isLongPressEnabled: true,
+            ),
             Expanded(
               child: Container(
                 margin: const EdgeInsets.all(16.0),
