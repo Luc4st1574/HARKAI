@@ -22,6 +22,7 @@ class LoginState extends State<Login> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // To control the loading state
 
   @override
   void dispose() {
@@ -31,7 +32,10 @@ class LoginState extends State<Login> {
   }
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
-    final localizations = AppLocalizations.of(context)!; // Get localizations
+    final localizations = AppLocalizations.of(context)!;
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
     try {
       print('Existing Firebase apps: ${Firebase.apps}');
       if (Firebase.apps.isEmpty) {
@@ -39,7 +43,10 @@ class LoginState extends State<Login> {
       }
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return; // User cancelled the sign-in
+      }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -52,7 +59,7 @@ class LoginState extends State<Login> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.googleSignInSuccess)), // Localized
+        SnackBar(content: Text(localizations.googleSignInSuccess)),
       );
 
       Navigator.pushReplacement(
@@ -61,31 +68,36 @@ class LoginState extends State<Login> {
       );
     } catch (e) {
       print('Error during Google Sign-In: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${localizations.googleSignInErrorPrefix}$e')), // Localized
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${localizations.googleSignInErrorPrefix}$e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _showForgotPasswordModal(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!; // Get localizations
+    final localizations = AppLocalizations.of(context)!;
     final TextEditingController emailController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) { // Use different context name
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFF011935),
           title: Text(
-            localizations.loginForgotPasswordDialogTitle, // Localized
+            localizations.loginForgotPasswordDialogTitle,
             style: const TextStyle(color: Color(0xFF57D463)),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                localizations.loginForgotPasswordDialogContent, // Localized
+                localizations.loginForgotPasswordDialogContent,
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 10),
@@ -93,7 +105,7 @@ class LoginState extends State<Login> {
                 controller: emailController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: localizations.emailHint, // Localized (reused)
+                  hintText: localizations.emailHint,
                   hintStyle: TextStyle(color: Colors.white.withAlpha((0.5 * 255).toInt())),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF57D463)),
@@ -110,10 +122,9 @@ class LoginState extends State<Login> {
             TextButton(
               onPressed: () async {
                 if (emailController.text.trim().isEmpty) {
-                  // Optional: Show a snackbar if email is empty
-                  if (dialogContext.mounted) { // Check mounted status of dialogContext
-                     ScaffoldMessenger.of(dialogContext).showSnackBar( // Use dialogContext for ScaffoldMessenger
-                       SnackBar(content: Text(localizations.emailHint)), // Or a specific "enter email" message
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(content: Text(localizations.emailHint)),
                     );
                   }
                   return;
@@ -122,21 +133,21 @@ class LoginState extends State<Login> {
                   await FirebaseAuth.instance.sendPasswordResetEmail(
                     email: emailController.text.trim(),
                   );
-                  if (!mounted) return; // Check mounted status of LoginState
+                  if (!mounted) return;
 
-                  Navigator.of(dialogContext).pop(); // Use dialogContext to pop
-                  ScaffoldMessenger.of(context).showSnackBar( // Use original context for ScaffoldMessenger
-                    SnackBar(content: Text(localizations.loginPasswordResetEmailSent)), // Localized
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(localizations.loginPasswordResetEmailSent)),
                   );
                 } catch (e) {
-                  if (!mounted) return; // Check mounted status of LoginState
-                   ScaffoldMessenger.of(context).showSnackBar( // Use original context
-                    SnackBar(content: Text('${localizations.commonErrorPrefix}$e')), // Localized
+                  if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${localizations.commonErrorPrefix}$e')),
                   );
                 }
               },
               child: Text(
-                localizations.loginSendButton, // Localized
+                localizations.loginSendButton,
                 style: const TextStyle(color: Colors.green),
               ),
             ),
@@ -147,35 +158,39 @@ class LoginState extends State<Login> {
   }
 
   void _handleLogin(BuildContext context) async {
-    final localizations = AppLocalizations.of(context)!; // Get localizations
+    final localizations = AppLocalizations.of(context)!;
+    if (_isLoading) return;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.loginEmptyFieldsPrompt)), // Localized
+        SnackBar(content: Text(localizations.loginEmptyFieldsPrompt)),
       );
       return;
     }
 
+    setState(() => _isLoading = true);
     try {
       final authService = AuthService();
       await authService.signin(
         email: email,
         password: password,
-        context: context,
+        context: context, localizations: localizations,
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${localizations.loginFailedErrorPrefix}${e.toString()}')), // Localized
-      );
+      // Error is already shown by the toast in AuthService, just catch to stop execution
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!; // Get localizations
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Stack(
@@ -191,7 +206,7 @@ class LoginState extends State<Login> {
                     _buildLogo(),
                     const SizedBox(height: 30),
                     Text(
-                      localizations.loginTitle, // Localized
+                      localizations.loginTitle,
                       style: const TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -201,15 +216,17 @@ class LoginState extends State<Login> {
                     const SizedBox(height: 40),
                     CustomTextField(
                       controller: _emailController,
-                      hintText: localizations.emailHint, // Localized (reused)
+                      hintText: localizations.emailHint,
                       icon: Icons.person,
+                      enabled: !_isLoading, // Disable when loading
                     ),
                     const SizedBox(height: 20),
                     CustomTextField(
                       controller: _passwordController,
-                      hintText: localizations.passwordHint, // Localized (reused)
+                      hintText: localizations.passwordHint,
                       icon: Icons.lock,
                       obscureText: !_isPasswordVisible,
+                      enabled: !_isLoading, // Disable when loading
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -223,18 +240,25 @@ class LoginState extends State<Login> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildForgotPassword(context, localizations), // Pass localizations
+                    _buildForgotPassword(context, localizations),
                     const SizedBox(height: 40),
-                    _buildSignInButton(context, localizations), // Pass localizations
+                    _buildSignInButton(context, localizations),
                     const SizedBox(height: 20),
-                    _buildGoogleSignInButton(context, localizations), // Pass localizations
+                    _buildGoogleSignInButton(context, localizations),
                     const SizedBox(height: 20),
-                    _buildRegisterLink(context, localizations), // Pass localizations
+                    _buildRegisterLink(context, localizations),
                   ],
                 ),
               ),
             ),
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF57D463)),
+              ),
+            ),
         ],
       ),
     );
@@ -263,9 +287,9 @@ class LoginState extends State<Login> {
     return Align(
       alignment: Alignment.centerRight,
       child: GestureDetector(
-        onTap: () => _showForgotPasswordModal(context),
+        onTap: _isLoading ? null : () => _showForgotPasswordModal(context),
         child: Text(
-          localizations.loginForgotPasswordLink, // Localized
+          localizations.loginForgotPasswordLink,
           style: const TextStyle(color: Color(0xFF57D463)),
         ),
       ),
@@ -276,7 +300,7 @@ class LoginState extends State<Login> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _handleLogin(context),
+        onPressed: _isLoading ? null : () => _handleLogin(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF011935),
           padding: const EdgeInsets.symmetric(vertical: 15),
@@ -285,7 +309,7 @@ class LoginState extends State<Login> {
           ),
         ),
         child: Text(
-          localizations.loginSignInButton, // Localized
+          localizations.loginSignInButton,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -300,7 +324,7 @@ class LoginState extends State<Login> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () => _handleGoogleSignIn(context),
+        onPressed: _isLoading ? null : () => _handleGoogleSignIn(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 15),
@@ -313,7 +337,7 @@ class LoginState extends State<Login> {
           height: 24,
         ),
         label: Text(
-          localizations.loginSignInWithGoogleButton, // Localized
+          localizations.loginSignInWithGoogleButton,
           style: const TextStyle(fontSize: 18, color: Colors.black87),
         ),
       ),
@@ -324,16 +348,16 @@ class LoginState extends State<Login> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(localizations.loginDontHaveAccountPrompt), // Localized
+        Text(localizations.loginDontHaveAccountPrompt),
         GestureDetector(
-          onTap: () {
+          onTap: _isLoading ? null : () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Register()),
             );
           },
           child: Text(
-            localizations.registerTitle, // Localized (reused)
+            localizations.registerTitle,
             style: const TextStyle(color: Color(0xFF57D463)),
           ),
         ),
@@ -342,21 +366,22 @@ class LoginState extends State<Login> {
   }
 }
 
-// CustomTextField remains the same, it receives the localized hintText as a parameter
 class CustomTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool obscureText;
   final TextEditingController controller;
   final Widget? suffixIcon;
+  final bool enabled; // New property
 
   const CustomTextField({
     super.key,
-    required this.hintText, // Expects localized string
+    required this.hintText,
     required this.icon,
     required this.controller,
     this.obscureText = false,
     this.suffixIcon,
+    this.enabled = true, // Default to true
   });
 
   @override
@@ -364,10 +389,11 @@ class CustomTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      enabled: enabled, // Apply the enabled state
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: const Color(0xFF57D463)),
-        hintText: hintText, // Displays the localized hint text
+        hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withAlpha((0.5 * 255).toInt())),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFF57D463)),

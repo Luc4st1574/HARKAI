@@ -83,7 +83,7 @@ class ProfileState extends State<Profile> {
                     label: localizations.profileLogoutButton, // Localized
                     onPressed: () async {
                       final authService = AuthService();
-                      await authService.signout(context);
+                      await authService.signout(context, localizations);
                     },
                     localizations: localizations,
                   ),

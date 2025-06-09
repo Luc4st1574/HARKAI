@@ -746,4 +746,35 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingNext => 'Siguiente';
+
+  @override
+  String get authWeakPassword =>
+      'La contraseña proporcionada es demasiado débil.';
+
+  @override
+  String get authEmailInUse =>
+      'La cuenta ya existe para ese correo electrónico.';
+
+  @override
+  String get authInvalidEmail =>
+      'La dirección de correo electrónico no es válida.';
+
+  @override
+  String get authGenericError =>
+      'Ocurrió un error. Por favor, inténtalo de nuevo.';
+
+  @override
+  String get authUserNotFound =>
+      'No se encontró ningún usuario para ese correo electrónico.';
+
+  @override
+  String get authWrongPassword =>
+      'Contraseña incorrecta proporcionada para ese usuario.';
+
+  @override
+  String get authSignOutError =>
+      'Error al cerrar la sesión. Por favor, inténtalo de nuevo.';
+
+  @override
+  String get profileLogoutMessage => 'Se ha cerrado la sesión correctamente.';
 }

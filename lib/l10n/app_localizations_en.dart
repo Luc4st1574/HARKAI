@@ -729,4 +729,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingNext => 'Next';
+
+  @override
+  String get authWeakPassword => 'The password provided is too weak.';
+
+  @override
+  String get authEmailInUse => 'The account already exists for that email.';
+
+  @override
+  String get authInvalidEmail => 'The email address is not valid.';
+
+  @override
+  String get authGenericError => 'An error occurred. Please try again.';
+
+  @override
+  String get authUserNotFound => 'No user found for that email.';
+
+  @override
+  String get authWrongPassword => 'Wrong password provided for that user.';
+
+  @override
+  String get authSignOutError => 'Error signing out. Please try again.';
+
+  @override
+  String get profileLogoutMessage =>
+      'The user has been logged out successfully.';
 }

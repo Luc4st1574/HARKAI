@@ -408,5 +408,13 @@
       "onboardingMapTitle": "Pinpointing Locations",
       "onboardingMapDescription": "To report an incident, first tap on the map to place the target marker precisely where the event is happening. You can also tap the compass icon to center it on your current location.",
       "onboardingGotIt": "Got it!",
-      "onboardingNext": "Next"
+      "onboardingNext": "Next",
+      "authWeakPassword": "The password provided is too weak.",
+      "authEmailInUse": "The account already exists for that email.",
+      "authInvalidEmail": "The email address is not valid.",
+      "authGenericError": "An error occurred. Please try again.",
+      "authUserNotFound": "No user found for that email.",
+      "authWrongPassword": "Wrong password provided for that user.",
+      "authSignOutError": "Error signing out. Please try again.",
+      "profileLogoutMessage": "The user has been logged out successfully."
 }

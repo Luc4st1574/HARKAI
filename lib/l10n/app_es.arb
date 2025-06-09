@@ -397,5 +397,14 @@
     "onboardingMapTitle": "Ubicaciones Precisas",
     "onboardingMapDescription": "Para reportar un incidente, primero toca en el mapa para colocar el marcador de objetivo precisamente donde está ocurriendo el evento. También puedes tocar el ícono de la brújula para centrarlo en tu ubicación actual.",
     "onboardingGotIt": "¡Entendido!",
-    "onboardingNext": "Siguiente"
+    "onboardingNext": "Siguiente",
+    "authWeakPassword": "La contraseña proporcionada es demasiado débil.",
+    "authEmailInUse": "La cuenta ya existe para ese correo electrónico.",
+    "authInvalidEmail": "La dirección de correo electrónico no es válida.",
+    "authGenericError": "Ocurrió un error. Por favor, inténtalo de nuevo.",
+    "authUserNotFound": "No se encontró ningún usuario para ese correo electrónico.",
+    "authWrongPassword": "Contraseña incorrecta proporcionada para ese usuario.",
+    "authSignOutError": "Error al cerrar la sesión. Por favor, inténtalo de nuevo.",
+    "profileLogoutMessage": "Se ha cerrado la sesión correctamente."
+
 }

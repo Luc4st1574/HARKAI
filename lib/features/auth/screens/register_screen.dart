@@ -22,19 +22,24 @@ class RegisterState extends State<Register> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // To control loading state
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
-    // Get localizations instance
     final localizations = AppLocalizations.of(context)!;
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
     try {
       print('Existing Firebase apps: ${Firebase.apps}');
       if (Firebase.apps.isEmpty) {
-        // This error is more for developers, consider if it needs user-facing localization
         throw Exception('Firebase is not initialized. Check main.dart setup.');
       }
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return; // User cancelled
+      }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -56,22 +61,29 @@ class RegisterState extends State<Register> {
       );
     } catch (e) {
       print('Error during Google Sign-In: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${localizations.googleSignInErrorPrefix}$e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${localizations.googleSignInErrorPrefix}$e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _handleEmailSignup(BuildContext context) async {
-    // Get localizations instance
     final localizations = AppLocalizations.of(context)!;
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
     try {
       await AuthService().signup(
         userName: _usernameController.text,
         email: _emailController.text,
         password: _passwordController.text,
-        context: context, // Assuming AuthService might use context for something
+        context: context, localizations: localizations,
       );
 
       if (!mounted) return;
@@ -83,10 +95,11 @@ class RegisterState extends State<Register> {
         MaterialPageRoute(builder: (context) => const Home()),
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${localizations.emailSignupErrorPrefix}$e')),
-      );
+      // Error is displayed by AuthService toast
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -100,7 +113,6 @@ class RegisterState extends State<Register> {
 
   @override
   Widget build(BuildContext context) {
-    // Get localizations instance available in the build method
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -117,7 +129,7 @@ class RegisterState extends State<Register> {
                     _buildLogo(),
                     const SizedBox(height: 30),
                     Text(
-                      localizations.registerTitle, // Localized
+                      localizations.registerTitle,
                       style: const TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -127,21 +139,24 @@ class RegisterState extends State<Register> {
                     const SizedBox(height: 40),
                     CustomTextField(
                       controller: _usernameController,
-                      hintText: localizations.usernameHint, // Localized
+                      hintText: localizations.usernameHint,
                       icon: Icons.person,
+                      enabled: !_isLoading, // Disable when loading
                     ),
                     const SizedBox(height: 25),
                     CustomTextField(
                       controller: _emailController,
-                      hintText: localizations.emailHint, // Localized
+                      hintText: localizations.emailHint,
                       icon: Icons.email,
+                      enabled: !_isLoading, // Disable when loading
                     ),
                     const SizedBox(height: 25),
                     CustomTextField(
                       controller: _passwordController,
-                      hintText: localizations.passwordHint, // Localized
+                      hintText: localizations.passwordHint,
                       icon: Icons.lock,
                       obscureText: !_isPasswordVisible,
+                      enabled: !_isLoading, // Disable when loading
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -155,16 +170,23 @@ class RegisterState extends State<Register> {
                       ),
                     ),
                     const SizedBox(height: 45),
-                    _buildSignupButton(context, localizations), // Pass localizations
+                    _buildSignupButton(context, localizations),
                     const SizedBox(height: 25),
-                    _buildGoogleSignupButton(context, localizations), // Pass localizations
+                    _buildGoogleSignupButton(context, localizations),
                     const SizedBox(height: 30),
-                    _buildSignInLink(context, localizations), // Pass localizations
+                    _buildSignInLink(context, localizations),
                   ],
                 ),
               ),
             ),
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF57D463)),
+              ),
+            ),
         ],
       ),
     );
@@ -193,7 +215,7 @@ class RegisterState extends State<Register> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () async => await _handleEmailSignup(context),
+        onPressed: _isLoading ? null : () => _handleEmailSignup(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF011935),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
@@ -202,7 +224,7 @@ class RegisterState extends State<Register> {
           ),
         ),
         child: Text(
-          localizations.signUpButton, // Localized
+          localizations.signUpButton,
           style: const TextStyle(fontSize: 18, color: Color(0xFF57D463)),
         ),
       ),
@@ -213,7 +235,7 @@ class RegisterState extends State<Register> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () => _handleGoogleSignIn(context),
+        onPressed: _isLoading ? null : () => _handleGoogleSignIn(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
@@ -226,7 +248,7 @@ class RegisterState extends State<Register> {
           height: 24,
         ),
         label: Text(
-          localizations.signUpWithGoogleButton, // Localized
+          localizations.signUpWithGoogleButton,
           style: const TextStyle(fontSize: 18, color: Colors.black87),
         ),
       ),
@@ -237,13 +259,13 @@ class RegisterState extends State<Register> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(localizations.alreadyHaveAccountPrompt), // Localized
+        Text(localizations.alreadyHaveAccountPrompt),
         GestureDetector(
-          onTap: () {
-            Navigator.pop(context); // Assuming this screen was pushed onto a Login screen
+          onTap: _isLoading ? null : () {
+            Navigator.pop(context);
           },
           child: Text(
-            localizations.logInLink, // Localized
+            localizations.logInLink,
             style: const TextStyle(color: Color(0xFF57D463)),
           ),
         ),
@@ -252,21 +274,22 @@ class RegisterState extends State<Register> {
   }
 }
 
-// CustomTextField remains the same, it receives the localized hintText as a parameter
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
-  final String hintText; // This will be the localized string
+  final String hintText;
   final IconData icon;
   final bool obscureText;
   final Widget? suffixIcon;
+  final bool enabled; // New property
 
   const CustomTextField({
     super.key,
     required this.controller,
-    required this.hintText, // Expects localized string
+    required this.hintText,
     required this.icon,
     this.obscureText = false,
     this.suffixIcon,
+    this.enabled = true, // Default to true
   });
 
   @override
@@ -274,10 +297,11 @@ class CustomTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      enabled: enabled, // Apply the enabled state
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: const Color(0xFF57D463)),
-        hintText: hintText, // Displays the localized hint text
+        hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withAlpha((0.5 * 255).toInt())),
         contentPadding: const EdgeInsets.symmetric(vertical: 15),
         enabledBorder: const UnderlineInputBorder(
