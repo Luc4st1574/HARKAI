@@ -777,4 +777,63 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileLogoutMessage => 'Se ha cerrado la sesión correctamente.';
+
+  @override
+  String get notifFireNearbyTitle => 'Incendio Cercano';
+
+  @override
+  String get notifFireNearbyBody =>
+      'Advertencia, hay un incendio cerca. Por favor, ten cuidado.';
+
+  @override
+  String get notifFireDangerTitle => 'Peligro: Incendio Adelante';
+
+  @override
+  String get notifFireDangerBody =>
+      'Te estás acercando mucho al incendio. Evita la zona por tu seguridad.';
+
+  @override
+  String get notifTheftAlertTitle => 'Alerta de Robo';
+
+  @override
+  String get notifTheftAlertBody =>
+      'Se ha reportado un robo cerca. Por favor, mantente alerta.';
+
+  @override
+  String get notifTheftSecurityTitle => 'Alerta de Seguridad';
+
+  @override
+  String get notifTheftSecurityBody =>
+      'Estás muy cerca de un robo reportado. Evita la zona y mantente a salvo.';
+
+  @override
+  String get notifGenericIncidentTitle => 'Incidente Cercano';
+
+  @override
+  String get notifGenericIncidentBody =>
+      'Echa un vistazo y ve si puedes ayudar.';
+
+  @override
+  String get notifPlaceDiscoveryTitle => 'Descubre un Nuevo Lugar';
+
+  @override
+  String notifPlaceDiscoveryBody(String placeName) {
+    return '¡Oye, estás cerca de $placeName! Creemos que deberías echarle un vistazo.';
+  }
+
+  @override
+  String get notifPlaceAlmostThereTitle => '¡Ya Casi Llegas!';
+
+  @override
+  String notifPlaceAlmostThereBody(String placeName) {
+    return 'Te estás acercando a $placeName. ¡Disfruta tu visita!';
+  }
+
+  @override
+  String get notifPlaceWelcomeTitle => '¡Bienvenido!';
+
+  @override
+  String notifPlaceWelcomeBody(String placeName) {
+    return 'Nos alegra que hayas venido a $placeName. ¡Esperamos que disfrutes tu estancia aquí!';
+  }
 }

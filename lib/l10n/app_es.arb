@@ -405,6 +405,22 @@
     "authUserNotFound": "No se encontró ningún usuario para ese correo electrónico.",
     "authWrongPassword": "Contraseña incorrecta proporcionada para ese usuario.",
     "authSignOutError": "Error al cerrar la sesión. Por favor, inténtalo de nuevo.",
-    "profileLogoutMessage": "Se ha cerrado la sesión correctamente."
+    "profileLogoutMessage": "Se ha cerrado la sesión correctamente.",
+    "notifFireNearbyTitle": "Incendio Cercano",
+    "notifFireNearbyBody": "Advertencia, hay un incendio cerca. Por favor, ten cuidado.",
+    "notifFireDangerTitle": "Peligro: Incendio Adelante",
+    "notifFireDangerBody": "Te estás acercando mucho al incendio. Evita la zona por tu seguridad.",
+    "notifTheftAlertTitle": "Alerta de Robo",
+    "notifTheftAlertBody": "Se ha reportado un robo cerca. Por favor, mantente alerta.",
+    "notifTheftSecurityTitle": "Alerta de Seguridad",
+    "notifTheftSecurityBody": "Estás muy cerca de un robo reportado. Evita la zona y mantente a salvo.",
+    "notifGenericIncidentTitle": "Incidente Cercano",
+    "notifGenericIncidentBody": "Echa un vistazo y ve si puedes ayudar.",
+    "notifPlaceDiscoveryTitle": "Descubre un Nuevo Lugar",
+    "notifPlaceDiscoveryBody": "¡Oye, estás cerca de {placeName}! Creemos que deberías echarle un vistazo.",
+    "notifPlaceAlmostThereTitle": "¡Ya Casi Llegas!",
+    "notifPlaceAlmostThereBody": "Te estás acercando a {placeName}. ¡Disfruta tu visita!",
+    "notifPlaceWelcomeTitle": "¡Bienvenido!",
+    "notifPlaceWelcomeBody": "Nos alegra que hayas venido a {placeName}. ¡Esperamos que disfrutes tu estancia aquí!"
 
 }

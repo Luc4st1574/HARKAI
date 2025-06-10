@@ -41,15 +41,16 @@ class _HomeState extends State<Home> {
   final FirestoreService _firestoreService = FirestoreService();
   final PhoneService _phoneService = PhoneService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final SpeechPermissionService _speechPermissionService = SpeechPermissionService();
+  final SpeechPermissionService _speechPermissionService =
+      SpeechPermissionService();
 
   late final MarkerManager _dataEventManager;
   late final MapLocationManager _mapLocationManager;
   late final UserSessionManager _userSessionManager;
+
   GoogleMapController? _mapController;
   AppLocalizations? _localizations;
 
-  // New state variable to control CustomScrollView physics
   bool _isScrollViewLocked = false;
 
   @override
@@ -60,7 +61,7 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_localizations == null) { 
+    if (_localizations == null) {
       _localizations = AppLocalizations.of(context)!;
 
       _userSessionManager = UserSessionManager(
@@ -99,18 +100,19 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _initializeScreenData() async {
-    if (_localizations == null) return; 
+    if (_localizations == null) return;
 
     _userSessionManager.initialize();
-    await _mapLocationManager.initializeManager(_localizations!); 
+    await _mapLocationManager.initializeManager(_localizations!);
     await _dataEventManager.initialize(_localizations!);
-    bool speechReady = await _speechPermissionService.ensurePermissionsAndInitializeService(openSettingsOnError: true);
+    bool speechReady = await _speechPermissionService
+        .ensurePermissionsAndInitializeService(openSettingsOnError: true);
     debugPrint("Home: Speech service ready: $speechReady");
   }
 
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
-    final isFirstLaunch = prefs.getBool('is_first_launch') ?? false;
+    final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
 
     if (isFirstLaunch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,13 +121,12 @@ class _HomeState extends State<Home> {
           barrierDismissible: false,
           builder: (BuildContext context) => const OnboardingTutorial(),
         ).then((_) {
-          // After the tutorial is dismissed, set the flag to false
           prefs.setBool('is_first_launch', false);
         });
       });
     }
   }
-  
+
   @override
   void dispose() {
     _userSessionManager.dispose();
@@ -133,25 +134,6 @@ class _HomeState extends State<Home> {
     _dataEventManager.dispose();
     _mapController?.dispose();
     super.dispose();
-  }
-
-  // Methods to lock and unlock the ScrollView
-  void _lockScrollView() {
-    if (mounted && !_isScrollViewLocked) {
-      setState(() {
-        _isScrollViewLocked = true;
-      });
-      debugPrint("Home Screen: ScrollView LOCKED for map interaction.");
-    }
-  }
-
-  void _unlockScrollView() {
-    if (mounted && _isScrollViewLocked) {
-      setState(() {
-        _isScrollViewLocked = false;
-      });
-      debugPrint("Home Screen: ScrollView UNLOCKED.");
-    }
   }
 
   Set<Marker> _prepareMapMarkers() {
@@ -163,7 +145,8 @@ class _HomeState extends State<Home> {
               onImageMarkerTapped: (tappedIncidence) {
                 showDialog(
                   context: context,
-                  builder: (_) => IncidentImageDisplayModal(incidence: tappedIncidence),
+                  builder: (_) =>
+                      IncidentImageDisplayModal(incidence: tappedIncidence),
                 );
               },
             ))
@@ -205,7 +188,7 @@ class _HomeState extends State<Home> {
           markerId: const MarkerId('target_location_pin_big_map'),
           position: LatLng(targetLat, targetLng),
           icon: targetPin,
-          infoWindow: InfoWindow(title: _localizations!.targetLocationNotSet), 
+          infoWindow: InfoWindow(title: _localizations!.targetLocationNotSet),
           anchor: const Offset(0.5, 0.4),
         ),
       );
@@ -237,10 +220,12 @@ class _HomeState extends State<Home> {
       targetLongitude: _mapLocationManager.targetLongitude,
     );
   }
-  
+
   void _handleIncidentButtonLongPressed(MakerType markerType) {
-    if (!mounted || _userSessionManager.currentUser == null || _localizations == null) return;
-    
+    if (!mounted ||_userSessionManager.currentUser == null ||_localizations == null) {
+      return;
+    }
+
     debugPrint("Button long pressed: ${markerType.name}. Navigating to IncidentScreen.");
     Navigator.push(
       context,
@@ -270,7 +255,7 @@ class _HomeState extends State<Home> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final String? currentCity = _mapLocationManager.currentCityName; 
+    final String? currentCity = _mapLocationManager.currentCityName;
     final LatLng? initialMapCenter = _mapLocationManager.initialCameraPosition;
 
     return Scaffold(
@@ -299,14 +284,17 @@ class _HomeState extends State<Home> {
                 child: CustomScrollView(
                   physics: _isScrollViewLocked
                       ? const NeverScrollableScrollPhysics()
-                      : const AlwaysScrollableScrollPhysics(), // Or your preferred default
+                      : const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          LocationInfoWidget(locationText: _mapLocationManager.getLocalizedLocationText(_localizations!)),
+                          LocationInfoWidget(
+                              locationText: _mapLocationManager
+                                  .getLocalizedLocationText(_localizations!)),
                           MapDisplayWidget(
-                            key: ValueKey('mapDisplay_${_mapLocationManager.initialCameraPosition?.latitude}_${_mapLocationManager.initialCameraPosition?.longitude}'),
+                            key: ValueKey(
+                                'mapDisplay_${_mapLocationManager.initialCameraPosition?.latitude}_${_mapLocationManager.initialCameraPosition?.longitude}'),
                             initialLatitude: initialMapCenter?.latitude,
                             initialLongitude: initialMapCenter?.longitude,
                             markers: _getDisplayMarkers(),
@@ -314,11 +302,12 @@ class _HomeState extends State<Home> {
                             selectedMarker: _dataEventManager.selectedIncident,
                             onMapTappedWithMarker: (LatLng position) {
                               _unlockScrollView();
-                              _mapLocationManager.handleMapTapped(position, context);
+                              _mapLocationManager.handleMapTapped(
+                                  position, context);
                             },
                             onMapLongPressed: (cameraPosition) {
-                                _unlockScrollView(); // Also unlock on long press if needed
-                                _mapLocationManager.handleMapLongPressed(
+                              _unlockScrollView();
+                              _mapLocationManager.handleMapLongPressed(
                                 context: context,
                                 currentCameraPosition: cameraPosition,
                                 markersForBigMap: _getMarkersForBigMapModal(),
@@ -327,11 +316,11 @@ class _HomeState extends State<Home> {
                             },
                             onMapCreated: _mapLocationManager.onMapCreated,
                             onResetTargetPressed: () {
-                              _unlockScrollView(); // Unlock if reset button is outside map gestures
-                              _mapLocationManager.resetTargetToUserLocation(context);
+                              _unlockScrollView();
+                              _mapLocationManager
+                                  .resetTargetToUserLocation(context);
                             },
                             onCameraMove: _mapLocationManager.handleCameraMove,
-                            // Pass the lock/unlock callbacks
                             onMapInteractionStart: _lockScrollView,
                             onMapInteractionEnd: _unlockScrollView,
                           ),
@@ -344,13 +333,13 @@ class _HomeState extends State<Home> {
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: (MakerType type) {
-                            _unlockScrollView(); // Unlock when incident buttons are pressed
+                            _unlockScrollView();
                             _handleIncidentButtonPressed(type);
                           },
                           onIncidentButtonLongPressed: (MakerType type) {
-                            _unlockScrollView(); // Unlock when incident buttons are long-pressed
+                            _unlockScrollView();
                             _handleIncidentButtonLongPressed(type);
-                          }, 
+                          },
                         ),
                       ),
                     ),
@@ -360,24 +349,27 @@ class _HomeState extends State<Home> {
                         alignment: Alignment.bottomCenter,
                         child: BottomActionButtonsWidget(
                           currentServiceName: getCallButtonServiceName(
-                              _dataEventManager.selectedIncident, _localizations!),
+                              _dataEventManager.selectedIncident,
+                              _localizations!),
                           onEmergencyPressed: () {
-                            _unlockScrollView(); // Unlock
+                            _unlockScrollView();
                             _handleEmergencyButtonPressed();
                           },
                           onLongPressEmergency: () {
-                            _unlockScrollView(); // Unlock
-                            _handleIncidentButtonLongPressed(MakerType.emergency);
+                            _unlockScrollView();
+                            _handleIncidentButtonLongPressed(
+                                MakerType.emergency);
                           },
                           onPhonePressed: () {
-                            _unlockScrollView(); // Unlock
+                            _unlockScrollView();
                             if (!mounted || _localizations == null) return;
                             _userSessionManager.makePhoneCall(
                               context: context,
                               localizations: _localizations!,
-                              selectedIncident: _dataEventManager.selectedIncident,
-                              cityName: currentCity, 
-                              firestoreService: _firestoreService, 
+                              selectedIncident:
+                                  _dataEventManager.selectedIncident,
+                              cityName: currentCity,
+                              firestoreService: _firestoreService,
                             );
                           },
                         ),
@@ -391,5 +383,23 @@ class _HomeState extends State<Home> {
         ),
       ),
     );
+  }
+
+  void _lockScrollView() {
+    if (mounted && !_isScrollViewLocked) {
+      setState(() {
+        _isScrollViewLocked = true;
+      });
+      debugPrint("Home Screen: ScrollView LOCKED for map interaction.");
+    }
+  }
+
+  void _unlockScrollView() {
+    if (mounted && _isScrollViewLocked) {
+      setState(() {
+        _isScrollViewLocked = false;
+      });
+      debugPrint("Home Screen: ScrollView UNLOCKED.");
+    }
   }
 }

@@ -7,13 +7,13 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'core/config/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/splash/screens/splash_screen.dart';
-
+import 'package:harkai/core/services/background_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeService();
   // The problematic line `GoogleMap.useAndroidViewSurface = false;` has been removed.
 
   final List<Locale> deviceLocalesList = WidgetsBinding.instance.platformDispatcher.locales;

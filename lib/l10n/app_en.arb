@@ -416,5 +416,42 @@
       "authUserNotFound": "No user found for that email.",
       "authWrongPassword": "Wrong password provided for that user.",
       "authSignOutError": "Error signing out. Please try again.",
-      "profileLogoutMessage": "The user has been logged out successfully."
+      "profileLogoutMessage": "The user has been logged out successfully.",
+      "notifFireNearbyTitle": "Fire Nearby",
+      "notifFireNearbyBody": "Warning, there is a fire nearby. Please be cautious.",
+      "notifFireDangerTitle": "Danger: Fire Ahead",
+      "notifFireDangerBody": "You are getting very close to the fire. Avoid the area for your safety.",
+      "notifTheftAlertTitle": "Theft Alert",
+      "notifTheftAlertBody": "A theft has been reported nearby. Please be aware of your surroundings.",
+      "notifTheftSecurityTitle": "Security Alert",
+      "notifTheftSecurityBody": "You are very close to a reported theft. Avoid the area and stay safe.",
+      "notifGenericIncidentTitle": "Incident Nearby",
+      "notifGenericIncidentBody": "Take a look around and see if you can help.",
+      "notifPlaceDiscoveryTitle": "Discover a New Place",
+      "notifPlaceDiscoveryBody": "Hey, you are near {placeName}! We think you should check it out.",
+      "@notifPlaceDiscoveryBody": {
+          "placeholders": {
+              "placeName": {
+                  "type": "String"
+              }
+          }
+      },
+      "notifPlaceAlmostThereTitle": "You're Almost There!",
+      "notifPlaceAlmostThereBody": "You're getting closer to {placeName}. Enjoy your visit!",
+      "@notifPlaceAlmostThereBody": {
+          "placeholders": {
+              "placeName": {
+                  "type": "String"
+              }
+          }
+      },
+      "notifPlaceWelcomeTitle": "Welcome!",
+      "notifPlaceWelcomeBody": "We are glad you came to {placeName}. We hope you enjoy your time here!",
+      "@notifPlaceWelcomeBody": {
+          "placeholders": {
+              "placeName": {
+                  "type": "String"
+              }
+          }
+      }
 }

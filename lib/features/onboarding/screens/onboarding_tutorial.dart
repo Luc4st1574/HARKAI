@@ -39,10 +39,13 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
       backgroundColor: Colors.white,
       child: Container(
         padding: const EdgeInsets.all(20.0),
-        height: 520,
+        // REMOVED fixed height to allow the dialog to resize based on content.
+        // height: 520, 
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Allows the column to take minimum vertical space
           children: [
-            Expanded(
+            // Flexible allows the PageView to take up available space without overflowing
+            Flexible(
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (int page) {
@@ -53,6 +56,7 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
                 children: tutorialPages,
               ),
             ),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -65,7 +69,7 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF001F3F), // Using a dark color for the button
+                  backgroundColor: const Color(0xFF001F3F),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -113,24 +117,28 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
     required String title,
     required String description,
   }) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Image.asset(imagePath, height: 150, fit: BoxFit.contain),
-        const SizedBox(height: 30),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          description,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16, height: 1.4, color: Colors.black54),
-        ),
-      ],
+    // Each page's content is wrapped in a SingleChildScrollView
+    // to allow scrolling if the text is too long for the screen.
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset(imagePath, height: 150, fit: BoxFit.contain),
+          const SizedBox(height: 30),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, height: 1.4, color: Colors.black54),
+          ),
+        ],
+      ),
     );
   }
 }

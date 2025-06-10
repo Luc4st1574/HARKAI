@@ -44,6 +44,8 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   http: ^1.4.0
   pay: ^3.2.1
+  flutter_background_service: ^5.1.0
+  flutter_local_notifications: ^19.2.1
 
 dev_dependencies:
   flutter_test:

@@ -754,4 +754,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileLogoutMessage =>
       'The user has been logged out successfully.';
+
+  @override
+  String get notifFireNearbyTitle => 'Fire Nearby';
+
+  @override
+  String get notifFireNearbyBody =>
+      'Warning, there is a fire nearby. Please be cautious.';
+
+  @override
+  String get notifFireDangerTitle => 'Danger: Fire Ahead';
+
+  @override
+  String get notifFireDangerBody =>
+      'You are getting very close to the fire. Avoid the area for your safety.';
+
+  @override
+  String get notifTheftAlertTitle => 'Theft Alert';
+
+  @override
+  String get notifTheftAlertBody =>
+      'A theft has been reported nearby. Please be aware of your surroundings.';
+
+  @override
+  String get notifTheftSecurityTitle => 'Security Alert';
+
+  @override
+  String get notifTheftSecurityBody =>
+      'You are very close to a reported theft. Avoid the area and stay safe.';
+
+  @override
+  String get notifGenericIncidentTitle => 'Incident Nearby';
+
+  @override
+  String get notifGenericIncidentBody =>
+      'Take a look around and see if you can help.';
+
+  @override
+  String get notifPlaceDiscoveryTitle => 'Discover a New Place';
+
+  @override
+  String notifPlaceDiscoveryBody(String placeName) {
+    return 'Hey, you are near $placeName! We think you should check it out.';
+  }
+
+  @override
+  String get notifPlaceAlmostThereTitle => 'You\'re Almost There!';
+
+  @override
+  String notifPlaceAlmostThereBody(String placeName) {
+    return 'You\'re getting closer to $placeName. Enjoy your visit!';
+  }
+
+  @override
+  String get notifPlaceWelcomeTitle => 'Welcome!';
+
+  @override
+  String notifPlaceWelcomeBody(String placeName) {
+    return 'We are glad you came to $placeName. We hope you enjoy your time here!';
+  }
 }

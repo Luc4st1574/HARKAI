@@ -1361,6 +1361,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The user has been logged out successfully.'**
   String get profileLogoutMessage;
+
+  /// No description provided for @notifFireNearbyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Nearby'**
+  String get notifFireNearbyTitle;
+
+  /// No description provided for @notifFireNearbyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning, there is a fire nearby. Please be cautious.'**
+  String get notifFireNearbyBody;
+
+  /// No description provided for @notifFireDangerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger: Fire Ahead'**
+  String get notifFireDangerTitle;
+
+  /// No description provided for @notifFireDangerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are getting very close to the fire. Avoid the area for your safety.'**
+  String get notifFireDangerBody;
+
+  /// No description provided for @notifTheftAlertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theft Alert'**
+  String get notifTheftAlertTitle;
+
+  /// No description provided for @notifTheftAlertBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A theft has been reported nearby. Please be aware of your surroundings.'**
+  String get notifTheftAlertBody;
+
+  /// No description provided for @notifTheftSecurityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security Alert'**
+  String get notifTheftSecurityTitle;
+
+  /// No description provided for @notifTheftSecurityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are very close to a reported theft. Avoid the area and stay safe.'**
+  String get notifTheftSecurityBody;
+
+  /// No description provided for @notifGenericIncidentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Incident Nearby'**
+  String get notifGenericIncidentTitle;
+
+  /// No description provided for @notifGenericIncidentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a look around and see if you can help.'**
+  String get notifGenericIncidentBody;
+
+  /// No description provided for @notifPlaceDiscoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover a New Place'**
+  String get notifPlaceDiscoveryTitle;
+
+  /// No description provided for @notifPlaceDiscoveryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Hey, you are near {placeName}! We think you should check it out.'**
+  String notifPlaceDiscoveryBody(String placeName);
+
+  /// No description provided for @notifPlaceAlmostThereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re Almost There!'**
+  String get notifPlaceAlmostThereTitle;
+
+  /// No description provided for @notifPlaceAlmostThereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re getting closer to {placeName}. Enjoy your visit!'**
+  String notifPlaceAlmostThereBody(String placeName);
+
+  /// No description provided for @notifPlaceWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome!'**
+  String get notifPlaceWelcomeTitle;
+
+  /// No description provided for @notifPlaceWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We are glad you came to {placeName}. We hope you enjoy your time here!'**
+  String notifPlaceWelcomeBody(String placeName);
 }
 
 class _AppLocalizationsDelegate

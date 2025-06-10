@@ -36,31 +36,25 @@ class LocationService {
   /// Requests location permission from the user if not already granted.
   Future<bool> requestLocationPermission({bool openSettingsOnError = false}) async {
     print("Requesting location permission...");
-    var status = await perm_handler.Permission.locationWhenInUse.status;
+    var status = await perm_handler.Permission.location.status; // Check general location status
     if (status.isGranted) {
       print("Location permission already granted.");
       return true;
     }
-    if (status.isDenied || status.isRestricted || status.isLimited) {
-      print("Location permission is denied/restricted/limited. Requesting...");
-      status = await perm_handler.Permission.locationWhenInUse.request();
-      if (status.isGranted) {
-        print("Location permission granted after request.");
-        return true;
-      } else {
-        print("Location permission denied after request.");
-        return false;
-      }
-    }
-    // If permanently denied or other states, permission cannot be requested here.
-    if (status.isPermanentlyDenied) {
-      print("Location permission is permanently denied.");
-      if (openSettingsOnError) {
-        print("Attempting to open app settings for location permission...");
+
+    // Request "always" permission
+    status = await perm_handler.Permission.locationAlways.request();
+
+    if (status.isGranted) {
+      print("Location 'always' permission granted.");
+      return true;
+    } else {
+      print("Location 'always' permission denied.");
+      if (status.isPermanentlyDenied && openSettingsOnError) {
         await perm_handler.openAppSettings();
       }
+      return false;
     }
-    return false;
   }
 
   /// Determines the current position of the device.
