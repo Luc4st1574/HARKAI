@@ -665,13 +665,13 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalStatusSendingAudioToHarki.
   ///
   /// In en, this message translates to:
-  /// **'Harki Analyzing Audio...'**
+  /// **'Harki Analyzing Description...'**
   String get incidentModalStatusSendingAudioToHarki;
 
   /// No description provided for @incidentModalStatusConfirmAudioDescription.
   ///
   /// In en, this message translates to:
-  /// **'Confirm Audio Description:'**
+  /// **'Confirm Description:'**
   String get incidentModalStatusConfirmAudioDescription;
 
   /// No description provided for @incidentModalStatusStep2AddImage.
@@ -943,7 +943,7 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalButtonConfirmAudioAndProceed.
   ///
   /// In en, this message translates to:
-  /// **'Confirm Audio & Proceed'**
+  /// **'Confirm & Proceed'**
   String get incidentModalButtonConfirmAudioAndProceed;
 
   /// No description provided for @incidentModalButtonRerecordAudio.

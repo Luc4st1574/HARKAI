@@ -321,11 +321,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get incidentModalStatusSendingAudioToHarki =>
-      'Harki Analyzing Audio...';
+      'Harki Analyzing Description...';
 
   @override
   String get incidentModalStatusConfirmAudioDescription =>
-      'Confirm Audio Description:';
+      'Confirm Description:';
 
   @override
   String get incidentModalStatusStep2AddImage => 'Step 2: Add Image (Optional)';
@@ -501,8 +501,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incidentModalButtonSendAudioToHarki => 'Send Audio to Harki';
 
   @override
-  String get incidentModalButtonConfirmAudioAndProceed =>
-      'Confirm Audio & Proceed';
+  String get incidentModalButtonConfirmAudioAndProceed => 'Confirm & Proceed';
 
   @override
   String get incidentModalButtonRerecordAudio => 'Re-record Audio';

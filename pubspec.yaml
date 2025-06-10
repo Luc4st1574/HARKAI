@@ -79,5 +79,5 @@ flutter:
   - assets/images/tap_position_marker.png
   - assets/images/place_icon.png
   - assets/images/incident_buttons.jpg
-  - assets/google_pay_config.json
+  - google_pay_config.json
   - .env
