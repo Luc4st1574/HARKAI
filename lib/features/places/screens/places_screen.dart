@@ -9,7 +9,7 @@ import 'package:harkai/l10n/app_localizations.dart';
 import 'package:harkai/core/services/location_service.dart';
 import 'package:harkai/core/services/phone_service.dart';
 
-// Utils & Managers (from home feature, ensure paths are correct)
+// Utils & Managers (from home feature)
 import 'package:harkai/features/home/utils/incidences.dart';
 import 'package:harkai/features/home/utils/markers.dart';
 import 'package:harkai/features/home/managers/marker_manager.dart';
@@ -20,13 +20,11 @@ import 'package:harkai/features/home/managers/user_session_manager.dart';
 import 'package:harkai/features/home/widgets/header.dart';
 import 'package:harkai/features/home/widgets/map.dart';
 
-// Modals (from home feature - to be adapted)
+// Modals & Screens
 import 'package:harkai/features/home/modals/incident_description.dart';
 import 'package:harkai/features/home/modals/incident_image.dart';
 import 'package:harkai/features/home/screens/home.dart';
 import 'package:harkai/features/places/screens/izipay_payment_screen.dart';
-
-// Incident Feed Screen (reused)
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
 
 class PlacesScreen extends StatefulWidget {
@@ -40,7 +38,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
   final LocationService _locationService = LocationService();
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  // final PaymentService _paymentService = PaymentService(); // Old service removed
 
   late final MarkerManager _markerManager;
   late final MapLocationManager _mapLocationManager;
@@ -109,6 +106,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Set<Marker> _getDisplayMarkers() {
     if (_localizations == null) return {};
     Set<Marker> displayMarkers = _markerManager.incidences
+        .where((incidence) => incidence.type == MakerType.place) // Only show place markers
         .map((incidence) => createMarkerFromIncidence(
               incidence,
               _localizations!,
@@ -120,6 +118,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
               },
             ))
         .toSet();
+        
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -139,6 +138,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Set<Circle> _getCirclesForDisplay() {
     if (_localizations == null) return {};
     return _markerManager.incidences
+        .where((incidence) => incidence.type == MakerType.place) // Only show circles for places
         .map((incidence) => createCircleFromIncidence(incidence, _localizations!))
         .toSet();
   }
@@ -164,7 +164,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final paymentResult = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => const IzipayPaymentScreen(amount: 1.00),
+        builder: (context) => const IzipayPaymentScreen(amount: 1.00), // S/ 1.00 charge
       ),
     );
 
