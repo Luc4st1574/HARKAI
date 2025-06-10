@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:harkai/l10n/app_localizations.dart';
+import 'package:pay/pay.dart';
 
 // Services
 import 'package:harkai/core/services/location_service.dart';
@@ -24,7 +25,6 @@ import 'package:harkai/features/home/widgets/map.dart';
 import 'package:harkai/features/home/modals/incident_description.dart';
 import 'package:harkai/features/home/modals/incident_image.dart';
 import 'package:harkai/features/home/screens/home.dart';
-import 'package:harkai/features/places/screens/izipay_payment_screen.dart';
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
 
 class PlacesScreen extends StatefulWidget {
@@ -47,10 +47,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
   User? _currentUser;
 
   bool _isAddingPlace = false;
+  
+  // *** NEW: Future to hold the loaded payment configuration ***
+  late final Future<PaymentConfiguration> _googlePayConfigFuture;
 
   @override
   void initState() {
     super.initState();
+    // *** NEW: Initialize the future in initState ***
+    _googlePayConfigFuture =
+        PaymentConfiguration.fromAsset('assets/google_pay_config.json');
   }
 
   @override
@@ -118,7 +124,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
               },
             ))
         .toSet();
-        
+
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
@@ -143,7 +149,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         .toSet();
   }
 
-  // *** THIS IS THE MAIN MODIFIED FUNCTION ***
+  // *** UPDATED: This is the fully corrected method ***
   Future<void> _handleAddPlaceButtonPressed() async {
     if (_localizations == null || _currentUser == null) return;
 
@@ -160,22 +166,64 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (!mounted) return;
     setState(() => _isAddingPlace = true);
 
-    // Navigate to the payment screen and wait for the result
-    final paymentResult = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const IzipayPaymentScreen(amount: 1.00), // S/ 1.00 charge
+    final paymentItems = [
+      const PaymentItem(
+        label: 'Total',
+        amount: '1.00',
+        status: PaymentItemStatus.final_price,
+      )
+    ];
+
+    // Show the payment dialog
+    final paymentResult = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pay with Google Pay'),
+        content: FutureBuilder<PaymentConfiguration>(
+          future: _googlePayConfigFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.hasData) {
+                return GooglePayButton(
+                  paymentConfiguration: snapshot.data!,
+                  paymentItems: paymentItems,
+                  onPaymentResult: (Map<String, dynamic> result) {
+                    // Assuming the payment is successful if this callback is fired
+                    Navigator.pop(context, true);
+                  },
+                  loadingIndicator: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  onError: (error) {
+                    debugPrint("Google Pay Error: $error");
+                    Navigator.pop(context, false);
+                  },
+                );
+              } else {
+                return const Text("Error loading payment configuration.");
+              }
+            }
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          )
+        ],
       ),
     );
 
-    if (paymentResult == true) { // Payment was successful
+    if (paymentResult == true) {
+      // Payment was successful
       if (!mounted) {
         setState(() => _isAddingPlace = false);
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_localizations!.paymentSuccessfulMessage)),
-        );
+        SnackBar(content: Text(_localizations!.paymentSuccessfulMessage)),
+      );
       // Now, proceed to the incident description dialog
       final result = await showIncidentVoiceDescriptionDialog(
         context: context,
@@ -205,14 +253,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
           }
         }
       }
-    } else { // Payment failed or was cancelled
+    } else {
+      // Payment failed or was cancelled
       if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(_localizations!.paymentFailedMessage)),
-            );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_localizations!.paymentFailedMessage)),
+        );
       }
     }
-    
+
     if (mounted) setState(() => _isAddingPlace = false);
   }
 
@@ -272,7 +321,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     const SizedBox(height: 16.0),
                     Expanded(
                       child: MapDisplayWidget(
-                        key: ValueKey('mapDisplay_places_${initialMapCenter?.latitude}_${initialMapCenter?.longitude}'),
+                        key: ValueKey(
+                            'mapDisplay_places_${initialMapCenter?.latitude}_${initialMapCenter?.longitude}'),
                         initialLatitude: initialMapCenter?.latitude,
                         initialLongitude: initialMapCenter?.longitude,
                         markers: _getDisplayMarkers(),
@@ -282,19 +332,21 @@ class _PlacesScreenState extends State<PlacesScreen> {
                           _mapLocationManager.handleMapTapped(position, context);
                         },
                         onMapCreated: _mapLocationManager.onMapCreated,
-                        onResetTargetPressed: () => _mapLocationManager.resetTargetToUserLocation(context),
+                        onResetTargetPressed: () =>
+                            _mapLocationManager.resetTargetToUserLocation(context),
                         onCameraMove: _mapLocationManager.handleCameraMove,
                         onMapLongPressed: (cameraPosition) =>
-                                _mapLocationManager.handleMapLongPressed(
-                              context: context,
-                              currentCameraPosition: cameraPosition,
-                              markersForBigMap: _getDisplayMarkers(),
-                              circlesForBigMap: _getCirclesForDisplay(),
-                            ),
+                            _mapLocationManager.handleMapLongPressed(
+                          context: context,
+                          currentCameraPosition: cameraPosition,
+                          markersForBigMap: _getDisplayMarkers(),
+                          circlesForBigMap: _getCirclesForDisplay(),
+                        ),
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16.0, horizontal: 20.0),
                       child: _isAddingPlace
                           ? const Center(child: CircularProgressIndicator())
                           : SizedBox(
@@ -304,15 +356,19 @@ class _PlacesScreenState extends State<PlacesScreen> {
                                   'assets/images/place_icon.png',
                                   width: 24,
                                   height: 24,
-                                  color: Colors.white, 
+                                  color: Colors.white,
                                 ),
                                 label: Text(
                                   _localizations!.buttonAddPlace,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.yellow.shade700,
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30.0),
                                   ),

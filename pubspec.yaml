@@ -43,6 +43,7 @@ dependencies:
   get_it: ^8.0.3
   flutter_inappwebview: ^6.1.5
   http: ^1.4.0
+  pay: ^3.2.1
 
 dev_dependencies:
   flutter_test:
@@ -76,4 +77,5 @@ flutter:
   - assets/images/tap_position_marker.png
   - assets/images/place_icon.png
   - assets/images/incident_buttons.jpg
+  - assets/google_pay_config.json
   - .env
