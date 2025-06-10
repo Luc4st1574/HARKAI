@@ -56,7 +56,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     super.initState();
     // *** NEW: Initialize the future in initState ***
     _googlePayConfigFuture =
-        PaymentConfiguration.fromAsset('google_pay_config.json');
+        PaymentConfiguration.fromAsset('google_pay.json');
   }
 
   @override
