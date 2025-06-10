@@ -7,7 +7,6 @@ import 'package:harkai/l10n/app_localizations.dart';
 
 // Services
 import 'package:harkai/core/services/location_service.dart';
-import 'package:harkai/core/services/payment_service.dart';
 import 'package:harkai/core/services/phone_service.dart';
 
 // Utils & Managers (from home feature, ensure paths are correct)
@@ -25,6 +24,7 @@ import 'package:harkai/features/home/widgets/map.dart';
 import 'package:harkai/features/home/modals/incident_description.dart';
 import 'package:harkai/features/home/modals/incident_image.dart';
 import 'package:harkai/features/home/screens/home.dart';
+import 'package:harkai/features/places/screens/izipay_payment_screen.dart';
 
 // Incident Feed Screen (reused)
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
@@ -40,7 +40,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   final LocationService _locationService = LocationService();
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final PaymentService _paymentService = PaymentService();
+  // final PaymentService _paymentService = PaymentService(); // Old service removed
 
   late final MarkerManager _markerManager;
   late final MapLocationManager _mapLocationManager;
@@ -61,7 +61,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
     super.didChangeDependencies();
     if (_localizations == null) {
       _localizations = AppLocalizations.of(context)!;
-
       _userSessionManager = UserSessionManager(
         firebaseAuthInstance: _firebaseAuth,
         phoneService: PhoneService(),
@@ -69,7 +68,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
           if (mounted) setState(() => _currentUser = user);
         },
       );
-
       _mapLocationManager = MapLocationManager(
         locationService: _locationService,
         onStateChange: () {
@@ -82,14 +80,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
           }
         },
       );
-
       _markerManager = MarkerManager(
         firestoreService: _firestoreService,
         onStateChange: () {
           if (mounted) setState(() {});
         },
       );
-
       _initializeScreenData();
     }
   }
@@ -124,11 +120,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
               },
             ))
         .toSet();
-
     final targetLat = _mapLocationManager.targetLatitude;
     final targetLng = _mapLocationManager.targetLongitude;
     final targetPin = _mapLocationManager.targetPinDot;
-
     if (targetLat != null && targetLng != null && targetPin != null) {
       displayMarkers.add(
         Marker(
@@ -149,6 +143,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         .toSet();
   }
 
+  // *** THIS IS THE MAIN MODIFIED FUNCTION ***
   Future<void> _handleAddPlaceButtonPressed() async {
     if (_localizations == null || _currentUser == null) return;
 
@@ -165,85 +160,59 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (!mounted) return;
     setState(() => _isAddingPlace = true);
 
-    bool proceedToPayment = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(_localizations!.addPlaceButtonTitle),
-            content: Text(_localizations!.paymentRequiredMessage("\$1.00")),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(_localizations!.profileDialogNo),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(_localizations!.profileDialogYes),
-              ),
-            ],
-          ),
-        ) ?? false;
-
-    if (!proceedToPayment) {
-      if (mounted) setState(() => _isAddingPlace = false);
-      return;
-    }
-    
-    if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_localizations!.paymentProcessingMessage)),
-        );
-    }
-
-    bool paymentSuccess = await _paymentService.initiateAndProcessPayment(
-      context: context,
-      amount: 1.00,
-      currency: "USD",
-      userDescription: "Add new place to Harkai: ${_currentUser!.displayName ?? _currentUser!.email}",
+    // Navigate to the payment screen and wait for the result
+    final paymentResult = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const IzipayPaymentScreen(amount: 1.00),
+      ),
     );
 
-    if (!paymentSuccess) {
-      if (mounted) {
+    if (paymentResult == true) { // Payment was successful
+      if (!mounted) {
         setState(() => _isAddingPlace = false);
+        return;
       }
-      return;
-    }
-    
-    if (!mounted) {
-      setState(() => _isAddingPlace = false);
-      return;
-    }
-    
-    final result = await showIncidentVoiceDescriptionDialog(
-      context: context,
-      markerType: MakerType.place,
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_localizations!.paymentSuccessfulMessage)),
+        );
+      // Now, proceed to the incident description dialog
+      final result = await showIncidentVoiceDescriptionDialog(
+        context: context,
+        markerType: MakerType.place,
+      );
 
-    if (result != null) {
-      final String? description = result['description'];
-      final String? imageUrl = result['imageUrl'];
+      if (result != null) {
+        final String? description = result['description'];
+        final String? imageUrl = result['imageUrl'];
 
-      if (imageUrl == null || imageUrl.isEmpty) {
+        if (imageUrl == null || imageUrl.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(_localizations!.photoRequiredMessage)),
             );
           }
-      } else if (description != null) {
-        if (mounted) {
-          await _markerManager.addMarkerAndShowNotification(
-            context: context,
-            makerType: MakerType.place,
-            latitude: targetLat,
-            longitude: targetLng,
-            description: description,
-            imageUrl: imageUrl,
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_localizations!.paymentSuccessfulMessage)),
-          );
+        } else if (description != null) {
+          if (mounted) {
+            await _markerManager.addMarkerAndShowNotification(
+              context: context,
+              makerType: MakerType.place,
+              latitude: targetLat,
+              longitude: targetLng,
+              description: description,
+              imageUrl: imageUrl,
+            );
+          }
         }
       }
+    } else { // Payment failed or was cancelled
+      if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(_localizations!.paymentFailedMessage)),
+            );
+      }
     }
+    
     if (mounted) setState(() => _isAddingPlace = false);
   }
 
