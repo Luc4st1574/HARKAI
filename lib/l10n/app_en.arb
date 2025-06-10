@@ -174,7 +174,7 @@
       }
     }
   },
-  "incidentModalInstructionAddImageOrSubmit": "Confirmed Audio: \"{confirmedAudioDescription}\"\nAdd an image or submit with audio only.",
+  "incidentModalInstructionAddImageOrSubmit": "Confirmed Audio: \"{confirmedAudioDescription}\"\nAdd an image or submit with description only.",
   "@incidentModalInstructionAddImageOrSubmit": {
     "placeholders": {
       "confirmedAudioDescription": {
@@ -237,7 +237,7 @@
   "incidentModalButtonSendAudioToHarki": "Send Audio to Harki",
   "incidentModalButtonConfirmAudioAndProceed": "Confirm Audio & Proceed",
   "incidentModalButtonRerecordAudio": "Re-record Audio",
-  "incidentModalButtonSubmitWithAudioOnly": "Submit with Audio Only",
+  "incidentModalButtonSubmitWithAudioOnly": "Submit with Description Only",
   "incidentModalButtonAddPicture": "Add Picture",
   "incidentModalButtonRetakePicture": "Retake Picture",
   "incidentModalButtonAnalyzeImageWithHarki": "Analyze Image with Harki",
@@ -453,5 +453,26 @@
                   "type": "String"
               }
           }
+      },
+      "incidentModalReportTextTitle": "Step 1: Report with Text for {incidentName}",
+      "@incidentModalReportTextTitle": {
+          "description": "Title for the incident reporting step when using text. Takes incident name as a parameter.",
+          "placeholders": {
+              "incidentName": {
+                  "type": "String"
+              }
+          }
+      },
+      "incidentModalInstructionEnterText": "Please describe the incident in the text box below.",
+      "@incidentModalInstructionEnterText": {
+          "description": "Instruction for the user to enter a text description for the incident."
+      },
+      "incidentModalButtonSendTextToHarki": "Send Text to Harki",
+      "@incidentModalButtonSendTextToHarki": {
+          "description": "Button text to submit the text description for analysis."
+      },
+      "incidentModalButtonEnterTextInstead": "Enter Text Instead",
+      "@incidentModalButtonEnterTextInstead": {
+          "description": "Button text for the option to switch to text input from the audio input."
       }
 }

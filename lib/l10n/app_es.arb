@@ -176,7 +176,7 @@
       }
     }
   },
-  "incidentModalInstructionAddImageOrSubmit": "Audio Confirmado: \"{confirmedAudioDescription}\"\nAñade una imagen o envía solo con audio.",
+  "incidentModalInstructionAddImageOrSubmit": "Audio Confirmado: \"{confirmedAudioDescription}\"\nAñade una imagen o envía solo con descripcion.",
   "@incidentModalInstructionAddImageOrSubmit": {
     "placeholders": {
       "confirmedAudioDescription": {
@@ -239,7 +239,7 @@
   "incidentModalButtonSendAudioToHarki": "Enviar Audio a Harki",
   "incidentModalButtonConfirmAudioAndProceed": "Confirmar Audio y Continuar",
   "incidentModalButtonRerecordAudio": "Grabar Audio de Nuevo",
-  "incidentModalButtonSubmitWithAudioOnly": "Enviar Solo con Audio",
+  "incidentModalButtonSubmitWithAudioOnly": "Enviar Solo con descripción",
   "incidentModalButtonAddPicture": "Añadir Foto",
   "incidentModalButtonRetakePicture": "Tomar Foto de Nuevo",
   "incidentModalButtonAnalyzeImageWithHarki": "Analizar Imagen con Harki",
@@ -421,6 +421,27 @@
     "notifPlaceAlmostThereTitle": "¡Ya Casi Llegas!",
     "notifPlaceAlmostThereBody": "Te estás acercando a {placeName}. ¡Disfruta tu visita!",
     "notifPlaceWelcomeTitle": "¡Bienvenido!",
-    "notifPlaceWelcomeBody": "Nos alegra que hayas venido a {placeName}. ¡Esperamos que disfrutes tu estancia aquí!"
+    "notifPlaceWelcomeBody": "Nos alegra que hayas venido a {placeName}. ¡Esperamos que disfrutes tu estancia aquí!",
+    "incidentModalReportTextTitle": "Paso 1: Reportar con Texto para {incidentName}",
+    "@incidentModalReportTextTitle": {
+        "description": "Título para el paso de reporte de incidente cuando se usa texto. Toma el nombre del incidente como parámetro.",
+        "placeholders": {
+            "incidentName": {
+                "type": "String"
+            }
+        }
+    },
+    "incidentModalInstructionEnterText": "Por favor, describe el incidente en el cuadro de texto a continuación.",
+    "@incidentModalInstructionEnterText": {
+        "description": "Instrucción para que el usuario ingrese una descripción de texto para el incidente."
+    },
+    "incidentModalButtonSendTextToHarki": "Enviar Texto a Harki",
+    "@incidentModalButtonSendTextToHarki": {
+        "description": "Texto del botón para enviar la descripción de texto para su análisis."
+    },
+    "incidentModalButtonEnterTextInstead": "Ingresar Texto en su Lugar",
+    "@incidentModalButtonEnterTextInstead": {
+        "description": "Texto del botón para la opción de cambiar a entrada de texto desde la entrada de audio."
+    }
 
 }

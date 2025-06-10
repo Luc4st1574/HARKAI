@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:record/record.dart'; 
+import 'package:record/record.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:harkai/l10n/app_localizations.dart'; 
+import 'package:harkai/l10n/app_localizations.dart';
 
 import 'modules/media_services.dart';
 import 'modules/media_handler.dart';
@@ -18,15 +18,15 @@ import 'package:harkai/core/services/storage_service.dart';
 import '../utils/markers.dart'; // For MakerType and getMarkerInfo
 
 // Enum to manage the state of the media input modal
-// Enum to manage the state of the media input modal
 enum MediaInputState {
   idle,
   recordingAudio,
   audioRecordedReadyToSend,
   sendingAudioToGemini,
   audioDescriptionReadyForConfirmation,
+  textInput,
   displayingConfirmedAudio,
-  awaitingImageCapture, // This state might be less explicit now
+  awaitingImageCapture,
   imagePreview,
   sendingImageToGemini,
   imageAnalyzed,
@@ -58,6 +58,7 @@ class _IncidentVoiceDescriptionModalState
   String? _uploadedImageUrl;
 
   MediaInputState _currentInputState = MediaInputState.idle;
+  final TextEditingController _textEditingController = TextEditingController();
   GenerativeModel? _generativeModel;
   bool _hasMicPermission = false;
   String _statusText = ''; // Will be set by _updateStatusAndInstructionText
@@ -112,7 +113,7 @@ class _IncidentVoiceDescriptionModalState
       }
       if (_localizations == null) {
         debugPrint("Error: Localizations not available during _initializeModal.");
-         // Potentially show a generic error or retry mechanism
+        // Potentially show a generic error or retry mechanism
         setState(() {
           _statusText = "Error initializing..."; // Non-localized fallback
           _userInstructionText = "Please try again.";
@@ -121,7 +122,7 @@ class _IncidentVoiceDescriptionModalState
       }
     }
 
-    _statusText = _localizations!.incidentModalStatusInitializing; // Initial status
+    _statusText =_localizations!.incidentModalStatusInitializing; // Initial status
 
     PermissionStatus micStatus =
         await _mediaServices.getMicrophonePermissionStatus();
@@ -173,7 +174,10 @@ class _IncidentVoiceDescriptionModalState
 
   Future<void> _handleStartRecording() async {
     if (_localizations == null) return;
-    _clearAllMediaData(clearAudioProcessingResults: true, clearImageProcessingResults: true, updateState: false);
+    _clearAllMediaData(
+        clearAudioProcessingResults: true,
+        clearImageProcessingResults: true,
+        updateState: false);
 
     if (!_hasMicPermission) {
       _handleError(_localizations!.incidentModalErrorMicNotGranted);
@@ -239,8 +243,7 @@ class _IncidentVoiceDescriptionModalState
   Future<void> _handleSendAudioToGemini() async {
     if (_localizations == null) return;
     if (_recordedAudioPath == null || _generativeModel == null) {
-      _handleError(
-          _localizations!.incidentModalErrorNoAudioOrHarkiNotReady,
+      _handleError(_localizations!.incidentModalErrorNoAudioOrHarkiNotReady,
           isGeminiError: _generativeModel == null);
       return;
     }
@@ -254,8 +257,11 @@ class _IncidentVoiceDescriptionModalState
     try {
       final audioFile = File(_recordedAudioPath!);
       final Uint8List audioBytes = await audioFile.readAsBytes();
-      final String incidentTypeName =
-          widget.markerType.name.toString().split('.').last.capitalizeAllWords();
+      final String incidentTypeName = widget.markerType.name
+          .toString()
+          .split('.')
+          .last
+          .capitalizeAllWords();
 
       final text = await _mediaServices.analyzeAudioWithGemini(
         model: _generativeModel!,
@@ -264,32 +270,40 @@ class _IncidentVoiceDescriptionModalState
         incidentTypeName: incidentTypeName,
       );
 
-      _geminiAudioProcessedText = text ?? _localizations!.incidentModalErrorHarkiAudioProcessingFailed(""); // Provide a generic part
+      _geminiAudioProcessedText = text ??
+          _localizations!
+              .incidentModalErrorHarkiAudioProcessingFailed(""); // Provide a generic part
 
       if (mounted) {
         if (text != null && text.isNotEmpty) {
           if (text.startsWith("MATCH:")) {
             _geminiAudioProcessedText = text.substring("MATCH:".length).trim();
             setState(() {
-              _currentInputState = MediaInputState.audioDescriptionReadyForConfirmation;
+              _currentInputState =
+                  MediaInputState.audioDescriptionReadyForConfirmation;
               _updateStatusAndInstructionText();
             });
-          } else if (text.startsWith("MISMATCH:") || text.startsWith("UNCLEAR:")) {
-            _handleError(_geminiAudioProcessedText, // This text is from Gemini, potentially not localized by ARB
+          } else if (text.startsWith("MISMATCH:") ||
+              text.startsWith("UNCLEAR:")) {
+            _handleError(
+                _geminiAudioProcessedText, // This text is from Gemini, potentially not localized by ARB
                 isMismatch: text.startsWith("MISMATCH:"),
                 isUnclear: text.startsWith("UNCLEAR:"));
           } else {
             _handleError(
-                _localizations!.incidentModalErrorHarkiAudioResponseFormatUnexpected(_geminiAudioProcessedText),
+                _localizations!.incidentModalErrorHarkiAudioResponseFormatUnexpected(
+                    _geminiAudioProcessedText),
                 isGeminiError: true);
           }
         } else {
-          _handleError(_localizations!.incidentModalErrorHarkiNoActionableTextAudio,
+          _handleError(
+              _localizations!.incidentModalErrorHarkiNoActionableTextAudio,
               isGeminiError: true);
         }
       }
     } catch (e) {
-      _handleError(_localizations!.incidentModalErrorHarkiAudioProcessingFailed(e.toString()),
+      _handleError(
+          _localizations!.incidentModalErrorHarkiAudioProcessingFailed(e.toString()),
           isGeminiError: true);
     }
   }
@@ -298,7 +312,7 @@ class _IncidentVoiceDescriptionModalState
     if (_localizations == null) return;
     if (_geminiAudioProcessedText.isNotEmpty) {
       _confirmedAudioDescription = _geminiAudioProcessedText;
-      _geminiAudioProcessedText = ''; 
+      _geminiAudioProcessedText = '';
       if (mounted) {
         setState(() {
           _currentInputState = MediaInputState.displayingConfirmedAudio;
@@ -319,9 +333,9 @@ class _IncidentVoiceDescriptionModalState
       await _initializeModal();
       return;
     }
-    
-    final File? capturedFile = await _deviceMediaHandler.captureImageFromCamera(
-        maxWidth: 1024, imageQuality: 70);
+
+    final File? capturedFile = await _deviceMediaHandler
+        .captureImageFromCamera(maxWidth: 1024, imageQuality: 70);
 
     if (mounted) {
       if (capturedFile != null) {
@@ -345,7 +359,8 @@ class _IncidentVoiceDescriptionModalState
   Future<void> _handleSendImageToGemini() async {
     if (_localizations == null) return;
     if (_capturedImageFile == null || _generativeModel == null) {
-      _handleError(_localizations!.incidentModalErrorNoImageOrHarkiNotReady, isGeminiError: _generativeModel == null);
+      _handleError(_localizations!.incidentModalErrorNoImageOrHarkiNotReady,
+          isGeminiError: _generativeModel == null);
       return;
     }
     if (mounted) {
@@ -357,9 +372,13 @@ class _IncidentVoiceDescriptionModalState
 
     try {
       final Uint8List imageBytes = await _capturedImageFile!.readAsBytes();
-      final String mimeType = _capturedImageFile!.path.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      final String incidentTypeName =
-          widget.markerType.name.toString().split('.').last.capitalizeAllWords();
+      final String mimeType =
+          _capturedImageFile!.path.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      final String incidentTypeName = widget.markerType.name
+          .toString()
+          .split('.')
+          .last
+          .capitalizeAllWords();
 
       final text = await _mediaServices.analyzeImageWithGemini(
         model: _generativeModel!,
@@ -368,7 +387,8 @@ class _IncidentVoiceDescriptionModalState
         incidentTypeName: incidentTypeName,
       );
 
-      _geminiImageAnalysisResultText = text ?? _localizations!.incidentModalErrorHarkiImageProcessingFailed("");
+      _geminiImageAnalysisResultText = text ??
+          _localizations!.incidentModalErrorHarkiImageProcessingFailed("");
       debugPrint("Gemini Image Response: $_geminiImageAnalysisResultText");
 
       if (mounted) {
@@ -376,13 +396,14 @@ class _IncidentVoiceDescriptionModalState
           if (text.startsWith("MATCH:")) {
             _isImageApprovedByGemini = true;
             // _geminiImageAnalysisResultText already set
-          } else { 
+          } else {
             _isImageApprovedByGemini = false;
             // _geminiImageAnalysisResultText already set
           }
         } else {
           _isImageApprovedByGemini = false;
-          _geminiImageAnalysisResultText = _localizations!.incidentModalErrorHarkiNoActionableTextImage;
+          _geminiImageAnalysisResultText =
+              _localizations!.incidentModalErrorHarkiNoActionableTextImage;
         }
         setState(() {
           _currentInputState = MediaInputState.imageAnalyzed;
@@ -391,7 +412,73 @@ class _IncidentVoiceDescriptionModalState
       }
     } catch (e) {
       _isImageApprovedByGemini = false;
-      _handleError(_localizations!.incidentModalErrorHarkiImageProcessingFailed(e.toString()), isGeminiError: true);
+      _handleError(
+          _localizations!.incidentModalErrorHarkiImageProcessingFailed(e.toString()),
+          isGeminiError: true);
+    }
+  }
+
+  Future<void> _handleSendTextToGemini() async {
+    if (_localizations == null) return;
+    final text = _textEditingController.text;
+    if (text.isEmpty || _generativeModel == null) {
+      _handleError(_localizations!.incidentModalErrorNoAudioOrHarkiNotReady,
+          isGeminiError: _generativeModel == null);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _currentInputState = MediaInputState.sendingAudioToGemini;
+        _updateStatusAndInstructionText();
+      });
+    }
+
+    try {
+      final incidentTypeName =
+          widget.markerType.name.toString().split('.').last.capitalizeAllWords();
+
+      final response = await _mediaServices.analyzeTextWithGemini(
+        model: _generativeModel!,
+        text: text,
+        incidentTypeName: incidentTypeName,
+      );
+
+      _geminiAudioProcessedText = response ??
+          _localizations!.incidentModalErrorHarkiAudioProcessingFailed("");
+
+      if (mounted) {
+        if (response != null && response.isNotEmpty) {
+          if (response.startsWith("MATCH:")) {
+            _geminiAudioProcessedText =
+                response.substring("MATCH:".length).trim();
+            setState(() {
+              _currentInputState =
+                  MediaInputState.audioDescriptionReadyForConfirmation;
+              _updateStatusAndInstructionText();
+            });
+          } else if (response.startsWith("MISMATCH:") ||
+              response.startsWith("UNCLEAR:")) {
+            _handleError(_geminiAudioProcessedText,
+                isMismatch: response.startsWith("MISMATCH:"),
+                isUnclear: response.startsWith("UNCLEAR:"));
+          } else {
+            _handleError(
+                _localizations!
+                    .incidentModalErrorHarkiAudioResponseFormatUnexpected(
+                        _geminiAudioProcessedText),
+                isGeminiError: true);
+          }
+        } else {
+          _handleError(
+              _localizations!.incidentModalErrorHarkiNoActionableTextAudio,
+              isGeminiError: true);
+        }
+      }
+    } catch (e) {
+      _handleError(
+          _localizations!.incidentModalErrorHarkiAudioProcessingFailed(e.toString()),
+          isGeminiError: true);
     }
   }
 
@@ -413,7 +500,8 @@ class _IncidentVoiceDescriptionModalState
       _uploadedImageUrl = null;
       if (updateState) {
         setState(() {
-          if (_currentInputState.name.startsWith("image") || _currentInputState == MediaInputState.displayingConfirmedAudio) {
+          if (_currentInputState.name.startsWith("image") ||
+              _currentInputState == MediaInputState.displayingConfirmedAudio) {
             _currentInputState = MediaInputState.displayingConfirmedAudio;
           } else {
             _currentInputState = MediaInputState.idle;
@@ -424,7 +512,10 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
-  void _clearAllMediaData({bool clearAudioProcessingResults = true, bool clearImageProcessingResults = true, bool updateState = true}) {
+  void _clearAllMediaData(
+      {bool clearAudioProcessingResults = true,
+      bool clearImageProcessingResults = true,
+      bool updateState = true}) {
     if (mounted) {
       if (_recordedAudioPath != null) {
         _deviceMediaHandler.deleteTemporaryFile(_recordedAudioPath);
@@ -454,13 +545,26 @@ class _IncidentVoiceDescriptionModalState
     if (_localizations == null) return;
     if (_currentUser?.uid == null) {
       _handleError(_localizations!.incidentModalErrorUserNotLoggedIn);
-      if (mounted) setState(() { _currentInputState = _capturedImageFile != null && _isImageApprovedByGemini ? MediaInputState.imageAnalyzed : MediaInputState.displayingConfirmedAudio; _updateStatusAndInstructionText();});
+      if (mounted) {
+        setState(() {
+          _currentInputState =
+              _capturedImageFile != null && _isImageApprovedByGemini
+                  ? MediaInputState.imageAnalyzed
+                  : MediaInputState.displayingConfirmedAudio;
+          _updateStatusAndInstructionText();
+        });
+      }
       return;
     }
 
-    if (_capturedImageFile != null && _isImageApprovedByGemini && _uploadedImageUrl == null) {
+    if (_capturedImageFile != null &&
+        _isImageApprovedByGemini &&
+        _uploadedImageUrl == null) {
       if (mounted) {
-        setState(() { _currentInputState = MediaInputState.uploadingMedia; _updateStatusAndInstructionText(); });
+        setState(() {
+          _currentInputState = MediaInputState.uploadingMedia;
+          _updateStatusAndInstructionText();
+        });
       }
       _uploadedImageUrl = await _mediaServices.uploadIncidentImage(
           storageService: _storageService,
@@ -470,19 +574,31 @@ class _IncidentVoiceDescriptionModalState
 
       if (_uploadedImageUrl == null && mounted) {
         _handleError(_localizations!.incidentModalErrorFailedToUploadImage);
-        setState(() { _currentInputState = MediaInputState.imageAnalyzed; _updateStatusAndInstructionText();});
+        setState(() {
+          _currentInputState = MediaInputState.imageAnalyzed;
+          _updateStatusAndInstructionText();
+        });
         return;
       }
     }
 
     if (_confirmedAudioDescription.isNotEmpty) {
       if (mounted) {
-        debugPrint("Submitting: Audio='$_confirmedAudioDescription', ImageUrl='$_uploadedImageUrl'");
-        Navigator.pop(context, {'description': _confirmedAudioDescription, 'imageUrl': _uploadedImageUrl});
+        debugPrint(
+            "Submitting: Audio='$_confirmedAudioDescription', ImageUrl='$_uploadedImageUrl'");
+        Navigator.pop(context, {
+          'description': _confirmedAudioDescription,
+          'imageUrl': _uploadedImageUrl
+        });
       }
     } else {
       _handleError(_localizations!.incidentModalErrorNoConfirmedAudioDescription);
-      if (mounted) setState(() { _currentInputState = MediaInputState.idle; _updateStatusAndInstructionText();});
+      if (mounted) {
+        setState(() {
+          _currentInputState = MediaInputState.idle;
+          _updateStatusAndInstructionText();
+        });
+      }
     }
   }
 
@@ -496,7 +612,7 @@ class _IncidentVoiceDescriptionModalState
   Future<void> _handleRetryFullProcess() async {
     await _deleteRecordedAudioFile();
     _clearAllMediaData(updateState: false);
-    
+
     if (!_hasMicPermission || _generativeModel == null) {
       await _initializeModal();
     } else if (mounted) {
@@ -525,24 +641,39 @@ class _IncidentVoiceDescriptionModalState
   }
 
   void _updateStatusAndInstructionText() {
-    if (_localizations == null) { // Guard against null localizations
-        _statusText = "Loading..."; // Non-localized fallback
-        _userInstructionText = "Please wait.";
-        if(mounted) setState(() {});
-        return;
+    if (_localizations == null) {
+      // Guard against null localizations
+      _statusText = "Loading..."; // Non-localized fallback
+      _userInstructionText = "Please wait.";
+      if (mounted) setState(() {});
+      return;
     }
-    
+
     final markerDetails = getMarkerInfo(widget.markerType, _localizations!);
-    final incidentName =
-        markerDetails?.title ?? widget.markerType.name.capitalizeAllWords(); // title is now localized from getMarkerInfo
+    final incidentName = markerDetails?.title ??widget.markerType.name.capitalizeAllWords(); // title is now localized from getMarkerInfo
 
     switch (_currentInputState) {
       case MediaInputState.idle:
-        _statusText = _localizations!.incidentModalStep1ReportAudioTitle(incidentName);
+        _statusText =
+            _localizations!.incidentModalStep1ReportAudioTitle(incidentName);
         _userInstructionText = _localizations!.incidentModalInstructionHoldMic;
-        if (!_hasMicPermission) _userInstructionText = _localizations!.incidentModalInstructionMicPermissionNeeded;
-        if (_generativeModel == null && _hasMicPermission) _userInstructionText = _localizations!.incidentModalInstructionHarkiInitializing;
-        if (!_hasMicPermission && _generativeModel == null) _userInstructionText = _localizations!.incidentModalInstructionMicPermAndHarkiInit;
+        if (!_hasMicPermission) {
+          _userInstructionText =
+              _localizations!.incidentModalInstructionMicPermissionNeeded;
+        }
+        if (_generativeModel == null && _hasMicPermission) {
+          _userInstructionText =
+              _localizations!.incidentModalInstructionHarkiInitializing;
+        }
+        if (!_hasMicPermission && _generativeModel == null) {
+          _userInstructionText =
+              _localizations!.incidentModalInstructionMicPermAndHarkiInit;
+        }
+        break;
+      case MediaInputState.textInput:
+        _statusText =
+            _localizations!.incidentModalReportTextTitle(incidentName);
+        _userInstructionText = _localizations!.incidentModalInstructionEnterText;
         break;
       case MediaInputState.recordingAudio:
         _statusText = _localizations!.incidentModalStatusRecordingAudio;
@@ -550,7 +681,8 @@ class _IncidentVoiceDescriptionModalState
         break;
       case MediaInputState.audioRecordedReadyToSend:
         _statusText = _localizations!.incidentModalStatusAudioRecorded;
-        _userInstructionText = _localizations!.incidentModalInstructionSendAudioToHarki;
+        _userInstructionText =
+            _localizations!.incidentModalInstructionSendAudioToHarki;
         break;
       case MediaInputState.sendingAudioToGemini:
         _statusText = _localizations!.incidentModalStatusSendingAudioToHarki;
@@ -558,11 +690,14 @@ class _IncidentVoiceDescriptionModalState
         break;
       case MediaInputState.audioDescriptionReadyForConfirmation:
         _statusText = _localizations!.incidentModalStatusConfirmAudioDescription;
-        _userInstructionText = _localizations!.incidentModalInstructionConfirmAudio(_geminiAudioProcessedText);
+        _userInstructionText = _localizations!
+            .incidentModalInstructionConfirmAudio(_geminiAudioProcessedText);
         break;
       case MediaInputState.displayingConfirmedAudio:
         _statusText = _localizations!.incidentModalStatusStep2AddImage;
-        _userInstructionText = _localizations!.incidentModalInstructionAddImageOrSubmit(_confirmedAudioDescription);
+        _userInstructionText = _localizations!
+            .incidentModalInstructionAddImageOrSubmit(
+                _confirmedAudioDescription);
         break;
       case MediaInputState.awaitingImageCapture: // This state might be brief or implicit
         _statusText = _localizations!.incidentModalStatusCapturingImage;
@@ -570,7 +705,8 @@ class _IncidentVoiceDescriptionModalState
         break;
       case MediaInputState.imagePreview:
         _statusText = _localizations!.incidentModalStatusImagePreview;
-        _userInstructionText = _localizations!.incidentModalInstructionAnalyzeRetakeRemoveImage;
+        _userInstructionText =
+            _localizations!.incidentModalInstructionAnalyzeRetakeRemoveImage;
         break;
       case MediaInputState.sendingImageToGemini:
         _statusText = _localizations!.incidentModalStatusSendingImageToHarki;
@@ -578,18 +714,22 @@ class _IncidentVoiceDescriptionModalState
         break;
       case MediaInputState.imageAnalyzed:
         _statusText = _localizations!.incidentModalStatusImageAnalyzed;
-        String imageAnalysisFeedback = _geminiImageAnalysisResultText.isNotEmpty 
-                                    ? _geminiImageAnalysisResultText 
-                                    : _localizations!.incidentModalImageHarkiAnalysisComplete;
+        String imageAnalysisFeedback =
+            _geminiImageAnalysisResultText.isNotEmpty
+                ? _geminiImageAnalysisResultText
+                : _localizations!.incidentModalImageHarkiAnalysisComplete;
         if (_isImageApprovedByGemini) {
-            _userInstructionText = "${_localizations!.incidentModalImageHarkiLooksGood}\n${_localizations!.incidentModalInstructionImageApproved.split('\n').sublist(1).join('\n')}";
+          _userInstructionText =
+              "${_localizations!.incidentModalImageHarkiLooksGood}\n${_localizations!.incidentModalInstructionImageApproved.split('\n').sublist(1).join('\n')}";
         } else {
-            _userInstructionText = "${_localizations!.incidentModalImageHarkiFeedback(imageAnalysisFeedback)}\n${_localizations!.incidentModalInstructionImageFeedback("").split('\n').sublist(1).join('\n')}";
+          _userInstructionText =
+              "${_localizations!.incidentModalImageHarkiFeedback(imageAnalysisFeedback)}\n${_localizations!.incidentModalInstructionImageFeedback("").split('\n').sublist(1).join('\n')}";
         }
         break;
       case MediaInputState.uploadingMedia:
         _statusText = _localizations!.incidentModalStatusSubmittingIncident;
-        _userInstructionText = _localizations!.incidentModalInstructionUploadingMedia;
+        _userInstructionText =
+            _localizations!.incidentModalInstructionUploadingMedia;
         break;
       case MediaInputState.error:
         // Status and instruction text are set by _handleError using localized strings
@@ -610,38 +750,51 @@ class _IncidentVoiceDescriptionModalState
   Widget build(BuildContext context) {
     // Ensure _localizations is initialized, if not, show loading or error
     if (_localizations == null) {
-      _localizations = AppLocalizations.of(context); // Try to get it here if not already set
+      _localizations =
+          AppLocalizations.of(context); // Try to get it here if not already set
       if (_localizations == null) {
-        return const Dialog(child: Center(child: CircularProgressIndicator(semanticsLabel: "Loading localization",)));
+        return const Dialog(
+            child: Center(
+                child: CircularProgressIndicator(
+          semanticsLabel: "Loading localization",
+        )));
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if(mounted) _updateStatusAndInstructionText();
+        if (mounted) _updateStatusAndInstructionText();
       });
     }
 
-    final MarkerInfo? markerDetails = getMarkerInfo(widget.markerType, _localizations!);
+    final MarkerInfo? markerDetails =
+        getMarkerInfo(widget.markerType, _localizations!);
     final Color accentColor = markerDetails?.color ?? Colors.blueGrey;
 
-    bool isProcessingAny = _currentInputState == MediaInputState.sendingAudioToGemini ||
-        _currentInputState == MediaInputState.sendingImageToGemini ||
-        _currentInputState == MediaInputState.uploadingMedia;
+    bool isProcessingAny =
+        _currentInputState == MediaInputState.sendingAudioToGemini ||
+            _currentInputState == MediaInputState.sendingImageToGemini ||
+            _currentInputState == MediaInputState.uploadingMedia;
 
     bool isStep1Active = _currentInputState == MediaInputState.idle ||
         _currentInputState == MediaInputState.recordingAudio ||
         _currentInputState == MediaInputState.audioRecordedReadyToSend ||
         _currentInputState == MediaInputState.sendingAudioToGemini ||
-        _currentInputState == MediaInputState.audioDescriptionReadyForConfirmation;
-    
-    bool showStep2ImageRelatedUI = _currentInputState == MediaInputState.displayingConfirmedAudio ||
-                                  _currentInputState == MediaInputState.imagePreview ||
-                                  _currentInputState == MediaInputState.sendingImageToGemini ||
-                                  _currentInputState == MediaInputState.imageAnalyzed;
+        _currentInputState ==
+            MediaInputState.audioDescriptionReadyForConfirmation;
+
+    bool isTextInputActive = _currentInputState == MediaInputState.textInput;
+
+    bool showStep2ImageRelatedUI =
+        _currentInputState == MediaInputState.displayingConfirmedAudio ||
+            _currentInputState == MediaInputState.imagePreview ||
+            _currentInputState == MediaInputState.sendingImageToGemini ||
+            _currentInputState == MediaInputState.imageAnalyzed;
 
     return PopScope(
-      canPop: !isProcessingAny && _currentInputState != MediaInputState.recordingAudio,
+      canPop:
+          !isProcessingAny && _currentInputState != MediaInputState.recordingAudio,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-        if (!(isProcessingAny || _currentInputState == MediaInputState.recordingAudio)) {
+        if (!(isProcessingAny ||
+            _currentInputState == MediaInputState.recordingAudio)) {
           _handleCancelInput();
         }
       },
@@ -661,8 +814,12 @@ class _IncidentVoiceDescriptionModalState
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: (_currentInputState == MediaInputState.error &&
-                            !(_statusText == _localizations!.incidentModalStatusTypeMismatch || 
-                              _statusText == _localizations!.incidentModalStatusInputUnclearInvalid))
+                            !(_statusText ==
+                                    _localizations!
+                                        .incidentModalStatusTypeMismatch ||
+                                _statusText ==
+                                    _localizations!
+                                        .incidentModalStatusInputUnclearInvalid))
                         ? Colors.redAccent
                         : accentColor),
                 textAlign: TextAlign.center,
@@ -677,16 +834,17 @@ class _IncidentVoiceDescriptionModalState
                     textAlign: TextAlign.center),
               ),
               const SizedBox(height: 15),
-
               IncidentModalUiBuilders.buildConfirmedAudioArea(
-                shouldShow: showStep2ImageRelatedUI || _currentInputState == MediaInputState.imagePreview,
+                shouldShow: showStep2ImageRelatedUI ||
+                    _currentInputState == MediaInputState.imagePreview,
                 confirmedAudioDescription: _confirmedAudioDescription,
                 accentColor: accentColor,
                 localizations: _localizations!,
               ),
-
               IncidentModalUiBuilders.buildImagePreviewArea(
-                shouldShow: _capturedImageFile != null && (showStep2ImageRelatedUI || _currentInputState == MediaInputState.imagePreview),
+                shouldShow: _capturedImageFile != null &&
+                    (showStep2ImageRelatedUI ||
+                        _currentInputState == MediaInputState.imagePreview),
                 capturedImageFile: _capturedImageFile,
                 currentInputState: _currentInputState,
                 isImageApprovedByGemini: _isImageApprovedByGemini,
@@ -695,46 +853,75 @@ class _IncidentVoiceDescriptionModalState
                 onRemoveImage: _handleRemoveImageAndGoBackToDecision,
                 localizations: _localizations!,
               ),
-              
               const SizedBox(height: 10),
-
               if (isProcessingAny)
                 IncidentModalUiBuilders.buildProcessingIndicator(
                     accentColor: accentColor,
                     userInstructionText: _userInstructionText) // Already localized
               else if (_currentInputState == MediaInputState.error)
                 IncidentModalUiBuilders.buildErrorControls(
-                    accentColor: accentColor,
-                    userInstructionText: _userInstructionText, // Already localized
-                    onRetryFullProcess: _handleRetryFullProcess,
-                    localizations: _localizations!,
+                  accentColor: accentColor,
+                  userInstructionText:
+                      _userInstructionText, // Already localized
+                  onRetryFullProcess: _handleRetryFullProcess,
+                  localizations: _localizations!,
                 )
               else
                 Column(
                   children: [
+                    if (isTextInputActive)
+                      Column(
+                        children: [
+                          TextField(
+                            controller: _textEditingController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText:
+                                  _localizations!.incidentModalInstructionEnterText,
+                              hintStyle:
+                                  TextStyle(color: Colors.white.withAlpha(150)),
+                              border: const OutlineInputBorder(),
+                            ),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                            label: Text(_localizations!.incidentModalButtonSendTextToHarki,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: accentColor,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                            onPressed: _handleSendTextToGemini,
+                          )
+                        ],
+                      ),
                     if (isStep1Active)
                       IncidentModalUiBuilders.buildMicInputControl(
-                          context: context,
-                          canRecordAudio: _hasMicPermission && _generativeModel != null && _currentInputState == MediaInputState.idle,
-                          currentInputState: _currentInputState,
-                          micScaleAnimation: _micScaleAnimation,
-                          accentColor: accentColor,
-                          onLongPressStart: _handleStartRecording,
-                          onLongPressEnd: _handleStopRecording,
-                          onTapHint: _onTapMicHintOrPermissionRecheck,
-                          localizations: _localizations!,
-                        ),
-                    
+                        context: context,
+                        canRecordAudio: _hasMicPermission &&
+                            _generativeModel != null &&
+                            _currentInputState == MediaInputState.idle,
+                        currentInputState: _currentInputState,
+                        micScaleAnimation: _micScaleAnimation,
+                        accentColor: accentColor,
+                        onLongPressStart: _handleStartRecording,
+                        onLongPressEnd: _handleStopRecording,
+                        onTapHint: _onTapMicHintOrPermissionRecheck,
+                        localizations: _localizations!,
+                      ),
                     if (showStep2ImageRelatedUI &&
-                        _currentInputState != MediaInputState.sendingImageToGemini &&
+                        _currentInputState !=
+                            MediaInputState.sendingImageToGemini &&
                         _currentInputState != MediaInputState.uploadingMedia)
                       Padding(
                         padding: const EdgeInsets.only(top: 15.0),
                         child: IncidentModalUiBuilders.buildCameraInputControl(
-                            capturedImageFile: _capturedImageFile,
-                            accentColor: accentColor,
-                            onPressedCapture: _handleCaptureImage,
-                            localizations: _localizations!,
+                          capturedImageFile: _capturedImageFile,
+                          accentColor: accentColor,
+                          onPressedCapture: _handleCaptureImage,
+                          localizations: _localizations!,
                         ),
                       ),
                     const SizedBox(height: 20),
@@ -746,30 +933,47 @@ class _IncidentVoiceDescriptionModalState
                       onSendAudioToGemini: _handleSendAudioToGemini,
                       onConfirmAudioAndProceed: _handleConfirmAudioAndProceed,
                       onRetryFullProcessAudio: _handleRetryFullProcess,
-                      onSubmitWithAudioOnlyAfterConfirmation: _handleFinalSubmitIncident,
+                      onSubmitWithAudioOnlyAfterConfirmation:
+                          _handleFinalSubmitIncident,
                       onSendImageToGemini: _handleSendImageToGemini,
-                      onRemoveImageAndGoBackToDecision: _handleRemoveImageAndGoBackToDecision,
+                      onRemoveImageAndGoBackToDecision:
+                          _handleRemoveImageAndGoBackToDecision,
                       onSubmitWithAudioAndImage: _handleFinalSubmitIncident,
                       onSubmitAudioOnlyFromImageAnalyzed: () {
-                          _clearImageData(updateState:false);
-                          _handleFinalSubmitIncident();
+                        _clearImageData(updateState: false);
+                        _handleFinalSubmitIncident();
                       },
                       onClearImageDataAndSubmitAudioOnlyFromAnalyzed: () {
-                          _clearImageData(updateState:false);
-                          _handleFinalSubmitIncident();
+                        _clearImageData(updateState: false);
+                        _handleFinalSubmitIncident();
                       },
                       localizations: _localizations!,
                     ),
                   ],
                 ),
-
-              const SizedBox(height: 20),
-              if (!isProcessingAny && _currentInputState != MediaInputState.recordingAudio)
-                TextButton(
-                  onPressed: _handleCancelInput,
-                  child: Text(_localizations!.incidentModalButtonCancelReport,
-                      style: const TextStyle(color: Colors.grey, fontSize: 15)),
-                ),
+                // This is where the spacing is adjusted
+                if (_currentInputState == MediaInputState.idle) ...[
+                  const SizedBox(height: 0), // Reduced from 10
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _currentInputState = MediaInputState.textInput;
+                        _updateStatusAndInstructionText();
+                      });
+                    },
+                    child: Text(
+                        _localizations!.incidentModalButtonEnterTextInstead,
+                        style: TextStyle(color: accentColor)),
+                  ),
+                ],
+                const SizedBox(height: 0), // Reduced from 10
+                if (!isProcessingAny &&
+                    _currentInputState != MediaInputState.recordingAudio)
+                  TextButton(
+                    onPressed: _handleCancelInput,
+                    child: Text(_localizations!.incidentModalButtonCancelReport,
+                        style: const TextStyle(color: Colors.grey, fontSize: 15)),
+                  ),
             ],
           ),
         ),

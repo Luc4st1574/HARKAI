@@ -98,6 +98,43 @@ class IncidentMediaServices {
     }
   }
 
+  Future<String?> analyzeTextWithGemini({
+    required GenerativeModel model,
+    required String text,
+    required String incidentTypeName,
+  }) async {
+    final textUserInstruction =
+      "Incident Type: '$incidentTypeName'. Process the following text. "
+      "On the theft incident type, this includes all kinds of theft, robbery, or burglary. even car theft and armed robbery all kinds of theft, robbery, or burglary please be conscious of this and if it as a theft incident do always a good check. "
+      "On the crash incident type, this includes all kinds of car accidents, motorcycle accidents, and pedestrian accidents. "
+      "On the fire incident type, this includes all kinds of fires, explosions, or smoke. "
+      "On the places incident type, this is for addding businesses, stores and so to the mpap, this is not for incidents but for adding places to the map so be conscious of this and do not use it for incidents, here just add what the user tells you do not try to give it more context or description cause it will look weird, just repeat what the user says on this kind incident do not add anything else. "
+      "On the emergency incident type, this includes all kinds of emergencies, like medical emergencies, natural disasters, or other urgent situations, lesions and all related this is a incident type that must be open to a lot of posible thing so be conscius of all kind of possible emergencies. "
+      "Expected response formats: 'MATCH: [Short summary, max 15 words, of the text content related to the incident type.]', "
+      "'MISMATCH: This text seems to describe a [Correct Incident Type] incident. Please confirm this type or re-enter for the $incidentTypeName incident.', "
+      "'UNCLEAR: The text was not clear enough or did not describe a reportable incident for '$incidentTypeName'. Please try entering again with more details.'"
+      "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' that must be in English."
+      "Only the part of 'MATCH', 'MISMATCH' or 'UNCLEAR' must be in English, the rest of the response must be in Spanish do not omit this part at all cost do not omit it please."
+      "Do not translate the response to English if Spanish was the used language by the user.";
+  try {
+    if (text.isEmpty) {
+      debugPrint("IncidentMediaServices: Text input is empty.");
+      return null;
+    }
+    final response = await model.generateContent([
+      Content('user', [
+      TextPart(textUserInstruction),
+      TextPart(text),
+      ])
+    ]);
+  return response.text;
+  } catch (e) {
+    debugPrint("IncidentMediaServices: Gemini text processing failed: ${e.toString()}");
+    return null;
+    }
+  }
+
+
   /// Sends image data to the Gemini model for analysis.
   Future<String?> analyzeImageWithGemini({
     required GenerativeModel model,

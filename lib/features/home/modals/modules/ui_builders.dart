@@ -51,7 +51,7 @@ class IncidentModalUiBuilders {
                 ? Icons.stop_circle_outlined
                 : Icons.mic,
             color: Colors.white,
-            size: 36,
+            size: 40,
           ),
         ),
       ),
@@ -72,7 +72,7 @@ class IncidentModalUiBuilders {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.camera_alt, size: 36),
+          icon: const Icon(Icons.camera_alt, size: 40),
           color: accentColor,
           padding: const EdgeInsets.all(16),
           style: IconButton.styleFrom(

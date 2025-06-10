@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalInstructionAddImageOrSubmit.
   ///
   /// In en, this message translates to:
-  /// **'Confirmed Audio: \"{confirmedAudioDescription}\"\nAdd an image or submit with audio only.'**
+  /// **'Confirmed Audio: \"{confirmedAudioDescription}\"\nAdd an image or submit with description only.'**
   String incidentModalInstructionAddImageOrSubmit(
       String confirmedAudioDescription);
 
@@ -955,7 +955,7 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalButtonSubmitWithAudioOnly.
   ///
   /// In en, this message translates to:
-  /// **'Submit with Audio Only'**
+  /// **'Submit with Description Only'**
   String get incidentModalButtonSubmitWithAudioOnly;
 
   /// No description provided for @incidentModalButtonAddPicture.
@@ -1457,6 +1457,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'We are glad you came to {placeName}. We hope you enjoy your time here!'**
   String notifPlaceWelcomeBody(String placeName);
+
+  /// Title for the incident reporting step when using text. Takes incident name as a parameter.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1: Report with Text for {incidentName}'**
+  String incidentModalReportTextTitle(String incidentName);
+
+  /// Instruction for the user to enter a text description for the incident.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the incident in the text box below.'**
+  String get incidentModalInstructionEnterText;
+
+  /// Button text to submit the text description for analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Text to Harki'**
+  String get incidentModalButtonSendTextToHarki;
+
+  /// Button text for the option to switch to text input from the audio input.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Text Instead'**
+  String get incidentModalButtonEnterTextInstead;
 }
 
 class _AppLocalizationsDelegate

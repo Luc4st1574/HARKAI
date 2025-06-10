@@ -393,7 +393,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String incidentModalInstructionAddImageOrSubmit(
       String confirmedAudioDescription) {
-    return 'Confirmed Audio: \"$confirmedAudioDescription\"\nAdd an image or submit with audio only.';
+    return 'Confirmed Audio: \"$confirmedAudioDescription\"\nAdd an image or submit with description only.';
   }
 
   @override
@@ -508,7 +508,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incidentModalButtonRerecordAudio => 'Re-record Audio';
 
   @override
-  String get incidentModalButtonSubmitWithAudioOnly => 'Submit with Audio Only';
+  String get incidentModalButtonSubmitWithAudioOnly =>
+      'Submit with Description Only';
 
   @override
   String get incidentModalButtonAddPicture => 'Add Picture';
@@ -813,4 +814,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String notifPlaceWelcomeBody(String placeName) {
     return 'We are glad you came to $placeName. We hope you enjoy your time here!';
   }
+
+  @override
+  String incidentModalReportTextTitle(String incidentName) {
+    return 'Step 1: Report with Text for $incidentName';
+  }
+
+  @override
+  String get incidentModalInstructionEnterText =>
+      'Please describe the incident in the text box below.';
+
+  @override
+  String get incidentModalButtonSendTextToHarki => 'Send Text to Harki';
+
+  @override
+  String get incidentModalButtonEnterTextInstead => 'Enter Text Instead';
 }
