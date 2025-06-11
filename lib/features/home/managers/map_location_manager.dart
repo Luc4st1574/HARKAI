@@ -12,8 +12,11 @@ class MapLocationManager {
   final GoogleMapController? Function() _getMapController;
   final Function(GoogleMapController) _setMapController;
 
-  String _locationData = '';
-  bool _isErrorOrStatus = false;
+  // --- FIX: Change the initial state to be a unique loading key ---
+  // This ensures the very first time the UI builds, it shows a loading message.
+  static const String _initialStateKey = 'harkai_initial_loading';
+  String _locationData = _initialStateKey;
+  bool _isErrorOrStatus = true; // The initial state is a "status"
 
   double? _latitude;
   double? _longitude;
@@ -56,7 +59,13 @@ class MapLocationManager {
         _getMapController = getMapController,
         _setMapController = setMapController;
 
+  // --- FIX: Update this method to handle the new initial state ---
   String getLocalizedLocationText(AppLocalizations localizations) {
+    // If we are in the initial loading state, always show the "getting initial location" message.
+    if (_locationData == _initialStateKey) {
+      return localizations.mapinitialFetchingLocation;
+    }
+
     if (_isErrorOrStatus) {
       switch (_locationData) {
         case 'loading': 

@@ -172,7 +172,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final paymentItems = [
       PaymentItem(
         label: _localizations!.addplaceTitle,
-        amount: '1.00',
+        amount: '8.00',
         status: PaymentItemStatus.final_price,
       )
     ];
