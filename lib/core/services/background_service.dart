@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:harkai/core/services/location_service.dart';
-import 'package:harkai/core/services/notification_manager.dart';
+import 'package:harkai/core/managers/notification_manager.dart';
 import 'package:harkai/features/home/utils/incidences.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 

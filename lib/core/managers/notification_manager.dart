@@ -3,7 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:harkai/features/home/utils/incidences.dart';
 import 'package:harkai/features/home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart';
-import 'location_service.dart';
+import '../services/location_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationManager {
