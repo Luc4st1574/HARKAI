@@ -19,7 +19,7 @@ class ProfileState extends State<Profile> {
   final user = FirebaseAuth.instance.currentUser;
 
   // Helper function to truncate the email from the middle
-  String _truncateEmail(String email, {int maxLength = 22}) {
+  String _truncateEmail(String email, {int maxLength = 18}) {
     if (email.length <= maxLength) {
       return email;
     }
@@ -33,8 +33,8 @@ class ProfileState extends State<Profile> {
     final name = email.substring(0, atIndex);
     final domain = email.substring(atIndex);
 
-    if (name.length > 10) {
-      final truncatedName = '${name.substring(0, 5)}...${name.substring(name.length - 2)}';
+    if (name.length > 8) {
+      final truncatedName = '${name.substring(0, 4)}...${name.substring(name.length - 1)}';
       return '$truncatedName$domain';
     }
 
