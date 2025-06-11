@@ -86,14 +86,16 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
           "  - 'Car Crash Alert': Allows users to mark a crash location and helps call local emergency services or relevant authorities (like Serenazgo). "
           "  - 'Theft Alert': For reporting robberies or burglaries, marking the location, and facilitating calls to the police. "
           "  - 'Pet Alert': For reporting lost or found pets, marking their location, and helping connect with animal rescue centers or shelters. Pet alerts on the incident feed screen have extended visibility (typically for the day of the report). "
-          "- Tapping an alert button on the home screen usually initiates a report. This process may involve the user providing an audio description and an optional image of the incident. This media can be analyzed by an AI (like you, but in a different process) to help confirm the incident type and details before submission. "
+          "- A new 'Add Place' feature that allows users to add businesses, stores, parks, and other points of interest to the map. This is different from reporting an incident. "
+          "  - Adding a place requires a small payment to be processed in the app. "
+          "  - It is mandatory to add a photo of the place, which can be taken with the camera or uploaded from the gallery. "
+          "- Tapping an alert button on the home screen usually initiates a report. This process may involve the user providing an audio description, a text description, and an optional image of the incident. This media can be analyzed by an AI (like you, but in a different process) to help confirm the incident type and details before submission. "
           "- Long-pressing an alert button on the home screen (Fire, Crash, Theft, Pet, or the general 'Emergency' button in the bottom bar) opens an 'Incident Feed' screen. This screen lists recent, nearby incidents of that specific type, showing the description, an image/icon, and the distance from the user's current location. "
           "- Tapping an incident tile in the 'Incident Feed' screen opens a map modal. This modal displays the specific incident's location, the user's current location (blue dot), and, if possible, a path (route) between the user and the incident. "
+          "- The app sends notifications to users when they are near a registered place, with messages like 'Discover a New Place', 'You're Almost There!', and 'Welcome!'. "
           "- The app also has a user profile section for account management (e.g., viewing email, option to change password). "
           "- You, Harki (the chatbot), are available to answer questions about these features, provide safety tips, or general assistance related to citizen security within the app's context. "
           "When users ask about how to use a feature, what a feature does, or what happens after an action (e.g., 'What happens if I long-press the fire button?'), use this knowledge to guide them clearly.";
-
-
       _model = GenerativeModel(
         model: 'gemini-1.5-flash', // Consider 'gemini-pro' if you need more complex reasoning and have it available
         apiKey: _apiKey,
