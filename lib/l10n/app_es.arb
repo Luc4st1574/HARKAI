@@ -445,5 +445,7 @@
     },
     "onboardingLocationTitle": "Ubicación Siempre Activa",
     "onboardingLocationDescription": "Para mantenerte seguro y enviarte alertas en tiempo real sobre incidentes cercanos incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso en la configuración interna de la app en los ajustes de aplicaciones.",
-    "addplaceTitle": "Añadir Lugar al Mapa de Harkai"
+    "addplaceTitle": "Añadir Lugar al Mapa de Harkai",
+    "incidentModalButtonAddFromGallery": "Añadir desde Galería",
+    "addplaceInfo": "Para añadir un lugar, completa el pago con el boton de pago"
 }

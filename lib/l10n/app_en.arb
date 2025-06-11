@@ -477,5 +477,7 @@
       },
       "onboardingLocationTitle": "Always-On Location",
     "onboardingLocationDescription": "To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission on applications settings.",
-    "addplaceTitle": "Add a Place to Harkai Map"
+    "addplaceTitle": "Add a Place to Harkai Map",
+    "incidentModalButtonAddFromGallery": "Add from Gallery",
+    "addplaceInfo": "To add a new place, please complete the payment below."
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/markers.dart';
+import '../../home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Ensure this import is correct
 
 /// A widget that displays a grid of incident buttons.

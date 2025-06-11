@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // For User object
 import 'package:flutter/material.dart';
 import '../../profile/screens/profile.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Added import
-import '../utils/markers.dart';
+import '../../home/utils/markers.dart';
 import 'package:harkai/features/incident_feed/screens/incident_screen.dart';
 import 'package:harkai/features/places/screens/places_screen.dart';
 

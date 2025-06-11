@@ -1,3 +1,5 @@
+// lib/features/home/modals/modules/media_handler.dart
+
 import 'dart:async';
 import 'dart:io'; // For File operations
 
@@ -116,6 +118,30 @@ class DeviceMediaHandler {
       }
     } catch (e) {
       debugPrint("DeviceMediaHandler: Failed to capture image: $e");
+      return null;
+    }
+  }
+
+  // --- NEW: Image Picking ---
+
+  Future<File?> pickImageFromGallery(
+      {double? maxWidth, int? imageQuality}) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+      );
+      if (pickedFile != null) {
+        debugPrint(
+            "DeviceMediaHandler: Image picked from gallery successfully: ${pickedFile.path}");
+        return File(pickedFile.path);
+      } else {
+        debugPrint("DeviceMediaHandler: Image picking cancelled by user.");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("DeviceMediaHandler: Failed to pick image from gallery: $e");
       return null;
     }
   }

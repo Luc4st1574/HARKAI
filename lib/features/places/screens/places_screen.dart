@@ -197,10 +197,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'To add a new place, please complete the payment below.',
+            Text(
+              _localizations!.addplaceInfo,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 25),
             FutureBuilder<PaymentConfiguration>(

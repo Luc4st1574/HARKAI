@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../chatbot/screens/chatbot.dart'; // For ChatBotScreen
-import '../utils/markers.dart';
+import '../../home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 /// A widget that displays the main action buttons at the bottom of the screen.

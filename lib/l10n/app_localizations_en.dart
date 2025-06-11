@@ -838,4 +838,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addplaceTitle => 'Add a Place to Harkai Map';
+
+  @override
+  String get incidentModalButtonAddFromGallery => 'Add from Gallery';
+
+  @override
+  String get addplaceInfo =>
+      'To add a new place, please complete the payment below.';
 }

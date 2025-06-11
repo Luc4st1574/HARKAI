@@ -356,6 +356,38 @@ class _IncidentVoiceDescriptionModalState
     }
   }
 
+  Future<void> _handlePickImageFromGallery() async {
+    if (_localizations == null) return;
+    _clearImageData(updateState: false);
+
+    if (_generativeModel == null) {
+      _handleError(_localizations!.incidentModalErrorHarkiNotReadyImage);
+      await _initializeModal();
+      return;
+    }
+
+    final File? pickedFile = await _deviceMediaHandler
+        .pickImageFromGallery(maxWidth: 1024, imageQuality: 70);
+
+    if (mounted) {
+      if (pickedFile != null) {
+        setState(() {
+          _capturedImageFile = pickedFile;
+          _currentInputState = MediaInputState.imagePreview;
+          _geminiImageAnalysisResultText = '';
+          _isImageApprovedByGemini = false;
+          _uploadedImageUrl = null;
+          _updateStatusAndInstructionText();
+        });
+      } else {
+        setState(() {
+          _currentInputState = MediaInputState.displayingConfirmedAudio;
+          _updateStatusAndInstructionText();
+        });
+      }
+    }
+  }
+
   Future<void> _handleSendImageToGemini() async {
     if (_localizations == null) return;
     if (_capturedImageFile == null || _generativeModel == null) {
@@ -787,6 +819,9 @@ class _IncidentVoiceDescriptionModalState
             _currentInputState == MediaInputState.imagePreview ||
             _currentInputState == MediaInputState.sendingImageToGemini ||
             _currentInputState == MediaInputState.imageAnalyzed;
+            
+    final bool showGalleryButton = widget.markerType == MakerType.place;
+
 
     return PopScope(
       canPop:
@@ -922,6 +957,8 @@ class _IncidentVoiceDescriptionModalState
                           accentColor: accentColor,
                           onPressedCapture: _handleCaptureImage,
                           localizations: _localizations!,
+                          onPressedGallery: _handlePickImageFromGallery,
+                          showGalleryButton: showGalleryButton,
                         ),
                       ),
                     const SizedBox(height: 20),

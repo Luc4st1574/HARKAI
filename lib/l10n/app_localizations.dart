@@ -1499,6 +1499,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add a Place to Harkai Map'**
   String get addplaceTitle;
+
+  /// No description provided for @incidentModalButtonAddFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Add from Gallery'**
+  String get incidentModalButtonAddFromGallery;
+
+  /// No description provided for @addplaceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'To add a new place, please complete the payment below.'**
+  String get addplaceInfo;
 }
 
 class _AppLocalizationsDelegate

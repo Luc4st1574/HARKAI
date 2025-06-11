@@ -63,35 +63,78 @@ class IncidentModalUiBuilders {
     required File? capturedImageFile,
     required Color accentColor,
     required VoidCallback onPressedCapture,
+    required VoidCallback onPressedGallery, // New callback
+    required bool showGalleryButton, // New flag
   }) {
     String cameraButtonLabel = capturedImageFile == null
         ? localizations.incidentModalButtonAddPicture // Localized
         : localizations.incidentModalButtonRetakePicture; // Localized
+    String galleryButtonLabel = localizations.incidentModalButtonAddFromGallery;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.camera_alt, size: 40),
-          color: accentColor,
-          padding: const EdgeInsets.all(16),
-          style: IconButton.styleFrom(
-            backgroundColor: accentColor.withAlpha((0.15 * 255).toInt()),
-            shape: const CircleBorder(),
-            side: BorderSide(color: accentColor.withAlpha((0.7 * 255).toInt()), width: 1.5),
-            elevation: 2,
-          ),
-          onPressed: onPressedCapture,
-          tooltip: cameraButtonLabel, // Tooltip uses the localized label
-        ),
-        const SizedBox(height: 4),
-        Text(
-          cameraButtonLabel, // Displaying the localized label
-          style: TextStyle(
-            color: accentColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Camera Button
+            Column(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt, size: 40),
+                  color: accentColor,
+                  padding: const EdgeInsets.all(16),
+                  style: IconButton.styleFrom(
+                    backgroundColor: accentColor.withAlpha((0.15 * 255).toInt()),
+                    shape: const CircleBorder(),
+                    side: BorderSide(color: accentColor.withAlpha((0.7 * 255).toInt()), width: 1.5),
+                    elevation: 2,
+                  ),
+                  onPressed: onPressedCapture,
+                  tooltip: cameraButtonLabel,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  cameraButtonLabel,
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            // Gallery Button (conditionally shown)
+            if (showGalleryButton && capturedImageFile == null) ...[
+              const SizedBox(width: 20),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.photo_library, size: 40),
+                    color: accentColor,
+                    padding: const EdgeInsets.all(16),
+                    style: IconButton.styleFrom(
+                      backgroundColor: accentColor.withAlpha((0.15 * 255).toInt()),
+                      shape: const CircleBorder(),
+                      side: BorderSide(color: accentColor.withAlpha((0.7 * 255).toInt()), width: 1.5),
+                      elevation: 2,
+                    ),
+                    onPressed: onPressedGallery,
+                    tooltip: galleryButtonLabel,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    galleryButtonLabel,
+                    style: TextStyle(
+                      color: accentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ]
+          ],
         ),
       ],
     );

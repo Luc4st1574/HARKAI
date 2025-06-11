@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../utils/markers.dart';
+import '../../home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart'; // Added import
 
 import 'package:flutter/foundation.dart';

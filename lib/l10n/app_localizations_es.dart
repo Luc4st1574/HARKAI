@@ -863,4 +863,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addplaceTitle => 'Añadir Lugar al Mapa de Harkai';
+
+  @override
+  String get incidentModalButtonAddFromGallery => 'Añadir desde Galería';
+
+  @override
+  String get addplaceInfo =>
+      'Para añadir un lugar, completa el pago con el boton de pago';
 }
