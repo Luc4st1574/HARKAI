@@ -1493,6 +1493,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission on applications settings.'**
   String get onboardingLocationDescription;
+
+  /// No description provided for @addplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Place to Harkai Map'**
+  String get addplaceTitle;
 }
 
 class _AppLocalizationsDelegate

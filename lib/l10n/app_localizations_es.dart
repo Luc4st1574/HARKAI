@@ -860,4 +860,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get onboardingLocationDescription =>
       'Para mantenerte seguro y enviarte alertas en tiempo real sobre incidentes cercanos incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso en la configuración interna de la app en los ajustes de aplicaciones.';
+
+  @override
+  String get addplaceTitle => 'Añadir Lugar al Mapa de Harkai';
 }

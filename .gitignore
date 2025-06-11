@@ -48,3 +48,4 @@ app.*.map.json
 /lib/core/config/firebase_options.dart
 firebase.json
 google_pay.json
+/lib/assets/json/google_pay.png

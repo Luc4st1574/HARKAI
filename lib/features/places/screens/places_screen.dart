@@ -47,14 +47,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
   User? _currentUser;
 
   bool _isAddingPlace = false;
-  
-  // *** NEW: Future to hold the loaded payment configuration ***
+
+  // *** UPDATED: Future to hold the payment configuration loaded from assets ***
   late final Future<PaymentConfiguration> _googlePayConfigFuture;
 
   @override
   void initState() {
     super.initState();
-    // *** NEW: Initialize the future in initState ***
+    // *** UPDATED: Initialize the configuration from the asset file ***
     _googlePayConfigFuture =
         PaymentConfiguration.fromAsset('google_pay.json');
   }
@@ -112,14 +112,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Set<Marker> _getDisplayMarkers() {
     if (_localizations == null) return {};
     Set<Marker> displayMarkers = _markerManager.incidences
-        .where((incidence) => incidence.type == MakerType.place) // Only show place markers
+        .where((incidence) =>
+            incidence.type == MakerType.place) // Only show place markers
         .map((incidence) => createMarkerFromIncidence(
               incidence,
               _localizations!,
               onImageMarkerTapped: (tappedIncidence) {
                 showDialog(
                   context: context,
-                  builder: (_) => IncidentImageDisplayModal(incidence: tappedIncidence),
+                  builder: (_) =>
+                      IncidentImageDisplayModal(incidence: tappedIncidence),
                 );
               },
             ))
@@ -144,12 +146,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Set<Circle> _getCirclesForDisplay() {
     if (_localizations == null) return {};
     return _markerManager.incidences
-        .where((incidence) => incidence.type == MakerType.place) // Only show circles for places
+        .where((incidence) =>
+            incidence.type == MakerType.place) // Only show circles for places
         .map((incidence) => createCircleFromIncidence(incidence, _localizations!))
         .toSet();
   }
 
-  // *** UPDATED: This is the fully corrected method ***
+  // *** UPDATED: This function now uses the FutureBuilder for the configuration ***
   Future<void> _handleAddPlaceButtonPressed() async {
     if (_localizations == null || _currentUser == null) return;
 
@@ -167,8 +170,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
     setState(() => _isAddingPlace = true);
 
     final paymentItems = [
-      const PaymentItem(
-        label: 'Total',
+      PaymentItem(
+        label: _localizations!.addplaceTitle,
         amount: '1.00',
         status: PaymentItemStatus.final_price,
       )
@@ -178,38 +181,69 @@ class _PlacesScreenState extends State<PlacesScreen> {
     final paymentResult = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pay with Google Pay'),
-        content: FutureBuilder<PaymentConfiguration>(
-          future: _googlePayConfigFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              if (snapshot.hasData) {
-                return GooglePayButton(
-                  paymentConfiguration: snapshot.data!,
-                  paymentItems: paymentItems,
-                  onPaymentResult: (Map<String, dynamic> result) {
-                    // Assuming the payment is successful if this callback is fired
-                    Navigator.pop(context, true);
-                  },
-                  loadingIndicator: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  onError: (error) {
-                    debugPrint("Google Pay Error: $error");
-                    Navigator.pop(context, false);
-                  },
-                );
-              } else {
-                return const Text("Error loading payment configuration.");
-              }
-            }
-            return const Center(child: CircularProgressIndicator());
-          },
+        backgroundColor: const Color(0xFF001F3F),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+          side: BorderSide(color: Colors.yellow.shade700, width: 2),
+        ),
+        title: Text(
+          _localizations!.paymentRequiredMessage('1.00'),
+          style: TextStyle(
+            color: Colors.yellow.shade700,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'To add a new place, please complete the payment below.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 25),
+            FutureBuilder<PaymentConfiguration>(
+              future: _googlePayConfigFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.hasData) {
+                    // *** MODIFIED: Wrapped button in a SizedBox for width control ***
+                    return SizedBox(
+                      width: double.infinity, // Makes the button wider
+                      child: GooglePayButton(
+                        paymentConfiguration: snapshot.data!,
+                        paymentItems: paymentItems,
+                        // *** MODIFIED: Changed type for a simpler look ***
+                        type: GooglePayButtonType.plain,
+                        theme: GooglePayButtonTheme.light,
+                        onPaymentResult: (Map<String, dynamic> result) {
+                          Navigator.pop(context, true);
+                        },
+                        loadingIndicator:
+                            const Center(child: CircularProgressIndicator()),
+                        onError: (error) {
+                          debugPrint("Google Pay Error: $error");
+                          Navigator.pop(context, false);
+                        },
+                      ),
+                    );
+                  } else {
+                    return const Text("Error loading payment configuration.");
+                  }
+                }
+                return const Center(child: CircularProgressIndicator());
+              },
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Colors.yellow.shade700),
+            ),
           )
         ],
       ),
