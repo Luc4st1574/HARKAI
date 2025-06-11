@@ -6,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart' as perm_handler;
 import 'package:flutter_google_maps_webservices/geocoding.dart'as g_geocoding;
 
-/// A data class to hold the result of a location operation,
 class LocationResult<T> {
   final T? data;
   final bool success;
@@ -33,8 +32,7 @@ class LocationService {
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  /// Requests location permission from the user if not already granted.
-  /// This will now loop until permission is granted.
+  /// Requests location permission from the user.
   Future<bool> requestLocationPermission({bool openSettingsOnError = false}) async {
     print("Requesting location permission...");
 
@@ -44,7 +42,8 @@ class LocationService {
 
       if (status.isGranted) {
         print("Location permission granted.");
-        return true;
+        // After getting basic location, now try for "Always" permission
+        return await requestBackgroundLocationPermission(openSettingsOnError: openSettingsOnError);
       }
 
       if (status.isPermanentlyDenied) {
@@ -52,17 +51,40 @@ class LocationService {
         if (openSettingsOnError) {
           await perm_handler.openAppSettings();
         }
-        // Add a delay to give the user time to change settings and return to the app
+        // Give the user time to change settings and return.
         await Future.delayed(const Duration(seconds: 5));
-        continue; // Re-check the status after returning from settings
+        continue; // Re-check the status after returning from settings.
       }
 
-      // If denied (but not permanently), request it again.
+      // If denied (but not permanently), request it.
       print("Requesting location permission...");
       await perm_handler.Permission.location.request();
-      // The loop will re-check the status on the next iteration.
-      await Future.delayed(const Duration(seconds: 1)); // Small delay to prevent overly aggressive re-prompting
+      // Loop will re-check the status on the next iteration.
+      await Future.delayed(const Duration(seconds: 1)); // Small delay
     }
+  }
+  
+  /// Requests "Always Allow" background location permission.
+  Future<bool> requestBackgroundLocationPermission({bool openSettingsOnError = false}) async {
+    var status = await perm_handler.Permission.locationAlways.status;
+    if (status.isGranted) {
+      print("Background location permission already granted.");
+      return true;
+    }
+    
+    print("Requesting 'Always' background location permission...");
+    status = await perm_handler.Permission.locationAlways.request();
+
+    if (status.isGranted) {
+      print("'Always' background location permission granted.");
+      return true;
+    }
+
+    if (status.isPermanentlyDenied && openSettingsOnError) {
+      await perm_handler.openAppSettings();
+    }
+    
+    return false;
   }
 
 
@@ -79,8 +101,6 @@ class LocationService {
 
     bool permissionGranted = await requestLocationPermission(openSettingsOnError: true);
     if (!permissionGranted) {
-      // This part is less likely to be hit with the new looping request,
-      // but it's good practice to keep it as a fallback.
       perm_handler.PermissionStatus status =
           await perm_handler.Permission.locationWhenInUse.status;
       String errorMessage = 'Location permission denied.';
@@ -116,7 +136,6 @@ class LocationService {
   }) {
     print(
         "Setting up location updates stream with accuracy: $accuracy, distanceFilter: $distanceFilter");
-    // The calling widget should ensure permissions are granted before subscribing to this stream.
     return Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: accuracy,
@@ -161,12 +180,10 @@ class LocationService {
       String? country;
 
       for (var component in place.addressComponents) {
-        // print("Component: ${component.longName}, Types: ${component.types}");
         if (component.types.contains("locality")) {
           city = component.longName;
         }
         if (component.types.contains("administrative_area_level_1") && city == null) {
-          // Fallback to administrative_area_level_1 if locality is not found
           city = component.longName;
         }
         if (component.types.contains("country")) {
@@ -183,7 +200,6 @@ class LocationService {
       } else if (country != null) {
         return LocationResult(data: country);
       } else {
-        // Fallback to formatted address if specific components are not found
         if (place.formattedAddress != null && place.formattedAddress!.isNotEmpty) {
             return LocationResult(data: place.formattedAddress);
         }

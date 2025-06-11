@@ -4,18 +4,38 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'core/config/firebase_options.dart';
+import 'package:harkai/core/config/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'features/splash/screens/splash_screen.dart';
-import 'package:harkai/core/services/background_service.dart';
+import 'package:harkai/features/splash/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'l10n/app_localizations.dart';
+import 'package:harkai/l10n/app_localizations.dart';
+import 'package:background_fetch/background_fetch.dart';
+import 'package:harkai/core/services/background_service.dart'; // Import the new background tasks
+
+// This is the TOP-LEVEL headless task handler.
+// It is called by the OS when a background fetch event occurs.
+@pragma('vm:entry-point')
+void backgroundFetchHeadlessTask(HeadlessTask task) async {
+  String taskId = task.taskId;
+  bool isTimeout = task.timeout;
+  if (isTimeout) {
+    // This task has exceeded its allowed running-time.
+    // You must stop what you're doing and immediately call finish(taskId)
+    print("[BackgroundFetch] Headless task timed-out: $taskId");
+    BackgroundFetch.finish(taskId);
+    return;
+  }
+  print('[BackgroundFetch] Headless event received: $taskId');
+  
+  // Perform your background work here
+  await BackgroundTasks.performBackgroundTask();
+  
+  BackgroundFetch.finish(taskId);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeService();
-  // The problematic line `GoogleMap.useAndroidViewSurface = false;` has been removed.
-
+  
   final List<Locale> deviceLocalesList = WidgetsBinding.instance.platformDispatcher.locales;
   final Locale devicePrimaryLocale = WidgetsBinding.instance.platformDispatcher.locale;
   print('FLUTTER DETECTED DEVICE LOCALES LIST: $deviceLocalesList');
@@ -44,6 +64,10 @@ void main() async {
       print('Firebase already initialized: ${Firebase.apps}');
     }
     runApp(const MyApp());
+    
+    // Register the background_fetch headless task.
+    BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+    
   } catch (e) {
     print('Error during Firebase initialization or App Check activation: $e');
     runApp(const ErrorApp());
@@ -51,8 +75,20 @@ void main() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Configure background_fetch when the app starts
+    BackgroundTasks.configureBackgroundFetch();
+  }
 
   @override
   Widget build(BuildContext context) {

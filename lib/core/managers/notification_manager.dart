@@ -163,6 +163,18 @@ class NotificationManager {
     );
   }
 
+  Future<void> checkForNearbyIncidents(Position currentPosition, List<IncidenceData> incidents) async {
+        for (final incident in incidents) {
+            final distance = Geolocator.distanceBetween(
+                currentPosition.latitude,
+                currentPosition.longitude,
+                incident.latitude,
+                incident.longitude,
+            );
+            _handleIncidentNotification(incident, distance);
+        }
+    }
+
   void dispose() {
     _positionStreamSubscription?.cancel();
     _incidentsStreamSubscription?.cancel();
