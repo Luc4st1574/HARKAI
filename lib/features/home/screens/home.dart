@@ -10,6 +10,7 @@ import '../../onboarding/screens/onboarding_tutorial.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/phone_service.dart';
 import '../../../core/services/speech_service.dart';
+import '../../../core/services/notification_service.dart';
 
 // Utils (Models and Map Utilities)
 import '../utils/incidences.dart';
@@ -43,6 +44,8 @@ class _HomeState extends State<Home> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final SpeechPermissionService _speechPermissionService =
       SpeechPermissionService();
+  final NotificationService _notificationService =
+      NotificationService(); // Instantiate the new service
 
   late final MarkerManager _dataEventManager;
   late final MapLocationManager _mapLocationManager;
@@ -122,6 +125,8 @@ class _HomeState extends State<Home> {
     // Request speech permissions
     bool speechReady = await _speechPermissionService
         .ensurePermissionsAndInitializeService(openSettingsOnError: true);
+    // Request notification permissions
+    await _notificationService.requestNotificationPermission(openSettingsOnError: true);
     debugPrint("Home: Speech service ready after onboarding: $speechReady");
   }
 
