@@ -15,7 +15,7 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     final tutorialPages = [
       _buildTutorialPage(
         imagePath: 'assets/images/bot.png',
@@ -23,7 +23,7 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
         description: localizations.onboardingWelcomeDescription,
       ),
       _buildTutorialPage(
-        imagePath: 'assets/images/incident_buttons.jpg', 
+        imagePath: 'assets/images/incident_buttons.jpg',
         title: localizations.onboardingIncidentsTitle,
         description: localizations.onboardingIncidentsDescription,
       ),
@@ -32,6 +32,12 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
         title: localizations.onboardingMapTitle,
         description: localizations.onboardingMapDescription,
       ),
+      // New page for location permission
+      _buildTutorialPage(
+        imagePath: 'assets/images/alert.png', // Using the alert icon for emphasis
+        title: localizations.onboardingLocationTitle,
+        description: localizations.onboardingLocationDescription,
+      ),
     ];
 
     return Dialog(
@@ -39,13 +45,12 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
       backgroundColor: Colors.white,
       child: Container(
         padding: const EdgeInsets.all(20.0),
-        // REMOVED fixed height to allow the dialog to resize based on content.
-        // height: 520, 
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Allows the column to take minimum vertical space
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Flexible allows the PageView to take up available space without overflowing
-            Flexible(
+            SizedBox(
+              // Increased height slightly to ensure content fits comfortably
+              height: MediaQuery.of(context).size.height * 0.45,
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (int page) {
@@ -86,8 +91,8 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
                   }
                 },
                 child: Text(
-                  _currentPage == tutorialPages.length - 1 
-                      ? localizations.onboardingGotIt 
+                  _currentPage == tutorialPages.length - 1
+                      ? localizations.onboardingGotIt
                       : localizations.onboardingNext,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
@@ -117,8 +122,6 @@ class _OnboardingTutorialState extends State<OnboardingTutorial> {
     required String title,
     required String description,
   }) {
-    // Each page's content is wrapped in a SingleChildScrollView
-    // to allow scrolling if the text is too long for the screen.
     return SingleChildScrollView(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

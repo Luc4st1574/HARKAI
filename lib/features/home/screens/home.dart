@@ -94,36 +94,58 @@ class _HomeState extends State<Home> {
         },
       );
 
-      _initializeScreenData();
-      _checkFirstLaunch();
+      // This now handles the full startup sequence including onboarding
+      _initializeAndCheckOnboarding();
     }
   }
 
-  Future<void> _initializeScreenData() async {
-    if (_localizations == null) return;
-
-    _userSessionManager.initialize();
-    await _mapLocationManager.initializeManager(_localizations!);
-    await _dataEventManager.initialize(_localizations!);
-    bool speechReady = await _speechPermissionService
-        .ensurePermissionsAndInitializeService(openSettingsOnError: true);
-    debugPrint("Home: Speech service ready: $speechReady");
+  // New wrapper function to control the startup flow
+  Future<void> _initializeAndCheckOnboarding() async {
+    // Initialize services that don't show pop-ups first
+    await _initializeScreenData();
+    // Then check for onboarding, which will handle permission requests
+    await _checkFirstLaunch();
   }
 
+  // Updated to only initialize non-UI blocking services
+  Future<void> _initializeScreenData() async {
+    if (_localizations == null) return;
+    _userSessionManager.initialize();
+    await _dataEventManager.initialize(_localizations!);
+  }
+
+  // New function to request permissions
+  Future<void> _requestInitialPermissions() async {
+    if (_localizations == null) return;
+    // This will now fetch location and request permission
+    await _mapLocationManager.initializeManager(_localizations!);
+    // Request speech permissions
+    bool speechReady = await _speechPermissionService
+        .ensurePermissionsAndInitializeService(openSettingsOnError: true);
+    debugPrint("Home: Speech service ready after onboarding: $speechReady");
+  }
+
+
+  // Updated to correctly sequence permissions after onboarding
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
     final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
 
     if (isFirstLaunch) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
+      if (mounted) {
+        // Show the tutorial and wait for it to be dismissed
+        await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) => const OnboardingTutorial(),
-        ).then((_) {
-          prefs.setBool('is_first_launch', false);
-        });
-      });
+        );
+        // Once the tutorial is done, save the preference and request permissions
+        await prefs.setBool('is_first_launch', false);
+        await _requestInitialPermissions();
+      }
+    } else {
+      // If it's not the first launch, request permissions right away
+      await _requestInitialPermissions();
     }
   }
 

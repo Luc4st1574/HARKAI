@@ -828,4 +828,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get incidentModalButtonEnterTextInstead => 'Enter Text Instead';
+
+  @override
+  String get onboardingLocationTitle => 'Always-On Location';
+
+  @override
+  String get onboardingLocationDescription =>
+      'To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission on applications settings.';
 }

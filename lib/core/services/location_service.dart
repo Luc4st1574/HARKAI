@@ -34,28 +34,37 @@ class LocationService {
   }
 
   /// Requests location permission from the user if not already granted.
+  /// This will now loop until permission is granted.
   Future<bool> requestLocationPermission({bool openSettingsOnError = false}) async {
     print("Requesting location permission...");
-    var status = await perm_handler.Permission.location.status; // Check general location status
-    if (status.isGranted) {
-      print("Location permission already granted.");
-      return true;
-    }
 
-    // Request "always" permission
-    status = await perm_handler.Permission.locationAlways.request();
+    while (true) {
+      var status = await perm_handler.Permission.location.status;
+      print("Current location permission status: $status");
 
-    if (status.isGranted) {
-      print("Location 'always' permission granted.");
-      return true;
-    } else {
-      print("Location 'always' permission denied.");
-      if (status.isPermanentlyDenied && openSettingsOnError) {
-        await perm_handler.openAppSettings();
+      if (status.isGranted) {
+        print("Location permission granted.");
+        return true;
       }
-      return false;
+
+      if (status.isPermanentlyDenied) {
+        print("Location permission permanently denied. Opening app settings...");
+        if (openSettingsOnError) {
+          await perm_handler.openAppSettings();
+        }
+        // Add a delay to give the user time to change settings and return to the app
+        await Future.delayed(const Duration(seconds: 5));
+        continue; // Re-check the status after returning from settings
+      }
+
+      // If denied (but not permanently), request it again.
+      print("Requesting location permission...");
+      await perm_handler.Permission.location.request();
+      // The loop will re-check the status on the next iteration.
+      await Future.delayed(const Duration(seconds: 1)); // Small delay to prevent overly aggressive re-prompting
     }
   }
+
 
   /// Determines the current position of the device.
   Future<LocationResult<Position>> getInitialPosition() async {
@@ -70,7 +79,8 @@ class LocationService {
 
     bool permissionGranted = await requestLocationPermission(openSettingsOnError: true);
     if (!permissionGranted) {
-      // Check the specific status to provide a more accurate message
+      // This part is less likely to be hit with the new looping request,
+      // but it's good practice to keep it as a fallback.
       perm_handler.PermissionStatus status =
           await perm_handler.Permission.locationWhenInUse.status;
       String errorMessage = 'Location permission denied.';

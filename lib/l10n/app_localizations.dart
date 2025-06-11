@@ -1481,6 +1481,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter Text Instead'**
   String get incidentModalButtonEnterTextInstead;
+
+  /// No description provided for @onboardingLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Always-On Location'**
+  String get onboardingLocationTitle;
+
+  /// No description provided for @onboardingLocationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission on applications settings.'**
+  String get onboardingLocationDescription;
 }
 
 class _AppLocalizationsDelegate
