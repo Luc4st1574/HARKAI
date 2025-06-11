@@ -18,6 +18,29 @@ class ProfileState extends State<Profile> {
   bool _obscurePassword = true;
   final user = FirebaseAuth.instance.currentUser;
 
+  // Helper function to truncate the email from the middle
+  String _truncateEmail(String email, {int maxLength = 22}) {
+    if (email.length <= maxLength) {
+      return email;
+    }
+
+    final atIndex = email.indexOf('@');
+    if (atIndex == -1) {
+      // Not a valid email, truncate normally
+      return '${email.substring(0, maxLength - 3)}...';
+    }
+
+    final name = email.substring(0, atIndex);
+    final domain = email.substring(atIndex);
+
+    if (name.length > 10) {
+      final truncatedName = '${name.substring(0, 5)}...${name.substring(name.length - 2)}';
+      return '$truncatedName$domain';
+    }
+
+    return email;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get localizations instance
@@ -107,7 +130,13 @@ class ProfileState extends State<Profile> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: const TextStyle(color: Color(0xFF57D463))), // Title is already localized when passed
-          Text(value, style: const TextStyle(color: Colors.white)), // Value is data or localized fallback
+          Flexible(
+            child: Text(
+              _truncateEmail(value),
+              style: const TextStyle(color: Colors.white),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
