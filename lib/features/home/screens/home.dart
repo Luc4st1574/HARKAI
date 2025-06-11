@@ -330,7 +330,7 @@ class _HomeState extends State<Home> {
                             onMapTappedWithMarker: (LatLng position) {
                               _unlockScrollView();
                               _mapLocationManager.handleMapTapped(
-                                  position, context);
+                                  position, context, isDistanceCheckEnabled: true);
                             },
                             onMapLongPressed: (cameraPosition) {
                               _unlockScrollView();

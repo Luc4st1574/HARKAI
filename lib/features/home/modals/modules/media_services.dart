@@ -151,7 +151,7 @@ class IncidentMediaServices {
         "IF MATCHES INCIDENT TYPE: Respond EXACTLY 'MATCH:'. "
         "IF MISMATCH (but valid other type like Fire, Crash, Theft, Pet, Emergency): Respond EXACTLY 'MISMATCH: This image looks more like a [Correct Incident Type] alert. Please confirm this type or retake image for $incidentTypeName incident.'. "
         "IF IRRELEVANT/UNCLEAR: Respond EXACTLY 'UNCLEAR: The image is not clear enough or does not seem to describe a reportable incident for '$incidentTypeName'. Please try retaking the picture.'."
-        "The places incident type is for adding businesses, stores, and so on to the map, this is not for incidents but for adding places to the map so be conscious of this and do not use it for incidents. "
+        "The places incident type is for adding businesses, stores,parks,plazas,malls and so on to the map, this is not for incidents but for adding places to the map so be conscious of this and do not use it for incidents. "
         "If the user give a instruction in Spanish you must respond in Spanish except the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' that must be in English."
         "Only the part of 'MATCH', 'MISMATCH' or 'IRRELEVANT/UNCLEAR' must be in English, the rest of the response must be in Spanish do not omit this part at all cost do not omit it please."
         "Do not translate the response to English if Spanish was the used language by the user.";

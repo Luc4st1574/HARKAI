@@ -233,8 +233,8 @@ class MapLocationManager {
     }
   }
 
-  void handleMapTapped(LatLng position, BuildContext context) {
-    if (_latitude != null && _longitude != null) {
+  void handleMapTapped(LatLng position, BuildContext context, {bool isDistanceCheckEnabled = true}) {
+    if (isDistanceCheckEnabled && _latitude != null && _longitude != null) {
       final distance = geolocator.Geolocator.distanceBetween(
         _latitude!,
         _longitude!,

@@ -187,7 +187,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           side: BorderSide(color: Colors.yellow.shade700, width: 2),
         ),
         title: Text(
-          _localizations!.paymentRequiredMessage('1.00'),
+          _localizations!.paymentRequiredMessage('8.00'),
           style: TextStyle(
             color: Colors.yellow.shade700,
             fontWeight: FontWeight.bold,
@@ -363,7 +363,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                         circles: _getCirclesForDisplay(),
                         selectedMarker: MakerType.none,
                         onMapTappedWithMarker: (LatLng position) {
-                          _mapLocationManager.handleMapTapped(position, context);
+                          _mapLocationManager.handleMapTapped(position, context, isDistanceCheckEnabled: false);
                         },
                         onMapCreated: _mapLocationManager.onMapCreated,
                         onResetTargetPressed: () =>
