@@ -1,64 +1,18 @@
-buildscript {
-    ext.kotlin_version = '1.9.22' // Explicitly set a modern, stable Kotlin version
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        // Define the classpaths for the build tools
-        classpath 'com.android.tools.build:gradle:8.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
-plugins {
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services' version '4.4.2' apply false
-    id 'com.google.firebase.firebase-perf' version '1.4.2' apply false
-    id 'com.google.firebase.crashlytics' version '3.0.2' apply false
-    // END: FlutterFire Configuration
-}
-
 allprojects {
     repositories {
         google()
         mavenCentral()
-        // Add this line
-        maven {
-            url "${project(':background_fetch').projectDir}/libs"
-        }
     }
 }
 
 rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
-}
-
-// Use afterEvaluate to apply settings to all subprojects after their own build files have been read.
-// This is a more robust way to override plugin-specific settings.
-subprojects {
-    afterEvaluate {project ->
-        if (project.hasProperty('android')) {
-            android {
-                compileSdkVersion flutter.compileSdkVersion
-
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
-                }
-            }
-            // FIX: Only apply kotlinOptions if the project is actually a Kotlin project
-            if (project.plugins.hasPlugin("kotlin-android")) {
-                project.android.kotlinOptions {
-                    jvmTarget = '17'
-                }
-            }
-        }
-        // Suppress the deprecation warnings from plugins
-        project.tasks.withType(JavaCompile).configureEach {
-            options.compilerArgs += "-Xlint:-deprecation"
-        }
-    }
 }

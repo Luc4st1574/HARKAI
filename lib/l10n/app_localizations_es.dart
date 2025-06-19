@@ -404,8 +404,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentModalInstructionAddImageOrSubmit(
-    String confirmedAudioDescription,
-  ) {
+      String confirmedAudioDescription) {
     return 'Audio Confirmado: \"$confirmedAudioDescription\"\nAñade una imagen o envía solo con descripcion.';
   }
 
@@ -460,8 +459,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentModalErrorHarkiAudioResponseFormatUnexpected(
-    String responseText,
-  ) {
+      String responseText) {
     return 'El formato de respuesta de audio de Harki AI fue inesperado: $responseText. Revisa o reintenta.';
   }
 
@@ -623,17 +621,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String locationServiceGeocodingLocationLatLonNoAddress(
-    String latitude,
-    String longitude,
-  ) {
+      String latitude, String longitude) {
     return 'Ubicación: $latitude, $longitude (No se encontró dirección)';
   }
 
   @override
   String locationServiceGeocodingLocationLatLonComponentsNotFound(
-    String latitude,
-    String longitude,
-  ) {
+      String latitude, String longitude) {
     return 'Ubicación: $latitude, $longitude (Componentes de dirección no encontrados)';
   }
 
