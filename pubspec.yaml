@@ -33,7 +33,6 @@ dependencies:
   flutter_google_maps_webservices: ^1.1.1
   shared_preferences: ^2.4.10
   record: ^6.0.0
-  speech_to_text: ^7.0.0
   path_provider: ^2.1.5
   firebase_storage: ^12.4.6
   image_picker: ^1.1.2
