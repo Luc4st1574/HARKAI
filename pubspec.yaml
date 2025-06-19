@@ -1,0 +1,82 @@
+name: harkai
+description: "An innovative security app created by citizens, designed to empower and protect communities by providing tools and resources that prioritize the safety and well-being of everyone. Built with a deep understanding of local needs, this app fosters collaboration, communication, and trust among neighbors, ensuring a safer environment for all."
+publish_to: 'none'
+
+version: 3.6.2
+
+environment:
+  sdk: ^3.5.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    # Add this line
+    sdk: flutter
+  intl: ^0.20.2
+
+  cupertino_icons: ^1.0.8
+  firebase_core: ^3.13.1
+  firebase_auth: ^5.5.4
+  google_sign_in: ^6.3.0
+  cloud_firestore: ^5.6.8
+  google_maps_flutter: ^2.12.2
+  google_fonts: ^6.2.1
+  fluttertoast: ^8.2.12
+  url_launcher: ^6.3.1
+  permission_handler: ^12.0.0+1
+  flutter_dotenv: ^5.2.1
+  google_generative_ai: ^0.4.7
+  geolocator: ^14.0.0
+  geocoding: ^4.0.0
+  location_geocoder: ^1.0.5
+  flutter_google_maps_webservices: ^1.1.1
+  shared_preferences: ^2.4.10
+  record: ^6.0.0
+  speech_to_text: ^7.0.0
+  path_provider: ^2.1.5
+  firebase_storage: ^12.4.6
+  image_picker: ^1.1.2
+  path: ^1.9.1
+  firebase_app_check: ^0.3.2+6
+  flutter_polyline_points: ^2.1.0
+  http: ^1.4.0
+  pay: ^3.2.1
+  flutter_local_notifications: ^19.2.1
+  background_fetch: ^1.3.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: "^0.14.1"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 23
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+  - assets/images/background.png
+  - assets/images/logo.png
+  - assets/images/google_logo.png
+  - assets/images/bot.png
+  - assets/images/car.png
+  - assets/images/dog.png
+  - assets/images/fire.png
+  - assets/images/theft.png
+  - assets/images/alert.png
+  - assets/icon/icon.png
+  - assets/images/tap_position_marker.png
+  - assets/images/place_icon.png
+  - assets/images/incident_buttons.jpg
+  - assets/
+  - assets/images/
+  - .env

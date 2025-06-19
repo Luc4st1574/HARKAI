@@ -1,0 +1,451 @@
+{
+  "@@locale": "es",
+  "appTitle": "Harkai",
+  "helloWorld": "¡Hola Mundo!",
+  "welcomeMessage": "¡Bienvenido, {name}!",
+  "@welcomeMessage": {
+    "description": "Un mensaje de bienvenida con un marcador de posición para el nombre del usuario.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Juan Pérez"
+      }
+    }
+  },
+  "firebaseInitError": "Fallo al inicializar Firebase. Por favor, reinicia la aplicación.",
+  "splashWelcome": "BIENVENIDO A HARKAI",
+  "registerTitle": "REGISTRARSE",
+  "usernameHint": "Nombre de usuario",
+  "emailHint": "Correo electrónico",
+  "passwordHint": "Contraseña",
+  "signUpButton": "REGISTRARSE",
+  "signUpWithGoogleButton": "Registrarse con Google",
+  "alreadyHaveAccountPrompt": "¿Ya tienes una cuenta? ",
+  "logInLink": "INICIAR SESIÓN",
+  "googleSignInSuccess": "¡Inicio de sesión con Google exitoso!",
+  "googleSignInErrorPrefix": "Error al iniciar sesión con Google: ",
+  "emailSignupSuccess": "¡Registro exitoso!",
+  "emailSignupErrorPrefix": "Error al registrarse: ",
+  "profileTitle": "Perfil de Usuario",
+  "profileDefaultUsername": "Usuario",
+  "profileEmailLabel": "Correo Electrónico",
+  "profileValueNotAvailable": "No disponible",
+  "profilePasswordLabel": "Contraseña",
+  "profilePasswordHiddenText": "contraseña oculta",
+  "profileChangePasswordButton": "Cambiar Contraseña",
+  "profileBlockCardsButton": "Bloquear Tarjetas",
+  "profileLogoutButton": "Cerrar Sesión",
+  "profileDialerErrorPrefix": "Error al abrir el marcador: ",
+  "profilePhonePermissionDenied": "Permiso denegado para realizar llamadas",
+  "profileResetPasswordDialogTitle": "Restablecer Contraseña",
+  "profileResetPasswordDialogContent": "¿Estás seguro de que quieres restablecer tu contraseña?",
+  "profileDialogNo": "No",
+  "profileDialogYes": "Sí",
+  "profilePasswordResetEmailSent": "¡Correo de restablecimiento de contraseña enviado!",
+  "profileNoEmailForPasswordReset": "¡No se encontró correo para restablecer la contraseña!",
+  "loginTitle": "INICIAR SESIÓN",
+  "loginForgotPasswordLink": "¿Olvidaste tu contraseña?",
+  "loginSignInButton": "INICIAR SESIÓN",
+  "loginSignInWithGoogleButton": "Iniciar sesión con Google",
+  "loginDontHaveAccountPrompt": "¿No tienes una cuenta? ",
+  "loginForgotPasswordDialogTitle": "Olvidé mi Contraseña",
+  "loginForgotPasswordDialogContent": "Ingresa tu correo electrónico para recibir un enlace de restablecimiento de contraseña:",
+  "loginSendButton": "ENVIAR",
+  "loginPasswordResetEmailSent": "Correo de restablecimiento de contraseña enviado.",
+  "commonErrorPrefix": "Error: ",
+  "loginEmptyFieldsPrompt": "Por favor, ingresa tu correo electrónico y contraseña.",
+  "loginFailedErrorPrefix": "Falló el inicio de sesión: ",
+  "chatApiKeyNotConfigured": "La clave API para Harki AI no está configurada. Por favor, revisa tu archivo .env.",
+  "chatHarkiAiInitializedSuccess": "Harki AI Inicializado.",
+  "chatHarkiAiInitFailedPrefix": "Fallo al inicializar Harki AI. Revisa la clave API y la red. Error: ",
+  "chatHarkiAiNotInitializedOnSend": "Harki AI no está inicializado. Por favor espera o revisa la clave API y la red.",
+  "chatSessionNotStartedOnSend": "La sesión de chat no ha comenzado. Por favor, intenta reinicializar.",
+  "chatHarkiAiEmptyResponse": "Harki AI devolvió una respuesta vacía.",
+  "chatHarkiAiEmptyResponseFallbackMessage": "Lo siento, no obtuve una respuesta. Por favor, inténtalo de nuevo.",
+  "chatSendMessageFailedPrefix": "Fallo al enviar el mensaje a Harki AI. Error: ",
+  "chatSendMessageErrorFallbackMessage": "Error: No se pudo obtener una respuesta de Harki.",
+  "chatScreenTitle": "Chat con Harki AI",
+  "chatInitializingHarkiAiText": "Inicializando Harki AI...",
+  "chatHarkiIsTypingText": "Harki está escribiendo...",
+  "chatMessageHintReady": "Mensaje a Harki...",
+  "chatMessageHintInitializing": "Harki AI se está inicializando...",
+  "chatSenderNameHarki": "Harki",
+  "chatSenderNameUserFallback": "Tú",
+
+  "homeScreenLocationInfoText": "Esto está sucediendo en tu área",
+  "homeMapLoadingText": "Cargando datos del mapa...",
+  "homeFireAlertButtonTitle": "Incendios",
+  "homeCrashAlertButtonTitle": "Choques",
+  "homeTheftAlertButtonTitle": "Robos",
+  "homePetAlertButtonTitle": "Mascotas",
+  "homeCallAgentButton": "{agent}",
+  "@homeCallAgentButton": {
+    "placeholders": {
+      "agent": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCallEmergenciesButton": "Emergencias",
+  "agentFirefighters": "Bomberos",
+  "agentSerenazgo": "Serenazgo",
+  "agentPolice": "Policía",
+  "agentShelter": "Refugio",
+  "agentEmergencies": "Emergencias",
+
+  "mapLoadingLocation": "Cargando ubicación...",
+  "mapFetchingLocation": "Obteniendo ubicación...",
+  "mapYouAreIn": "Estás en {location}",
+  "@mapYouAreIn": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "mapinitialFetchingLocation": "Obteniendo ubicación inicial...",
+  "mapCouldNotFetchAddress": "No se pudo obtener la dirección",
+  "mapFailedToGetInitialLocation": "Error al obtener la ubicación inicial",
+  "mapLocationServicesDisabled": "Servicios de ubicación desactivados.",
+  "mapLocationPermissionDenied": "Permiso de ubicación denegado.",
+  "mapErrorFetchingLocation": "Error al obtener la ubicación: {error}",
+  "@mapErrorFetchingLocation": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mapCurrentUserLocationNotAvailable": "Ubicación actual del usuario no disponible.",
+
+  "incidentReportedSuccess": "¡Incidente de {incidentTitle} reportado!",
+  "@incidentReportedSuccess": {
+    "placeholders": {
+      "incidentTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentReportFailed": "Error al reportar incidente de {incidentTitle}.",
+  "@incidentReportFailed": {
+    "placeholders": {
+      "incidentTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "targetLocationNotSet": "Ubicación objetivo no establecida. Toca en el mapa o usa la brújula.",
+  "emergencyReportLocationUnknown": "No se puede reportar emergencia: Ubicación objetivo desconocida.",
+  "enlargedMapDataUnavailable": "Datos del mapa no disponibles actualmente. Por favor, inténtalo de nuevo.",
+
+  "incidentModalStep1ReportAudioTitle": "Paso 1: Reportar Audio para {incidentName}",
+  "@incidentModalStep1ReportAudioTitle": {
+    "placeholders": {
+      "incidentName": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalStatusInitializing": "Inicializando...",
+  "incidentModalStatusRecordingAudio": "Grabando Audio...",
+  "incidentModalStatusAudioRecorded": "¡Audio Grabado!",
+  "incidentModalStatusSendingAudioToHarki": "Harki Analizando Descripción...",
+  "incidentModalStatusConfirmAudioDescription": "Confirmar Descripción:",
+  "incidentModalStatusStep2AddImage": "Paso 2: Añadir Imagen (Opcional)",
+  "incidentModalStatusCapturingImage": "Paso 2: Capturando Imagen...",
+  "incidentModalStatusImagePreview": "Paso 2: Vista Previa de Imagen",
+  "incidentModalStatusSendingImageToHarki": "Harki Analizando Imagen...",
+  "incidentModalStatusImageAnalyzed": "Paso 2: Imagen Analizada",
+  "incidentModalStatusSubmittingIncident": "Enviando Incidente...",
+  "incidentModalStatusError": "Error",
+  "incidentModalStatusTypeMismatch": "Tipo no Coincide",
+  "incidentModalStatusInputUnclearInvalid": "Entrada No Clara/Inválida",
+  "incidentModalStatusHarkiProcessingError": "Error de Procesamiento de Harki",
+  "incidentModalInstructionHoldMic": "Mantén presionado el Mic para grabar la descripción de audio.",
+  "incidentModalInstructionMicPermissionNeeded": "Se necesita permiso de micrófono. Toca el Mic para verificar/otorgar o concédelo en la configuración.",
+  "incidentModalInstructionHarkiInitializing": "Harki AI se está inicializando. Espera o toca el Mic para reintentar.",
+  "incidentModalInstructionMicPermAndHarkiInit": "Se necesita permiso de Mic y Harki AI se está inicializando. Toca el Mic para continuar.",
+  "incidentModalInstructionReleaseMic": "Suelta el Mic para detener.",
+  "incidentModalInstructionSendAudioToHarki": "Toca \"Enviar Audio a Harki\" para analizar.",
+  "incidentModalInstructionPleaseWait": "Por favor espera.",
+  "incidentModalInstructionConfirmAudio": "Harki sugiere: \"{audioDescription}\".\n¿Es correcto?",
+  "@incidentModalInstructionConfirmAudio": {
+    "placeholders": {
+      "audioDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalInstructionAddImageOrSubmit": "Audio Confirmado: \"{confirmedAudioDescription}\"\nAñade una imagen o envía solo con descripcion.",
+  "@incidentModalInstructionAddImageOrSubmit": {
+    "placeholders": {
+      "confirmedAudioDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalInstructionUseCamera": "Usa la cámara para capturar una imagen.",
+  "incidentModalInstructionAnalyzeRetakeRemoveImage": "Analiza esta imagen con Harki, tómala de nuevo o elimínala para continuar solo con audio.",
+  "incidentModalInstructionImageApproved": "¡Imagen aprobada por Harki!\nEnvía con los detalles actuales, toma la imagen de nuevo o elimínala.",
+  "incidentModalInstructionImageFeedback": "Comentarios de Harki sobre la imagen: {imageFeedback}\nEnvía con los detalles actuales, toma la imagen de nuevo o elimínala.",
+  "@incidentModalInstructionImageFeedback": {
+    "placeholders": {
+      "imageFeedback": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalInstructionUploadingMedia": "Subiendo multimedia, por favor espera.",
+  "incidentModalErrorMicPermissionRequired": "Se requiere permiso de micrófono para grabar audio. Otórgalo en la configuración o reinicia el proceso de reporte.",
+  "incidentModalErrorFailedToInitHarki": "Error al inicializar Harki AI. Procesamiento de multimedia no disponible.",
+  "incidentModalErrorMicNotGranted": "Permiso de micrófono no otorgado. No se puede grabar audio.",
+  "incidentModalErrorHarkiNotReadyAudio": "Harki AI no está listo. No se puede procesar audio.",
+  "incidentModalErrorCouldNotStartRecording": "No se pudo iniciar la grabación. Asegúrate de que el micrófono esté disponible.",
+  "incidentModalErrorAudioEmptyNotSaved": "La grabación de audio parece vacía o no se guardó correctamente. Inténtalo de nuevo.",
+  "incidentModalErrorNoAudioOrHarkiNotReady": "No hay audio grabado o Harki AI no está listo.",
+  "incidentModalErrorHarkiAudioResponseFormatUnexpected": "El formato de respuesta de audio de Harki AI fue inesperado: {responseText}. Revisa o reintenta.",
+  "@incidentModalErrorHarkiAudioResponseFormatUnexpected": {
+    "placeholders": {
+      "responseText": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalErrorHarkiNoActionableTextAudio": "Harki AI no devolvió texto procesable para el audio.",
+  "incidentModalErrorHarkiAudioProcessingFailed": "El procesamiento de audio de Harki AI falló: {error}",
+  "@incidentModalErrorHarkiAudioProcessingFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalErrorNoAudioToConfirm": "No hay descripción de audio para confirmar.",
+  "incidentModalErrorHarkiNotReadyImage": "Harki AI no está listo. No se puede procesar la imagen.",
+  "incidentModalErrorNoImageOrHarkiNotReady": "No hay imagen capturada o Harki AI no está listo.",
+  "incidentModalErrorHarkiNoActionableTextImage": "Harki AI no devolvió texto procesable para la imagen.",
+  "incidentModalErrorHarkiImageProcessingFailed": "El procesamiento de imagen de Harki AI falló: {error}",
+  "@incidentModalErrorHarkiImageProcessingFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalErrorUserNotLoggedIn": "Usuario no ha iniciado sesión. No se puede enviar el incidente.",
+  "incidentModalErrorFailedToUploadImage": "Error al subir la imagen. Inténtalo de nuevo o envía sin imagen.",
+  "incidentModalErrorNoConfirmedAudioDescription": "No hay descripción de audio confirmada disponible. Completa primero el paso de audio.",
+  "incidentModalButtonHoldToRecordReleaseToStop": "Mantén presionado para grabar, suelta para detener.",
+  "incidentModalButtonSendAudioToHarki": "Enviar Audio a Harki",
+  "incidentModalButtonConfirmAudioAndProceed": "Confirmar y Continuar",
+  "incidentModalButtonRerecordAudio": "Grabar Audio de Nuevo",
+  "incidentModalButtonSubmitWithAudioOnly": "Enviar solo con detalle",
+  "incidentModalButtonAddPicture": "Añadir Foto",
+  "incidentModalButtonRetakePicture": "Tomar Foto de Nuevo",
+  "incidentModalButtonAnalyzeImageWithHarki": "Analizar Imagen con Harki",
+  "incidentModalButtonUseAudioOnlyRemoveImage": "Usar Solo Audio (Eliminar Imagen)",
+  "incidentModalButtonSubmitWithAudioAndImage": "Enviar con Audio e Imagen",
+  "incidentModalButtonSubmitAudioOnlyInstead": "Enviar Solo Audio en su Lugar",
+  "incidentModalButtonTryAgainFromStart": "Intentar de Nuevo desde el Inicio",
+  "incidentModalButtonCancelReport": "Cancelar Reporte",
+  "incidentModalImageForIncident": "Imagen para el Incidente:",
+  "incidentModalImageRemoveTooltip": "Eliminar Imagen",
+  "incidentModalImageHarkiLooksGood": "Harki: ¡La imagen se ve bien!",
+  "incidentModalImageHarkiFeedback": "Harki: {feedback}",
+  "@incidentModalImageHarkiFeedback": {
+    "placeholders": {
+      "feedback": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentModalImageHarkiAnalysisComplete": "Harki: Análisis completo.",
+  "incidentModalAudioConfirmedAudio": "Audio Confirmado:",
+
+  "incidentImageModalDescriptionLabel": "Descripción:",
+  "incidentImageModalNoImage": "No hay imagen para este incidente.",
+  "incidentImageModalNoAdditionalDescription": "No se proporcionó descripción adicional para la imagen.",
+  "incidentImageModalCloseButton": "Cerrar",
+  "incidentImageModalImageUnavailable": "Imagen no disponible",
+
+  "locationServiceDisabled": "Servicios de ubicación desactivados.",
+  "locationServicePermissionDenied": "Permiso de ubicación denegado.",
+  "locationServicePermissionPermanentlyDenied": "Los permisos de ubicación están denegados permanentemente. Habilítalos en la configuración de la aplicación.",
+  "locationServiceFailedToGetLocation": "Error al obtener la ubicación: {error}",
+  "@locationServiceFailedToGetLocation": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationServiceGeocodingApiError": "Error de la API de Geocodificación: {status} - {errorMessage}",
+  "@locationServiceGeocodingApiError": {
+    "placeholders": {
+      "status": { "type": "String" },
+      "errorMessage": { "type": "String" }
+    }
+  },
+  "locationServiceGeocodingFailedDefault": "Error al obtener la dirección (estado de API no OK)",
+  "locationServiceGeocodingNoResults": "No se encontraron resultados de dirección para las coordenadas dadas.",
+  "locationServiceGeocodingLocationLatLonNoAddress": "Ubicación: {latitude}, {longitude} (No se encontró dirección)",
+  "@locationServiceGeocodingLocationLatLonNoAddress": {
+    "placeholders": {
+      "latitude": { "type": "String" },
+      "longitude": { "type": "String" }
+    }
+  },
+  "locationServiceGeocodingLocationLatLonComponentsNotFound": "Ubicación: {latitude}, {longitude} (Componentes de dirección no encontrados)",
+  "@locationServiceGeocodingLocationLatLonComponentsNotFound": {
+    "placeholders": {
+      "latitude": { "type": "String" },
+      "longitude": { "type": "String" }
+    }
+  },
+  "locationServiceGeocodingErrorGeneric": "Error de geocodificación: {error}",
+  "@locationServiceGeocodingErrorGeneric": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "phoneServicePermissionDenied": "Permiso denegado para hacer llamadas. Habilítalo en la configuración.",
+  "phoneServiceCouldNotLaunchDialer": "No se pudo iniciar el marcador: {error}",
+  "@phoneServiceCouldNotLaunchDialer": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "incidentScreenTitle": "{incidentType} cerca a ti",
+  "@incidentScreenTitle": {
+    "description": "Título para la pantalla de listado de incidentes, toma el nombre del tipo de incidente.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fuego"
+      }
+    }
+  },
+  "incidentFeedNoIncidentsFound": "No se encontraron incidentes de {incidentType} cercanos por el momento.",
+  "@incidentFeedNoIncidentsFound": {
+    "description": "Mensaje que se muestra cuando no se encuentran incidentes de un tipo específico.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Fuego"
+      }
+    }
+  },
+  "incidentTileDefaultTitle": "Incidente Reportado",
+  "incidentTileDistanceMeters": "A {distance}m",
+  "@incidentTileDistanceMeters": {
+    "description": "Distancia en metros para la tarjeta de incidente.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "150"
+      }
+    }
+  },
+  "incidentTileDistanceKm": "A {distance}km",
+  "@incidentTileDistanceKm": {
+    "description": "Distancia en kilómetros para la tarjeta de incidente.",
+    "placeholders": {
+      "distance": {
+        "type": "String",
+        "example": "1.2"
+      }
+    }
+  },
+  "incidentMapViewTitle": "Ubicación de {incidentType}",
+  "@incidentMapViewTitle": {
+    "description": "Título para la vista de mapa del incidente, toma el nombre del tipo de incidente.",
+    "placeholders": {
+      "incidentType": {
+        "type": "String",
+        "example": "Robo"
+      }
+    }
+  },
+  "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible.",
+
+  "placesScreenTitle": "Lugares",
+    "addPlaceButtonTitle": "Lugares interesantes",
+    "placeMarkerName": "Lugar",
+    "paymentRequiredMessage": "Se requiere un pago de {amount} para añadir este lugar.",
+    "@paymentRequiredMessage": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "example": "$1.00"
+            }
+        }
+    },
+    "paymentProcessingMessage": "Procesando pago...",
+    "paymentSuccessfulMessage": "¡Pago exitoso! Lugar añadido.",
+    "paymentFailedMessage": "El pago falló. Por favor, inténtalo de nuevo.",
+    "photoRequiredMessage": "Una foto es obligatoria para añadir un lugar.",
+    "placesIncidentFeedTitle": "Lugares Cercanos",
+    "buttonAddPlace": "Añadir Lugar",
+    "hintSearch": "Busca por descripcion...",
+    "searchNoResults": "Ninguna descripcion encontrada.",
+    "mapMarkerTooFar": "El marcador está demasiado lejos de tu ubicación actual.",
+    "onboardingWelcomeTitle": "¡Bienvenido a Harkai!",
+    "onboardingWelcomeDescription": "Conoce a Harki, tu asistente personal de IA. Harki puede ayudarte con consejos de seguridad y guiarte a través de las funciones de la aplicación.",
+    "onboardingIncidentsTitle": "Reportando Incidentes",
+    "onboardingIncidentsDescription": "Toca un botón de incidente (como 'Incendio' o 'Robo') para reportar algo en una ubicación específica. Mantén presionado el botón para ver una lista de incidentes recientes y cercanos de ese tipo.",
+    "onboardingMapTitle": "Ubicaciones Precisas",
+    "onboardingMapDescription": "Para reportar un incidente, primero toca en el mapa para colocar el marcador de objetivo precisamente donde está ocurriendo el evento. También puedes tocar el ícono de la brújula para centrarlo en tu ubicación actual.",
+    "onboardingGotIt": "¡Entendido!",
+    "onboardingNext": "Siguiente",
+    "authWeakPassword": "La contraseña proporcionada es demasiado débil.",
+    "authEmailInUse": "La cuenta ya existe para ese correo electrónico.",
+    "authInvalidEmail": "La dirección de correo electrónico no es válida.",
+    "authGenericError": "Ocurrió un error. Por favor, inténtalo de nuevo.",
+    "authUserNotFound": "No se encontró ningún usuario para ese correo electrónico.",
+    "authWrongPassword": "Contraseña incorrecta proporcionada para ese usuario.",
+    "authSignOutError": "Error al cerrar la sesión. Por favor, inténtalo de nuevo.",
+    "profileLogoutMessage": "Se ha cerrado la sesión correctamente.",
+    "notifFireNearbyTitle": "Incendio Cercano",
+    "notifFireNearbyBody": "Advertencia, hay un incendio cerca. Por favor, ten cuidado.",
+    "notifFireDangerTitle": "Peligro: Incendio Adelante",
+    "notifFireDangerBody": "Te estás acercando mucho al incendio. Evita la zona por tu seguridad.",
+    "notifTheftAlertTitle": "Alerta de Robo",
+    "notifTheftAlertBody": "Se ha reportado un robo cerca. Por favor, mantente alerta.",
+    "notifTheftSecurityTitle": "Alerta de Seguridad",
+    "notifTheftSecurityBody": "Estás muy cerca de un robo reportado. Evita la zona y mantente a salvo.",
+    "notifGenericIncidentTitle": "Incidente Cercano",
+    "notifGenericIncidentBody": "Echa un vistazo y ve si puedes ayudar.",
+    "notifPlaceDiscoveryTitle": "Descubre un Nuevo Lugar",
+    "notifPlaceDiscoveryBody": "¡Oye, estás cerca de {placeName}! Creemos que deberías echarle un vistazo.",
+    "notifPlaceAlmostThereTitle": "¡Ya Casi Llegas!",
+    "notifPlaceAlmostThereBody": "Te estás acercando a {placeName}. ¡Disfruta tu visita!",
+    "notifPlaceWelcomeTitle": "¡Bienvenido!",
+    "notifPlaceWelcomeBody": "Nos alegra que hayas venido a {placeName}. ¡Esperamos que disfrutes tu estancia aquí!",
+    "incidentModalReportTextTitle": "Paso 1: Reportar con Texto para {incidentName}",
+    "@incidentModalReportTextTitle": {
+        "description": "Título para el paso de reporte de incidente cuando se usa texto. Toma el nombre del incidente como parámetro.",
+        "placeholders": {
+            "incidentName": {
+                "type": "String"
+            }
+        }
+    },
+    "incidentModalInstructionEnterText": "Por favor, describe el incidente en el cuadro de texto a continuación.",
+    "@incidentModalInstructionEnterText": {
+        "description": "Instrucción para que el usuario ingrese una descripción de texto para el incidente."
+    },
+    "incidentModalButtonSendTextToHarki": "Enviar Texto a Harki",
+    "@incidentModalButtonSendTextToHarki": {
+        "description": "Texto del botón para enviar la descripción de texto para su análisis."
+    },
+    "incidentModalButtonEnterTextInstead": "Ingresar Texto en su Lugar",
+    "@incidentModalButtonEnterTextInstead": {
+        "description": "Texto del botón para la opción de cambiar a entrada de texto desde la entrada de audio."
+    },
+    "onboardingLocationTitle": "Ubicación Siempre Activa",
+    "onboardingLocationDescription": "Para mantenerte seguro y enviarte alertas en tiempo real sobre incidentes cercanos incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso en la configuración interna de la app en los ajustes de aplicaciones.",
+    "addplaceTitle": "Añadir Lugar al Mapa de Harkai",
+    "incidentModalButtonAddFromGallery": "Añadir desde Galería",
+    "addplaceInfo": "Para añadir un lugar, completa el pago con el boton de pago"
+}
