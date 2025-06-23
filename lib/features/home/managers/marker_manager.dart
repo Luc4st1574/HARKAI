@@ -30,10 +30,11 @@ class MarkerManager {
         _downloadDataManager = downloadDataManager;
 
   Future<void> initialize(AppLocalizations localizations) async {
+    await _downloadDataManager.cleanupInvisibleIncidentsFromCache();
     _setupIncidentListener(localizations);
-    debugPrint('MarkerManager: Initializing and performing initial cleanup...');
+    debugPrint('MarkerManager: Initializing and performing initial remote cleanup...');
     int initialCleanedCount = await _firestoreService.markExpiredIncidencesAsInvisible();
-    debugPrint('MarkerManager: Initial cleanup completed. $initialCleanedCount incidents marked invisible.');
+    debugPrint('MarkerManager: Initial remote cleanup completed. $initialCleanedCount incidents marked invisible.');
     _startPeriodicExpiryChecks();
   }
 
@@ -96,9 +97,7 @@ class MarkerManager {
       );
 
       if (success) {
-        // Trigger a check for new incidents in the user's city
-        final userCity = "Default City"; // Replace with actual user city
-        await _downloadDataManager.checkForNewIncidents(userCity);
+        await _downloadDataManager.checkForNewIncidents();
       }
     }
   }

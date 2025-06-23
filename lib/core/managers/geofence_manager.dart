@@ -13,25 +13,27 @@ class GeofenceManager {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DownloadDataManager _downloadDataManager;
-  final NotificationCallback onNotificationTrigger; // Use the callback type
+  final NotificationCallback onNotificationTrigger;
 
-  List<GeofenceModel> _geofences = [];
+  // MODIFIED: Renamed for clarity, this list holds all incidents for checking.
+  List<GeofenceModel> _incidents = [];
   final Set<String> _activeGeofences = {};
 
   GeofenceManager(this._downloadDataManager, {required this.onNotificationTrigger});
 
-  Future<void> initialize(String city) async {
-    await _downloadDataManager.fetchAndCacheGeofences(city);
-    _geofences = await _downloadDataManager.getCachedGeofences();
+  Future<void> initialize() async {
+    await _downloadDataManager.fetchAndCacheAllIncidents();
+    _incidents = await _downloadDataManager.getCachedIncidents();
+    debugPrint("GeofenceManager initialized with ${_incidents.length} incidents from cache.");
   }
 
   void onLocationUpdate(Position position) {
-    if (_geofences.isEmpty) return;
+    if (_incidents.isEmpty) return;
 
     final Set<String> previouslyActiveGeofences = Set.from(_activeGeofences);
     _activeGeofences.clear();
 
-    for (final geofence in _geofences) {
+    for (final geofence in _incidents) {
       final distance = Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -42,12 +44,10 @@ class GeofenceManager {
       if (distance <= geofence.radius) {
         _activeGeofences.add(geofence.id);
 
-        // If this geofence was not active before, it's an "enter" event.
         if (!previouslyActiveGeofences.contains(geofence.id)) {
           _onEnterGeofence(geofence, distance);
         }
         
-        // Always trigger the notification logic while inside to handle distance-based rules
         onNotificationTrigger(_createIncidenceData(geofence), distance);
       }
     }

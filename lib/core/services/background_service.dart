@@ -17,61 +17,37 @@ void callbackDispatcher() {
       return true; // Acknowledge other tasks if any
     }
 
-    // --- Isolate Initialization ---
-    // This is crucial for plugins to work in the background.
     WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp();
 
-    // --- Dependency Setup ---
     final locationService = LocationService();
     final downloadDataManager = DownloadDataManager();
-    final localizations = AppLocalizationsEn(); // Default language for background notifications
+    final localizations = AppLocalizationsEn(); 
 
     final notificationManager = NotificationManager(localizations: localizations);
     
-    // Wire the managers together using the callback
     final geofenceManager = GeofenceManager(
       downloadDataManager,
       onNotificationTrigger: notificationManager.handleIncidentNotification,
     );
 
-    // --- Task Execution ---
     try {
-      // 1. Get current location to find the city
-      final positionResult = await locationService.getInitialPosition();
-      if (!positionResult.success || positionResult.data == null) {
-        debugPrint('Background Task Error: Could not get initial position.');
-        return false;
-      }
-
-      // 2. Determine city for downloading geofences
-      final cityResult = await locationService.getAddressFromCoordinates(
-        positionResult.data!.latitude,
-        positionResult.data!.longitude,
-      );
-      if (!cityResult.success || cityResult.data == null) {
-        debugPrint('Background Task Error: Could not determine city.');
-        return false;
-      }
-
-      // 3. Initialize managers with city-specific data
-      await geofenceManager.initialize(cityResult.data!);
+      // MODIFIED: Removed logic to get user's city. Initialization is now global.
+      await geofenceManager.initialize();
       await notificationManager.initialize();
-      debugPrint("Background Service: Managers initialized for city: ${cityResult.data!}");
+      debugPrint("Background Service: Managers initialized globally.");
 
-      // 4. Start the location stream and connect it to the GeofenceManager
+      // This stream will continue to run and check the user's location against all cached incidents.
       locationService.getPositionStream().listen((Position newPosition) {
         geofenceManager.onLocationUpdate(newPosition);
       });
 
-      // The stream will keep this isolate alive.
-      // Workmanager handles the lifecycle.
       return true;
 
     } catch (e, s) {
       debugPrint('FATAL Error in background task: $e');
       debugPrint(s.toString());
-      return false; // Indicate failure
+      return false; 
     }
   });
 }

@@ -1,11 +1,8 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:harkai/core/config/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:harkai/core/managers/download_data_manager.dart';
 import 'package:harkai/core/services/background_service.dart';
 import 'package:harkai/features/splash/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,14 +14,14 @@ void main() async {
   
   final List<Locale> deviceLocalesList = WidgetsBinding.instance.platformDispatcher.locales;
   final Locale devicePrimaryLocale = WidgetsBinding.instance.platformDispatcher.locale;
-  print('FLUTTER DETECTED DEVICE LOCALES LIST: $deviceLocalesList');
-  print('FLUTTER DETECTED PRIMARY DEVICE LOCALE: $devicePrimaryLocale');
+  debugPrint('FLUTTER DETECTED DEVICE LOCALES LIST: $deviceLocalesList');
+  debugPrint('FLUTTER DETECTED PRIMARY DEVICE LOCALE: $devicePrimaryLocale');
 
   try {
     await dotenv.load(fileName: ".env");
-    print("Environment variables loaded successfully.");
+    debugPrint("Environment variables loaded successfully.");
   } catch (e) {
-    print("Failed to load environment variables: $e");
+    debugPrint("Failed to load environment variables: $e");
   }
 
   try {
@@ -32,15 +29,15 @@ void main() async {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      print('Firebase initialized successfully.');
+      debugPrint('Firebase initialized successfully.');
 
       await FirebaseAppCheck.instance.activate(
         androidProvider: AndroidProvider.playIntegrity,
       );
-      print('Firebase App Check activated.');
+      debugPrint('Firebase App Check activated.');
 
     } else {
-      print('Firebase already initialized: ${Firebase.apps}');
+      debugPrint('Firebase already initialized: ${Firebase.apps}');
     }
 
     Workmanager().initialize(
@@ -53,13 +50,10 @@ void main() async {
       frequency: const Duration(minutes: 15),
     );
 
-    final downloadDataManager = DownloadDataManager();
-    await downloadDataManager.fetchAndCacheGeofences("Default City");
-
     runApp(const MyApp());
     
   } catch (e) {
-    print('Error during Firebase initialization or App Check activation: $e');
+    debugPrint('Error during Firebase initialization or App Check activation: $e');
     runApp(const ErrorApp());
     return;
   }
@@ -95,8 +89,8 @@ class _MyAppState extends State<MyApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       localeListResolutionCallback: (deviceLocales, supportedLocales) {
-        print('DEVICE PREFERRED LOCALES (from callback): $deviceLocales');
-        print('APP SUPPORTED LOCALES (from callback): $supportedLocales');
+        debugPrint('DEVICE PREFERRED LOCALES (from callback): $deviceLocales');
+        debugPrint('APP SUPPORTED LOCALES (from callback): $supportedLocales');
         if (deviceLocales != null) {
           for (Locale deviceLocale in deviceLocales) {
             for (Locale supportedLocale in supportedLocales) {
@@ -104,14 +98,14 @@ class _MyAppState extends State<MyApp> {
                 if (supportedLocale.countryCode == null ||
                     supportedLocale.countryCode == '' ||
                     supportedLocale.countryCode == deviceLocale.countryCode) {
-                  print('MATCH! Using app locale: $supportedLocale for device locale: $deviceLocale');
+                  debugPrint('MATCH! Using app locale: $supportedLocale for device locale: $deviceLocale');
                   return supportedLocale;
                 }
               }
             }
           }
         }
-        print('NO MATCH from device preferences, defaulting to ${supportedLocales.first}');
+        debugPrint('NO MATCH from device preferences, defaulting to ${supportedLocales.first}');
         return supportedLocales.first;
       },
       theme: ThemeData(

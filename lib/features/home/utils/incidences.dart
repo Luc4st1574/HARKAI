@@ -207,6 +207,34 @@ class FirestoreService {
     });
   }
 
+  Future<Map<String, bool>> getIncidentsVisibility(List<String> incidentIds) async {
+    if (incidentIds.isEmpty) {
+        return {};
+    }
+    final Map<String, bool> visibilityMap = {};
+    // Firestore 'whereIn' queries are limited (to 30 items), so we batch the requests.
+    const batchSize = 30;
+    for (var i = 0; i < incidentIds.length; i += batchSize) {
+        final sublist = incidentIds.sublist(i, i + batchSize > incidentIds.length ? incidentIds.length : i + batchSize);
+        if (sublist.isEmpty) continue;
+
+        try {
+            final querySnapshot = await _heatPointsCollection
+                .where(FieldPath.documentId, whereIn: sublist)
+                .get();
+
+            // For docs found, record their visibility.
+            for (final doc in querySnapshot.docs) {
+                final data = doc.data() as Map<String, dynamic>?;
+                visibilityMap[doc.id] = data?['isVisible'] ?? false;
+            }
+        } catch (e) {
+            debugPrint('Error fetching batch of incident visibilities: $e');
+        }
+    }
+    return visibilityMap;
+  }
+
   /// Marks all expired incidences as invisible based on the provided expiry duration.
   Future<int> markExpiredIncidencesAsInvisible(
       {Duration expiryDuration = const Duration(hours: 3)}) async { // Default for general incidents
