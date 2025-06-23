@@ -104,6 +104,70 @@ class _IncidentScreenState extends State<IncidentScreen> {
     }
   }
 
+  String _formatDistance(double distanceInMeters, AppLocalizations localizations) {
+    if (distanceInMeters < 1000) {
+      return localizations.incidentTileDistanceMeters(distanceInMeters.toStringAsFixed(0));
+    } else {
+      double distanceInKm = distanceInMeters / 1000;
+      return localizations.incidentTileDistanceKm(distanceInKm.toStringAsFixed(1));
+    }
+  }
+
+  Future<bool?> _showNearbyVetsModal(List<IncidenceData> nearbyVets) async {
+    final markerInfo = getMarkerInfo(widget.incidentType, localizations);
+    final Color accentColor = markerInfo?.color ?? Colors.blueGrey;
+
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF011935),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: BorderSide(color: accentColor, width: 2),
+          ),
+          title: Text(
+            localizations.nearbyVetsTitle,
+            style: TextStyle(color: accentColor, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: nearbyVets.length,
+              itemBuilder: (context, index) {
+                final vet = nearbyVets[index];
+                return Card(
+                  color: Colors.black.withOpacity(0.2),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    leading: Icon(Icons.pets, color: accentColor, size: 28),
+                    title: Text(vet.description, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: vet.distance != null
+                        ? Text(
+                            _formatDistance(vet.distance!, localizations),
+                            style: const TextStyle(color: Colors.white70),
+                          )
+                        : null,
+                    onTap: () {
+                      Navigator.of(dialogContext).pop(false); // Close this modal
+                      _navigateToIncidentMap(vet); // Show vet on the map
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(localizations.incidentImageModalCloseButton, style: TextStyle(color: accentColor))),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(localizations.exitScreenButton, style: TextStyle(color: Colors.red.shade400))),
+          ],
+        );
+      },
+    );
+  }
+
   void _listenToIncidents() {
     if (!mounted) return;
     _incidentsStreamSubscription?.cancel();
@@ -115,13 +179,18 @@ class _IncidentScreenState extends State<IncidentScreen> {
       });
     }
 
-    _incidentsStreamSubscription = _firestoreService
-        .getIncidencesStreamByType(widget.incidentType)
-        .listen(
-      (incidentsOfType) {
+    // If it's the pet screen, fetch ALL incidents so we have 'place' data for the vet modal.
+    // Otherwise, fetch only the specific incident type.
+    Stream<List<IncidenceData>> incidentsStream = widget.incidentType == MakerType.pet
+        ? _firestoreService.getIncidencesStream()
+        : _firestoreService.getIncidencesStreamByType(widget.incidentType);
+
+
+    _incidentsStreamSubscription = incidentsStream.listen(
+      (incidents) { // Now named `incidents` for clarity
         if (!mounted) return;
-        _allFetchedIncidents = incidentsOfType;
-        _processIncidentsUpdate(_allFetchedIncidents);
+        _allFetchedIncidents = incidents; // This holds the raw data from the stream
+        _processIncidentsUpdate(_allFetchedIncidents); // This will process it for display
         setState(() {
           _isLoadingInitialData = false;
         });
@@ -172,8 +241,12 @@ class _IncidentScreenState extends State<IncidentScreen> {
   void _processIncidentsUpdate(List<IncidenceData> allIncidents) {
     if (!mounted) return;
 
-    List<IncidenceData> filteredIncidents = List.from(allIncidents);
+    // Start by filtering for the type that should be displayed on this screen.
+    List<IncidenceData> filteredIncidents = allIncidents
+        .where((incident) => incident.type == widget.incidentType)
+        .toList();
 
+    // Now, apply the rest of the filters (distance, search, expiry) ONLY to the list to be displayed.
     if (_currentPosition != null) {
       filteredIncidents.removeWhere((incident) {
         final distance = Geolocator.distanceBetween(
@@ -419,113 +492,147 @@ class _IncidentScreenState extends State<IncidentScreen> {
     final markerInfo = getMarkerInfo(widget.incidentType, localizations);
     final Color incidentColor = markerInfo?.color ?? Colors.blueGrey;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF001F3F),
-      body: SafeArea(
-        child: Column(
-          children: [
-            HomeHeaderWidget(
-              currentUser: widget.currentUser,
-              onLogoTap: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const Home()),
-                    (Route<dynamic> route) => false);
-              },
-              isLongPressEnabled: false,
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-              child: Text(
-                _getScreenTitleText(),
-                style: const TextStyle(
-                  color: Color(0xFF57D463),
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (widget.incidentType == MakerType.pet) {
+          final nearbyVets = _allFetchedIncidents.where((incident) {
+            if (incident.type != MakerType.place) return false;
+            return incident.description.toLowerCase().contains('vet');
+          }).toList();
+
+          if (_currentPosition != null) {
+            for (var vet in nearbyVets) {
+              vet.distance = Geolocator.distanceBetween(
+                  _currentPosition!.latitude, _currentPosition!.longitude,
+                  vet.latitude, vet.longitude);
+            }
+            nearbyVets.sort((a, b) => (a.distance ?? double.maxFinite).compareTo(b.distance ?? double.maxFinite));
+          }
+
+          if (nearbyVets.isEmpty) {
+            if (mounted) Navigator.of(context).pop();
+            return;
+          }
+
+          final bool? shouldPop = await _showNearbyVetsModal(nearbyVets);
+          if (shouldPop == true && mounted) {
+            Navigator.of(context).pop();
+          }
+        } else {
+          if (mounted) Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF001F3F),
+        body: SafeArea(
+          child: Column(
+            children: [
+              HomeHeaderWidget(
+                currentUser: widget.currentUser,
+                onLogoTap: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const Home()),
+                      (Route<dynamic> route) => false);
+                },
+                isLongPressEnabled: false,
               ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: localizations.hintSearch,
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: BorderSide.none,
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Text(
+                  _getScreenTitleText(),
+                  style: const TextStyle(
+                    color: Color(0xFF57D463),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(color: Color(0xFF57D463)),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                  suffixIcon: _searchTerm.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear,
-                              color: Colors.white.withOpacity(0.7)),
-                          onPressed: () {
-                            _searchController.clear();
-                          },
-                        )
-                      : null,
+                  textAlign: TextAlign.center,
                 ),
               ),
-            ),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 10.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(25),
-                      spreadRadius: 0,
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: _buildBody(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.favorite, color: Colors.white),
-                  label: Text(
-                    localizations.donationButtonText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: incidentColor,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: localizations.hintSearch,
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                    prefixIcon:
+                        Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30.0),
+                      borderSide: BorderSide.none,
                     ),
-                    elevation: 5.0,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                      borderSide: const BorderSide(color: Color(0xFF57D463)),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                    suffixIcon: _searchTerm.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear,
+                                color: Colors.white.withOpacity(0.7)),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
                   ),
-                  onPressed: _showDonationModal,
                 ),
               ),
-            )
-          ],
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 10.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(25),
+                        spreadRadius: 0,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _buildBody(),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.favorite, color: Colors.white),
+                    label: Text(
+                      localizations.donationButtonText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: incidentColor,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      elevation: 5.0,
+                    ),
+                    onPressed: _showDonationModal,
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

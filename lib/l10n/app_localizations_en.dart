@@ -875,4 +875,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get donationLabel => 'Donation to Harkai';
+
+  @override
+  String get nearbyVetsTitle => 'Nearby Vets';
+
+  @override
+  String get noNearbyVetsFound =>
+      'No nearby vets registered as places were found in the area.';
+
+  @override
+  String get exitScreenButton => 'Exit';
 }

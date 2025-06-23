@@ -463,5 +463,8 @@
     "donationSuccessMessage": "¡Gracias por tu generosa donación!",
     "donationFailedMessage": "Donación cancelada o fallida.",
     "donationInvalidAmountMessage": "Por favor, ingrese un monto de donación válido.",
-    "donationLabel": "Donación para Harkai"
+    "donationLabel": "Donación para Harkai",
+    "nearbyVetsTitle": "Veterinarias Cercanas",
+    "noNearbyVetsFound": "No se encontraron veterinarias cercanas.",
+    "exitScreenButton": "Salir"
 }

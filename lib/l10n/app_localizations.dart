@@ -1565,6 +1565,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Donation to Harkai'**
   String get donationLabel;
+
+  /// No description provided for @nearbyVetsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Vets'**
+  String get nearbyVetsTitle;
+
+  /// No description provided for @noNearbyVetsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No nearby vets registered as places were found in the area.'**
+  String get noNearbyVetsFound;
+
+  /// No description provided for @exitScreenButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exitScreenButton;
 }
 
 class _AppLocalizationsDelegate
