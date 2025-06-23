@@ -1,5 +1,7 @@
+import 'dart:async'; // Import Completer and StreamSubscription
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import 'package:geolocator/geolocator.dart';
 import 'package:harkai/core/managers/download_data_manager.dart';
 import 'package:harkai/core/managers/geofence_manager.dart';
@@ -13,41 +15,63 @@ const String backgroundTask = "harkaiBackgroundTask";
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    if (task != backgroundTask) {
-      return true; // Acknowledge other tasks if any
-    }
+    // 1. Use a Completer to keep the task running while the stream is active.
+    final Completer<bool> taskCompleter = Completer<bool>();
 
-    WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp();
-
-    final locationService = LocationService();
-    final downloadDataManager = DownloadDataManager();
-    final localizations = AppLocalizationsEn(); 
-
-    final notificationManager = NotificationManager(localizations: localizations);
-    
-    final geofenceManager = GeofenceManager(
-      downloadDataManager,
-      onNotificationTrigger: notificationManager.handleIncidentNotification,
-    );
+    // This ensures we can clean up the stream listener if an error occurs.
+    StreamSubscription<Position>? positionStreamSubscription;
 
     try {
-      // MODIFIED: Removed logic to get user's city. Initialization is now global.
+      // 2. Initialize dependencies required for the background isolate.
+      WidgetsFlutterBinding.ensureInitialized();
+      await dotenv.load(fileName: ".env");
+      await Firebase.initializeApp();
+
+      // --- The rest of your setup code remains the same ---
+      final locationService = LocationService();
+      final downloadDataManager = DownloadDataManager();
+      final localizations = AppLocalizationsEn();
+      final notificationManager = NotificationManager(localizations: localizations);
+      final geofenceManager = GeofenceManager(
+        downloadDataManager,
+        onNotificationTrigger: notificationManager.handleIncidentNotification,
+      );
+      
       await geofenceManager.initialize();
       await notificationManager.initialize();
       debugPrint("Background Service: Managers initialized globally.");
 
-      // This stream will continue to run and check the user's location against all cached incidents.
-      locationService.getPositionStream().listen((Position newPosition) {
-        geofenceManager.onLocationUpdate(newPosition);
-      });
-
-      return true;
-
+      // 3. Listen to the stream and manage the completer's state.
+      positionStreamSubscription = locationService.getPositionStream().listen(
+        (Position newPosition) {
+          // This will now run continuously as the task is kept alive.
+          geofenceManager.onLocationUpdate(newPosition);
+        },
+        onError: (error) {
+          debugPrint('Error in background location stream: $error');
+          positionStreamSubscription?.cancel();
+          if (!taskCompleter.isCompleted) {
+            taskCompleter.complete(false); // Task fails on stream error
+          }
+        },
+        onDone: () {
+          debugPrint('Background location stream was closed.');
+          positionStreamSubscription?.cancel();
+          if (!taskCompleter.isCompleted) {
+            taskCompleter.complete(true); // Task succeeds if stream closes gracefully
+          }
+        },
+      );
+      
     } catch (e, s) {
-      debugPrint('FATAL Error in background task: $e');
+      debugPrint('FATAL Error in background task setup: $e');
       debugPrint(s.toString());
-      return false; 
+      positionStreamSubscription?.cancel(); // Ensure cleanup on setup error
+      if (!taskCompleter.isCompleted) {
+         taskCompleter.complete(false); // The task fails if setup fails
+      }
     }
+
+    return taskCompleter.future;
   });
 }
