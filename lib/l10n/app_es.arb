@@ -447,5 +447,21 @@
     "onboardingLocationDescription": "Para mantenerte seguro y enviarte alertas en tiempo real sobre incidentes cercanos incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso en la configuración interna de la app en los ajustes de aplicaciones.",
     "addplaceTitle": "Añadir Lugar al Mapa de Harkai",
     "incidentModalButtonAddFromGallery": "Añadir desde Galería",
-    "addplaceInfo": "Para añadir un lugar, completa el pago con el boton de pago"
+    "addplaceInfo": "Para añadir un lugar, completa el pago con el boton de pago",
+    "donationSectionTitle": "Apoya a Harkai",
+    "donationAmountHint": "Ingrese el monto a donar",
+    "donationButtonText": "Donar",
+    "donationDialogTitle": "Confirmar Donación",
+    "donationDialogContent": "Estás a punto de donar S/.{amount} a Harkai. ¡Gracias por tu apoyo!",
+    "@donationDialogContent": {
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "donationSuccessMessage": "¡Gracias por tu generosa donación!",
+    "donationFailedMessage": "Donación cancelada o fallida.",
+    "donationInvalidAmountMessage": "Por favor, ingrese un monto de donación válido.",
+    "donationLabel": "Donación para Harkai"
 }

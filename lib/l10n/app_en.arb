@@ -479,5 +479,22 @@
     "onboardingLocationDescription": "To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission on applications settings.",
     "addplaceTitle": "Add a Place to Harkai Map",
     "incidentModalButtonAddFromGallery": "Add from Gallery",
-    "addplaceInfo": "To add a new place, please complete the payment below."
+    "addplaceInfo": "To add a new place, please complete the payment below.",
+    "donationSectionTitle": "Support Harkai",
+    "donationAmountHint": "Enter donation amount",
+    "donationButtonText": "Donate",
+    "donationDialogTitle": "Confirm Donation",
+    "donationDialogContent": "You are about to donate ${amount} to Harkai. Thank you for your support!",
+    "@donationDialogContent": {
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "donationSuccessMessage": "Thank you for your generous donation!",
+    "donationFailedMessage": "Donation cancelled or failed.",
+    "donationInvalidAmountMessage": "Please enter a valid donation amount.",
+    "donationLabel": "Donation to Harkai"
+
 }

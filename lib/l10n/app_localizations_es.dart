@@ -870,4 +870,34 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get addplaceInfo =>
       'Para añadir un lugar, completa el pago con el boton de pago';
+
+  @override
+  String get donationSectionTitle => 'Apoya a Harkai';
+
+  @override
+  String get donationAmountHint => 'Ingrese el monto a donar';
+
+  @override
+  String get donationButtonText => 'Donar';
+
+  @override
+  String get donationDialogTitle => 'Confirmar Donación';
+
+  @override
+  String donationDialogContent(String amount) {
+    return 'Estás a punto de donar S/.$amount a Harkai. ¡Gracias por tu apoyo!';
+  }
+
+  @override
+  String get donationSuccessMessage => '¡Gracias por tu generosa donación!';
+
+  @override
+  String get donationFailedMessage => 'Donación cancelada o fallida.';
+
+  @override
+  String get donationInvalidAmountMessage =>
+      'Por favor, ingrese un monto de donación válido.';
+
+  @override
+  String get donationLabel => 'Donación para Harkai';
 }

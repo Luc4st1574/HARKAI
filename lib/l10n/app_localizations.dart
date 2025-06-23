@@ -1511,6 +1511,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'To add a new place, please complete the payment below.'**
   String get addplaceInfo;
+
+  /// No description provided for @donationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Harkai'**
+  String get donationSectionTitle;
+
+  /// No description provided for @donationAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter donation amount'**
+  String get donationAmountHint;
+
+  /// No description provided for @donationButtonText.
+  ///
+  /// In en, this message translates to:
+  /// **'Donate'**
+  String get donationButtonText;
+
+  /// No description provided for @donationDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Donation'**
+  String get donationDialogTitle;
+
+  /// No description provided for @donationDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to donate \${amount} to Harkai. Thank you for your support!'**
+  String donationDialogContent(String amount);
+
+  /// No description provided for @donationSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your generous donation!'**
+  String get donationSuccessMessage;
+
+  /// No description provided for @donationFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation cancelled or failed.'**
+  String get donationFailedMessage;
+
+  /// No description provided for @donationInvalidAmountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid donation amount.'**
+  String get donationInvalidAmountMessage;
+
+  /// No description provided for @donationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation to Harkai'**
+  String get donationLabel;
 }
 
 class _AppLocalizationsDelegate
