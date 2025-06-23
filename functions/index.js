@@ -41,9 +41,12 @@ exports.sendGeofenceNotification = onDocumentCreated("geofence_events/{eventId}"
 
     // Create the notification payload
     const payload = {
-      notification: {
-        title: `You have ${eventType === "enter" ? "entered" : "exited"} an area`,
-        body: `You are near ${geofence.description}`,
+      data: {
+        // Send IDs and types, not display text
+        geofenceId: geofenceId,
+        type: geofence.type, // e.g., 'fire', 'theft'
+        description: geofence.description, // Can be useful for the notification body
+        eventType: eventType // 'enter' or 'exit'
       },
     };
 

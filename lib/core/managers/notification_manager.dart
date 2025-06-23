@@ -4,13 +4,97 @@ import 'package:harkai/features/home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+// A private helper class to define the conditions for a notification.
+class _NotificationRule {
+  final MakerType type;
+  final double maxDistance; // The maximum distance in meters for the rule to apply.
+  final double? minDistance; // Optional minimum distance to create distance ranges.
+  final String Function(AppLocalizations) titleBuilder;
+  final String Function(AppLocalizations, String) bodyBuilder;
+
+  _NotificationRule({
+    required this.type,
+    required this.maxDistance,
+    this.minDistance,
+    required this.titleBuilder,
+    required this.bodyBuilder,
+  });
+
+  /// Checks if this rule applies to a given incident and distance.
+  bool applies(IncidenceData incident, double distance) {
+    if (incident.type != type) return false;
+    
+    bool inMaxDistance = distance <= maxDistance;
+    // The rule applies if there's no minimum distance, or if the distance is greater than the minimum.
+    bool inMinDistance = minDistance == null || distance > minDistance!;
+    
+    return inMaxDistance && inMinDistance;
+  }
+}
+
+
 class NotificationManager {
   final FlutterLocalNotificationsPlugin _notificationsPlugin;
   final AppLocalizations _localizations;
 
+  // A list of all notification rules, making it easy to add or change them.
+  late final List<_NotificationRule> _notificationRules;
+
   NotificationManager({required AppLocalizations localizations})
       : _localizations = localizations,
-        _notificationsPlugin = FlutterLocalNotificationsPlugin();
+        _notificationsPlugin = FlutterLocalNotificationsPlugin() {
+    
+    // All notification logic is now defined here in a clear, readable list.
+    _notificationRules = [
+      // Fire Rules (most urgent first)
+      _NotificationRule(
+          type: MakerType.fire, maxDistance: 250,
+          titleBuilder: (l) => l.notifFireDangerTitle,
+          bodyBuilder: (l, d) => l.notifFireDangerBody),
+      _NotificationRule(
+          type: MakerType.fire, maxDistance: 500, minDistance: 250,
+          titleBuilder: (l) => l.notifFireNearbyTitle,
+          bodyBuilder: (l, d) => l.notifFireNearbyBody),
+
+      // Theft Rules (most urgent first)
+      _NotificationRule(
+          type: MakerType.theft, maxDistance: 250,
+          titleBuilder: (l) => l.notifTheftSecurityTitle,
+          bodyBuilder: (l, d) => l.notifTheftSecurityBody),
+      _NotificationRule(
+          type: MakerType.theft, maxDistance: 500, minDistance: 250,
+          titleBuilder: (l) => l.notifTheftAlertTitle,
+          bodyBuilder: (l, d) => l.notifTheftAlertBody),
+      
+      // Generic Incident Rules for Crash, Pet, and Emergency
+      _NotificationRule(
+          type: MakerType.crash, maxDistance: 300,
+          titleBuilder: (l) => l.notifGenericIncidentTitle,
+          bodyBuilder: (l, d) => l.notifGenericIncidentBody),
+      _NotificationRule(
+          type: MakerType.emergency, maxDistance: 300,
+          titleBuilder: (l) => l.notifGenericIncidentTitle,
+          bodyBuilder: (l, d) => l.notifGenericIncidentBody),
+      _NotificationRule(
+          type: MakerType.pet, maxDistance: 300,
+          titleBuilder: (l) => l.notifGenericIncidentTitle,
+          bodyBuilder: (l, d) => l.notifGenericIncidentBody),
+
+      // Place Rules (closest first)
+      _NotificationRule(
+          type: MakerType.place, maxDistance: 10,
+          titleBuilder: (l) => l.notifPlaceWelcomeTitle,
+          bodyBuilder: (l, desc) => l.notifPlaceWelcomeBody(desc)),
+      _NotificationRule(
+          type: MakerType.place, maxDistance: 100, minDistance: 10,
+          titleBuilder: (l) => l.notifPlaceAlmostThereTitle,
+          bodyBuilder: (l, desc) => l.notifPlaceAlmostThereBody(desc)),
+      _NotificationRule(
+          type: MakerType.place, maxDistance: 500, minDistance: 100,
+          titleBuilder: (l) => l.notifPlaceDiscoveryTitle,
+          bodyBuilder: (l, desc) => l.notifPlaceDiscoveryBody(desc)),
+    ];
+  }
 
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -20,74 +104,20 @@ class NotificationManager {
     await _notificationsPlugin.initialize(initializationSettings);
   }
 
-  // This is now the single public entry point for this class.
-  // It contains all the rules you wanted.
+  /// Iterates through the defined rules and sends a notification for the first one that matches.
   void handleIncidentNotification(IncidenceData incident, double distance) {
-    switch (incident.type) {
-      case MakerType.fire:
-        if (distance <= 500 && distance > 250) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifFireNearbyTitle,
-            body: _localizations.notifFireNearbyBody,
-          );
-        } else if (distance <= 250) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifFireDangerTitle,
-            body: _localizations.notifFireDangerBody,
-          );
-        }
-        break;
-      case MakerType.theft:
-        if (distance <= 500 && distance > 250) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifTheftAlertTitle,
-            body: _localizations.notifTheftAlertBody,
-          );
-        } else if (distance <= 250) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifTheftSecurityTitle,
-            body: _localizations.notifTheftSecurityBody,
-          );
-        }
-        break;
-      case MakerType.pet:
-      case MakerType.crash:
-      case MakerType.emergency:
-        if (distance <= 300) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifGenericIncidentTitle,
-            body: _localizations.notifGenericIncidentBody,
-          );
-        }
-        break;
-      case MakerType.place:
-        if (distance <= 500 && distance > 100) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifPlaceDiscoveryTitle,
-            body: _localizations.notifPlaceDiscoveryBody(incident.description),
-          );
-        } else if (distance <= 100 && distance > 10) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifPlaceAlmostThereTitle,
-            body: _localizations.notifPlaceAlmostThereBody(incident.description),
-          );
-        } else if (distance <= 10) {
-          _sendNotification(
-            incident: incident,
-            title: _localizations.notifPlaceWelcomeTitle,
-            body: _localizations.notifPlaceWelcomeBody(incident.description),
-          );
-        }
-        break;
-      default:
-        break;
+    for (final rule in _notificationRules) {
+      if (rule.applies(incident, distance)) {
+        _sendNotification(
+          incident: incident,
+          title: rule.titleBuilder(_localizations),
+          // Pass incident description, which is used for 'place' notifications
+          body: rule.bodyBuilder(_localizations, incident.description),
+        );
+        // Break after finding the first and most specific rule that applies
+        // to prevent sending multiple notifications for the same event.
+        break; 
+      }
     }
   }
 
