@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:harkai/core/managers/download_data_manager.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../onboarding/screens/onboarding_tutorial.dart';
@@ -46,7 +47,7 @@ class _HomeState extends State<Home> {
       SpeechPermissionService();
   final NotificationService _notificationService =
       NotificationService(); // Instantiate the new service
-
+  final DownloadDataManager _downloadDataManager = DownloadDataManager();
   late final MarkerManager _dataEventManager;
   late final MapLocationManager _mapLocationManager;
   late final UserSessionManager _userSessionManager;
@@ -95,6 +96,7 @@ class _HomeState extends State<Home> {
         onStateChange: () {
           if (mounted) setState(() {});
         },
+        downloadDataManager: _downloadDataManager,
       );
 
       // This now handles the full startup sequence including onboarding

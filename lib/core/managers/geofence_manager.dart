@@ -4,17 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:harkai/core/models/geofence_model.dart';
 import 'package:harkai/core/managers/download_data_manager.dart';
-import 'package:harkai/core/managers/notification_manager.dart';
+import 'package:harkai/features/home/utils/incidences.dart';
+
+// Define a type for the callback function for better readability.
+typedef NotificationCallback = void Function(IncidenceData incident, double distance);
 
 class GeofenceManager {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DownloadDataManager _downloadDataManager;
-  final NotificationManager _notificationManager;
-  List<GeofenceModel> _geofences = [];
-  Set<String> _activeGeofences = {};
+  final NotificationCallback onNotificationTrigger; // Use the callback type
 
-  GeofenceManager(this._downloadDataManager, this._notificationManager);
+  List<GeofenceModel> _geofences = [];
+  final Set<String> _activeGeofences = {};
+
+  GeofenceManager(this._downloadDataManager, {required this.onNotificationTrigger});
 
   Future<void> initialize(String city) async {
     await _downloadDataManager.fetchAndCacheGeofences(city);
@@ -22,11 +26,11 @@ class GeofenceManager {
   }
 
   void onLocationUpdate(Position position) {
-    if (_geofences.isEmpty) {
-      return;
-    }
+    if (_geofences.isEmpty) return;
 
-    final currentGeofences = <String>{};
+    final Set<String> previouslyActiveGeofences = Set.from(_activeGeofences);
+    _activeGeofences.clear();
+
     for (final geofence in _geofences) {
       final distance = Geolocator.distanceBetween(
         position.latitude,
@@ -36,36 +40,22 @@ class GeofenceManager {
       );
 
       if (distance <= geofence.radius) {
-        currentGeofences.add(geofence.id);
+        _activeGeofences.add(geofence.id);
+
+        // If this geofence was not active before, it's an "enter" event.
+        if (!previouslyActiveGeofences.contains(geofence.id)) {
+          _onEnterGeofence(geofence, distance);
+        }
+        
+        // Always trigger the notification logic while inside to handle distance-based rules
+        onNotificationTrigger(_createIncidenceData(geofence), distance);
       }
     }
-
-    final enteredGeofences = currentGeofences.difference(_activeGeofences);
-    final exitedGeofences = _activeGeofences.difference(currentGeofences);
-
-    for (final geofenceId in enteredGeofences) {
-      final geofence = _geofences.firstWhere((g) => g.id == geofenceId);
-      _onEnterGeofence(geofence);
-    }
-
-    for (final geofenceId in exitedGeofences) {
-      final geofence = _geofences.firstWhere((g) => g.id == geofenceId);
-      _onExitGeofence(geofence);
-    }
-
-    _activeGeofences = currentGeofences;
   }
 
-  void _onEnterGeofence(GeofenceModel geofence) {
-    debugPrint('Entering geofence: ${geofence.id}');
+  void _onEnterGeofence(GeofenceModel geofence, double distance) {
+    debugPrint('Entering geofence: ${geofence.id} at distance: $distance');
     _writeGeofenceEvent('enter', geofence.id);
-    _notificationManager.handleGeofenceEvent('enter', geofence);
-  }
-
-  void _onExitGeofence(GeofenceModel geofence) {
-    debugPrint('Exiting geofence: ${geofence.id}');
-    _writeGeofenceEvent('exit', geofence.id);
-    _notificationManager.handleGeofenceEvent('exit', geofence);
   }
 
   Future<void> _writeGeofenceEvent(String event, String geofenceId) async {
@@ -82,5 +72,19 @@ class GeofenceManager {
         debugPrint('Error writing geofence event: $e');
       }
     }
+  }
+
+  // Helper to convert GeofenceModel to IncidenceData for the callback
+  IncidenceData _createIncidenceData(GeofenceModel geofence) {
+    return IncidenceData(
+      id: geofence.id,
+      latitude: geofence.latitude,
+      longitude: geofence.longitude,
+      type: geofence.type,
+      description: geofence.description,
+      timestamp: Timestamp.now(),
+      isVisible: true,
+      userId: '',
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:harkai/core/managers/download_data_manager.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import 'package:pay/pay.dart';
 
@@ -42,6 +43,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   late final MarkerManager _markerManager;
   late final MapLocationManager _mapLocationManager;
   late final UserSessionManager _userSessionManager;
+  final DownloadDataManager _downloadDataManager = DownloadDataManager();
   GoogleMapController? _mapController;
   AppLocalizations? _localizations;
   User? _currentUser;
@@ -88,6 +90,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         onStateChange: () {
           if (mounted) setState(() {});
         },
+        downloadDataManager: _downloadDataManager,
       );
       _initializeScreenData();
     }
@@ -113,7 +116,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (_localizations == null) return {};
     Set<Marker> displayMarkers = _markerManager.incidences
         .where((incidence) =>
-            incidence.type == MakerType.place) // Only show place markers
+            incidence.type == MakerType.place)
         .map((incidence) => createMarkerFromIncidence(
               incidence,
               _localizations!,
@@ -147,7 +150,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     if (_localizations == null) return {};
     return _markerManager.incidences
         .where((incidence) =>
-            incidence.type == MakerType.place) // Only show circles for places
+            incidence.type == MakerType.place)
         .map((incidence) => createCircleFromIncidence(incidence, _localizations!))
         .toSet();
   }
@@ -210,7 +213,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   if (snapshot.hasData) {
                     // *** MODIFIED: Wrapped button in a SizedBox for width control ***
                     return SizedBox(
-                      width: double.infinity, // Makes the button wider
+                      width: double.infinity,
                       child: GooglePayButton(
                         paymentConfiguration: snapshot.data!,
                         paymentItems: paymentItems,
