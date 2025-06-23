@@ -138,7 +138,7 @@
   "emergencyReportLocationUnknown": "No se puede reportar emergencia: Ubicación objetivo desconocida.",
   "enlargedMapDataUnavailable": "Datos del mapa no disponibles actualmente. Por favor, inténtalo de nuevo.",
 
-  "incidentModalStep1ReportAudioTitle": "Paso 1: Reportar Audio para {incidentName}",
+  "incidentModalStep1ReportAudioTitle": "Paso 1: Grabar Audio para {incidentName}",
   "@incidentModalStep1ReportAudioTitle": {
     "placeholders": {
       "incidentName": {
@@ -370,7 +370,7 @@
   "incidentMapViewIncidentExpired": "Este reporte de incidente ha expirado o ya no está visible.",
 
   "placesScreenTitle": "Lugares",
-    "addPlaceButtonTitle": "Lugares interesantes",
+    "addPlaceButtonTitle": "Lugares de Interés",
     "placeMarkerName": "Lugar",
     "paymentRequiredMessage": "Se requiere un pago de {amount} para añadir este lugar.",
     "@paymentRequiredMessage": {

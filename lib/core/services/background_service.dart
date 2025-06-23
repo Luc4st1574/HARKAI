@@ -1,13 +1,15 @@
-import 'dart:async'; // Import Completer and StreamSubscription
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:harkai/core/managers/download_data_manager.dart';
 import 'package:harkai/core/managers/geofence_manager.dart';
 import 'package:harkai/core/managers/notification_manager.dart';
 import 'package:harkai/core/services/location_service.dart';
-import 'package:harkai/l10n/app_localizations_en.dart';
+import 'package:harkai/l10n/app_localizations.dart'; // MODIFIED: Import base class
+import 'package:harkai/l10n/app_localizations_en.dart'; // English fallback
+import 'package:harkai/l10n/app_localizations_es.dart'; // MODIFIED: Import Spanish class
 import 'package:workmanager/workmanager.dart';
 
 const String backgroundTask = "harkaiBackgroundTask";
@@ -27,11 +29,15 @@ void callbackDispatcher() {
       await dotenv.load(fileName: ".env");
       await Firebase.initializeApp();
 
-      // --- The rest of your setup code remains the same ---
+      // --- FIX: Dynamically select the localization class ---
+      final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+      final AppLocalizations localizations = deviceLocale.languageCode == 'es'
+          ? AppLocalizationsEs()
+          : AppLocalizationsEn(); 
+
       final locationService = LocationService();
       final downloadDataManager = DownloadDataManager();
-      final localizations = AppLocalizationsEn();
-      final notificationManager = NotificationManager(localizations: localizations);
+      final notificationManager = NotificationManager(localizations: localizations); // USE THE DYNAMIC ONE
       final geofenceManager = GeofenceManager(
         downloadDataManager,
         onNotificationTrigger: notificationManager.handleIncidentNotification,

@@ -44,11 +44,11 @@ class GeofenceManager {
       if (distance <= geofence.radius) {
         _activeGeofences.add(geofence.id);
 
+        // This block is only entered ONCE when the user crosses into the geofence.
         if (!previouslyActiveGeofences.contains(geofence.id)) {
           _onEnterGeofence(geofence, distance);
+          onNotificationTrigger(_createIncidenceData(geofence), distance);
         }
-        
-        onNotificationTrigger(_createIncidenceData(geofence), distance);
       }
     }
   }

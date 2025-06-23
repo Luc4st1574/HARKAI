@@ -98,7 +98,7 @@ class NotificationManager {
 
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@drawable/ic_notification');
+        AndroidInitializationSettings('@drawable/ic_notifications');
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     await _notificationsPlugin.initialize(initializationSettings);

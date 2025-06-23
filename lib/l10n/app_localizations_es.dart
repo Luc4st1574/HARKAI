@@ -314,7 +314,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentModalStep1ReportAudioTitle(String incidentName) {
-    return 'Paso 1: Reportar Audio para $incidentName';
+    return 'Paso 1: Grabar Audio para $incidentName';
   }
 
   @override
@@ -681,7 +681,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get placesScreenTitle => 'Lugares';
 
   @override
-  String get addPlaceButtonTitle => 'Lugares interesantes';
+  String get addPlaceButtonTitle => 'Lugares de Interés';
 
   @override
   String get placeMarkerName => 'Lugar';
