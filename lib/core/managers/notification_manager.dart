@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:harkai/features/home/utils/incidences.dart';
@@ -6,26 +7,25 @@ import 'package:harkai/features/home/utils/markers.dart';
 import 'package:harkai/l10n/app_localizations.dart';
 import '../services/location_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:harkai/core/managers/geofence_manager.dart';
+import 'package:harkai/core/models/geofence_model.dart';
 
 class NotificationManager {
   final LocationService _locationService;
-  final FirestoreService _firestoreService;
   final FlutterLocalNotificationsPlugin _notificationsPlugin;
-  final AppLocalizations _localizations; // Add this
-
+  final AppLocalizations _localizations;
+  final GeofenceManager _geofenceManager;
   StreamSubscription<Position>? _positionStreamSubscription;
-  StreamSubscription<List<IncidenceData>>? _incidentsStreamSubscription;
-
-  List<IncidenceData> _incidents = [];
   Position? _currentPosition;
 
   NotificationManager({
     required LocationService locationService,
     required FirestoreService firestoreService,
-    required AppLocalizations localizations, // Add this
+    required AppLocalizations localizations,
+    required GeofenceManager geofenceManager,
   })  : _locationService = locationService,
-        _firestoreService = firestoreService,
-        _localizations = localizations, // Add this
+        _localizations = localizations,
+        _geofenceManager = geofenceManager,
         _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
@@ -36,38 +36,39 @@ class NotificationManager {
     await _notificationsPlugin.initialize(initializationSettings);
 
     _listenToLocationUpdates();
-    _listenToIncidents();
   }
 
   void _listenToLocationUpdates() {
     _positionStreamSubscription =
         _locationService.getPositionStream().listen((position) {
       _currentPosition = position;
-      _checkForNearbyIncidents();
+      _geofenceManager.onLocationUpdate(position);
     });
   }
 
-  void _listenToIncidents() {
-    _incidentsStreamSubscription =
-        _firestoreService.getIncidencesStream().listen((incidents) {
-      _incidents = incidents;
-      _checkForNearbyIncidents();
-    });
-  }
-
-  void _checkForNearbyIncidents() {
+  void handleGeofenceEvent(String eventType, GeofenceModel geofence) {
     if (_currentPosition == null) return;
 
-    for (final incident in _incidents) {
-      final distance = Geolocator.distanceBetween(
-        _currentPosition!.latitude,
-        _currentPosition!.longitude,
-        incident.latitude,
-        incident.longitude,
-      );
+    final distance = Geolocator.distanceBetween(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+      geofence.latitude,
+      geofence.longitude,
+    );
 
-      _handleIncidentNotification(incident, distance);
-    }
+    _handleIncidentNotification(
+      IncidenceData(
+        id: geofence.id,
+        userId: '', // Not needed for notification
+        latitude: geofence.latitude,
+        longitude: geofence.longitude,
+        type: geofence.type,
+        description: geofence.description,
+        timestamp: Timestamp.now(), // Not needed for notification, using current time
+        isVisible: true, // Not needed for notification
+      ),
+      distance,
+    );
   }
 
   void _handleIncidentNotification(IncidenceData incident, double distance) {
@@ -157,32 +158,20 @@ class NotificationManager {
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     try {
-    await _notificationsPlugin.show(
-      incident.id.hashCode,
-      title,
-      body,
-      platformChannelSpecifics,
-    );
-    debugPrint('NotificationManager: Successfully sent notification (ID: ${incident.id.hashCode}, Title: "$title", Body: "$body") for incident type ${incident.type.name} at lat: ${incident.latitude}, lng: ${incident.longitude}.');
+      await _notificationsPlugin.show(
+        incident.id.hashCode,
+        title,
+        body,
+        platformChannelSpecifics,
+      );
+      debugPrint(
+          'NotificationManager: Successfully sent notification (ID: ${incident.id.hashCode}, Title: "$title", Body: "$body") for incident type ${incident.type.name} at lat: ${incident.latitude}, lng: ${incident.longitude}.');
     } catch (e) {
       debugPrint('NotificationManager: Failed to show notification: $e');
     }
   }
 
-  Future<void> checkForNearbyIncidents(Position currentPosition, List<IncidenceData> incidents) async {
-        for (final incident in incidents) {
-            final distance = Geolocator.distanceBetween(
-                currentPosition.latitude,
-                currentPosition.longitude,
-                incident.latitude,
-                incident.longitude,
-            );
-            _handleIncidentNotification(incident, distance);
-        }
-    }
-
   void dispose() {
     _positionStreamSubscription?.cancel();
-    _incidentsStreamSubscription?.cancel();
   }
 }

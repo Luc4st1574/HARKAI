@@ -1,4 +1,3 @@
-// lib/main.dart
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
@@ -6,10 +5,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:harkai/core/config/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:harkai/core/managers/download_data_manager.dart';
+import 'package:harkai/core/services/background_service.dart';
 import 'package:harkai/features/splash/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:harkai/l10n/app_localizations.dart';
-
+import 'package:workmanager/workmanager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,20 @@ void main() async {
     } else {
       print('Firebase already initialized: ${Firebase.apps}');
     }
+
+    Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: true,
+    );
+    Workmanager().registerPeriodicTask(
+      "1",
+      backgroundTask,
+      frequency: const Duration(minutes: 15),
+    );
+
+    final downloadDataManager = DownloadDataManager();
+    await downloadDataManager.fetchAndCacheGeofences("Default City");
+
     runApp(const MyApp());
     
   } catch (e) {

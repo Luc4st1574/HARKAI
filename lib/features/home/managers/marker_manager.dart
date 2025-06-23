@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:harkai/core/managers/download_data_manager.dart';
 import '../utils/incidences.dart';
 import '../utils/markers.dart';
 import '../modals/incident_description.dart';
@@ -9,6 +10,7 @@ import 'package:harkai/features/home/utils/extensions.dart';
 class MarkerManager {
   final FirestoreService _firestoreService;
   final VoidCallback _onStateChange;
+  final DownloadDataManager _downloadDataManager;
 
   MakerType _selectedIncident = MakerType.none;
   MakerType get selectedIncident => _selectedIncident;
@@ -22,13 +24,13 @@ class MarkerManager {
   MarkerManager({
     required FirestoreService firestoreService,
     required VoidCallback onStateChange,
+    required DownloadDataManager downloadDataManager,
   })  : _firestoreService = firestoreService,
-        _onStateChange = onStateChange;
-        // _localizations = localizations; // Optional
+        _onStateChange = onStateChange,
+        _downloadDataManager = downloadDataManager;
 
-  // Call this after localizations are available in HomeState
   Future<void> initialize(AppLocalizations localizations) async {
-    _setupIncidentListener(localizations); // Pass localizations to listener setup
+    _setupIncidentListener(localizations);
     debugPrint('MarkerManager: Initializing and performing initial cleanup...');
     int initialCleanedCount = await _firestoreService.markExpiredIncidencesAsInvisible();
     debugPrint('MarkerManager: Initial cleanup completed. $initialCleanedCount incidents marked invisible.');
@@ -50,7 +52,6 @@ class MarkerManager {
       _onStateChange();
     }, onError: (error) {
       _incidencesData = [];
-      // _incidentCircles = {};
       _onStateChange();
       debugPrint('MarkerManager: Error fetching incidents: $error');
     });
@@ -59,20 +60,21 @@ class MarkerManager {
   void _startPeriodicExpiryChecks({Duration interval = const Duration(hours: 1)}) {
     _expiryCheckTimer?.cancel();
     _expiryCheckTimer = Timer.periodic(interval, (timer) async {
-      // ... (expiry check logic remains)
+      int cleanedCount = await _firestoreService.markExpiredIncidencesAsInvisible();
+      debugPrint('MarkerManager: Periodic cleanup completed. $cleanedCount incidents marked invisible.');
     });
     debugPrint('MarkerManager: Periodic expiry checks started with an interval of ${interval.inMinutes} minutes.');
   }
 
   Future<void> addMarkerAndShowNotification({
-    required BuildContext context, // Has context to get localizations
+    required BuildContext context,
     required MakerType makerType,
     required double latitude,
     required double longitude,
     String? description,
     String? imageUrl,
   }) async {
-    final localizations = AppLocalizations.of(context)!; // Get localizations from context
+    final localizations = AppLocalizations.of(context)!;
     final success = await _firestoreService.addIncidence(
       type: makerType,
       latitude: latitude,
@@ -82,37 +84,39 @@ class MarkerManager {
     );
 
     if (context.mounted) {
-      // getMarkerInfo now requires localizations
       final markerInfo = getMarkerInfo(makerType, localizations); 
-      // markerInfo.title will be localized
       final String markerTitle = markerInfo?.title ?? makerType.name.toString().split('.').last.capitalizeAllWords();
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
-              ? localizations.incidentReportedSuccess(markerTitle) // Use localized string
-              : localizations.incidentReportFailed(markerTitle)), // Use localized string
+              ? localizations.incidentReportedSuccess(markerTitle)
+              : localizations.incidentReportFailed(markerTitle)),
         ),
       );
+
+      if (success) {
+        // Trigger a check for new incidents in the user's city
+        final userCity = "Default City"; // Replace with actual user city
+        await _downloadDataManager.checkForNewIncidents(userCity);
+      }
     }
   }
 
   Future<void> processIncidentReporting({
     required BuildContext context,
     required AppLocalizations localizations,
-    required MakerType newMarkerToSelect, // This is the type of the button pressed
+    required MakerType newMarkerToSelect,
     required double? targetLatitude,
     required double? targetLongitude,
   }) async {
     if (_selectedIncident == newMarkerToSelect) {
-      // If the same incident button is tapped again, deselect it.
       _selectedIncident = MakerType.none;
       _onStateChange();
       debugPrint("MarkerManager: Deselected incident type ${newMarkerToSelect.name}.");
-      return; // Exit without showing dialog
+      return;
     }
 
-    // A new incident type is selected, or an existing different one was active.
     _selectedIncident = newMarkerToSelect;
     _onStateChange();
     debugPrint("MarkerManager: Selected incident type ${newMarkerToSelect.name} for reporting.");
@@ -120,7 +124,7 @@ class MarkerManager {
     if (targetLatitude != null && targetLongitude != null) {
       final result = await showIncidentVoiceDescriptionDialog(
         context: context,
-        markerType: _selectedIncident, // Use the currently active _selectedIncident
+        markerType: _selectedIncident,
       );
 
       if (result != null) {
@@ -131,7 +135,7 @@ class MarkerManager {
           if (context.mounted) {
             await addMarkerAndShowNotification(
               context: context,
-              makerType: _selectedIncident, // Report the currently active type
+              makerType: _selectedIncident,
               latitude: targetLatitude,
               longitude: targetLongitude,
               description: description,
@@ -145,7 +149,6 @@ class MarkerManager {
           _onStateChange();
         }
       } else {
-        // Dialog was cancelled by the user (e.g., back button or cancel button in modal)
         debugPrint("MarkerManager: Incident reporting dialog cancelled by user for ${_selectedIncident.name}. Reverting selection.");
         _selectedIncident = MakerType.none;
         _onStateChange();
@@ -157,7 +160,7 @@ class MarkerManager {
         );
       }
       debugPrint("MarkerManager: Target location not set for ${_selectedIncident.name}. Reverting selection.");
-      _selectedIncident = MakerType.none; // Reset if no target location
+      _selectedIncident = MakerType.none;
       _onStateChange();
     }
   }
@@ -168,9 +171,8 @@ class MarkerManager {
     required double? targetLatitude,
     required double? targetLongitude,
   }) async {
-    // Always treat emergency button press as selecting MakerType.emergency
     _selectedIncident = MakerType.emergency;
-    _onStateChange(); // Update UI (phone button text to "Call Emergencies" or specific agent)
+    _onStateChange();
     debugPrint("MarkerManager: Emergency reporting selected.");
 
     if (targetLatitude != null && targetLongitude != null) {
@@ -193,7 +195,6 @@ class MarkerManager {
               description: description ?? localizations.incidentModalStatusError,
               imageUrl: imageUrl,
             );
-            // Emergency reported. _selectedIncident REMAINS MakerType.emergency
             debugPrint("MarkerManager: Emergency incident reported. Selection persists as 'emergency'.");
           }
         } else {
@@ -203,7 +204,7 @@ class MarkerManager {
         }
       } else {
         debugPrint("MarkerManager: Emergency reporting dialog cancelled by user. Reverting selection.");
-        _selectedIncident = MakerType.none; // Reset if dialog is cancelled
+        _selectedIncident = MakerType.none;
         _onStateChange();
       }
     } else {
@@ -213,11 +214,10 @@ class MarkerManager {
         );
       }
       debugPrint("MarkerManager: Target location not set for emergency report. Reverting selection.");
-      _selectedIncident = MakerType.none; // Reset if no target location
+      _selectedIncident = MakerType.none;
       _onStateChange();
     }
   }
-
 
   void resetSelectedMarkerToNone() {
     _selectedIncident = MakerType.none;
