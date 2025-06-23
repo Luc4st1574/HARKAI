@@ -209,7 +209,7 @@ class FirestoreService {
 
   /// Marks all expired incidences as invisible based on the provided expiry duration.
   Future<int> markExpiredIncidencesAsInvisible(
-      {Duration expiryDuration = const Duration(hours: 1)}) async { // Default for general incidents
+      {Duration expiryDuration = const Duration(hours: 3)}) async { // Default for general incidents
     final DateTime now = DateTime.now();
     // Cutoff for general incidents (e.g., 1 hour ago)
     final Timestamp generalCutoffTimestamp = Timestamp.fromDate(now.subtract(expiryDuration));
