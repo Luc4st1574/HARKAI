@@ -641,7 +641,7 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalStep1ReportAudioTitle.
   ///
   /// In en, this message translates to:
-  /// **'Step 1: Report Audio for {incidentName}'**
+  /// **'Record Audio for {incidentName}'**
   String incidentModalStep1ReportAudioTitle(String incidentName);
 
   /// No description provided for @incidentModalStatusInitializing.
@@ -677,19 +677,19 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalStatusStep2AddImage.
   ///
   /// In en, this message translates to:
-  /// **'Step 2: Add Image (Optional)'**
+  /// **'Add Image (Optional)'**
   String get incidentModalStatusStep2AddImage;
 
   /// No description provided for @incidentModalStatusCapturingImage.
   ///
   /// In en, this message translates to:
-  /// **'Step 2: Capturing Image...'**
+  /// **'Capturing Image...'**
   String get incidentModalStatusCapturingImage;
 
   /// No description provided for @incidentModalStatusImagePreview.
   ///
   /// In en, this message translates to:
-  /// **'Step 2: Image Preview'**
+  /// **'Image Preview'**
   String get incidentModalStatusImagePreview;
 
   /// No description provided for @incidentModalStatusSendingImageToHarki.
@@ -701,7 +701,7 @@ abstract class AppLocalizations {
   /// No description provided for @incidentModalStatusImageAnalyzed.
   ///
   /// In en, this message translates to:
-  /// **'Step 2: Image Analyzed'**
+  /// **'Image Analyzed'**
   String get incidentModalStatusImageAnalyzed;
 
   /// No description provided for @incidentModalStatusSubmittingIncident.
@@ -1461,7 +1461,7 @@ abstract class AppLocalizations {
   /// Title for the incident reporting step when using text. Takes incident name as a parameter.
   ///
   /// In en, this message translates to:
-  /// **'Step 1: Report with Text for {incidentName}'**
+  /// **'Report with Text for {incidentName}'**
   String incidentModalReportTextTitle(String incidentName);
 
   /// Instruction for the user to enter a text description for the incident.

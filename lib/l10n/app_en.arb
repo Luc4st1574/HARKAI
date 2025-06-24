@@ -136,7 +136,7 @@
   "targetLocationNotSet": "Target location not set. Tap on map or use compass.",
   "emergencyReportLocationUnknown": "Unable to report emergency: Target location unknown.",
   "enlargedMapDataUnavailable": "Map data is currently unavailable. Please try again.",
-  "incidentModalStep1ReportAudioTitle": "Step 1: Report Audio for {incidentName}",
+  "incidentModalStep1ReportAudioTitle": "Record Audio for {incidentName}",
   "@incidentModalStep1ReportAudioTitle": {
     "placeholders": {
       "incidentName": {
@@ -149,11 +149,11 @@
   "incidentModalStatusAudioRecorded": "Audio Recorded!",
   "incidentModalStatusSendingAudioToHarki": "Harki Analyzing Description...",
   "incidentModalStatusConfirmAudioDescription": "Confirm Description:",
-  "incidentModalStatusStep2AddImage": "Step 2: Add Image (Optional)",
-  "incidentModalStatusCapturingImage": "Step 2: Capturing Image...",
-  "incidentModalStatusImagePreview": "Step 2: Image Preview",
+  "incidentModalStatusStep2AddImage": "Add Image (Optional)",
+  "incidentModalStatusCapturingImage": "Capturing Image...",
+  "incidentModalStatusImagePreview": "Image Preview",
   "incidentModalStatusSendingImageToHarki": "Harki Analyzing Image...",
-  "incidentModalStatusImageAnalyzed": "Step 2: Image Analyzed",
+  "incidentModalStatusImageAnalyzed": "Image Analyzed",
   "incidentModalStatusSubmittingIncident": "Submitting Incident...",
   "incidentModalStatusError": "Error",
   "incidentModalStatusTypeMismatch": "Type Mismatch",
@@ -454,7 +454,7 @@
               }
           }
       },
-      "incidentModalReportTextTitle": "Step 1: Report with Text for {incidentName}",
+      "incidentModalReportTextTitle": "Report with Text for {incidentName}",
       "@incidentModalReportTextTitle": {
           "description": "Title for the incident reporting step when using text. Takes incident name as a parameter.",
           "placeholders": {

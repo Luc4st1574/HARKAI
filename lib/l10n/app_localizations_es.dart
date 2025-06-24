@@ -314,7 +314,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentModalStep1ReportAudioTitle(String incidentName) {
-    return 'Paso 1: Grabar Audio para $incidentName';
+    return 'Grabar Audio para $incidentName';
   }
 
   @override
@@ -335,23 +335,20 @@ class AppLocalizationsEs extends AppLocalizations {
       'Confirmar Descripción:';
 
   @override
-  String get incidentModalStatusStep2AddImage =>
-      'Paso 2: Añadir Imagen (Opcional)';
+  String get incidentModalStatusStep2AddImage => 'Añadir Imagen (Opcional)';
 
   @override
-  String get incidentModalStatusCapturingImage =>
-      'Paso 2: Capturando Imagen...';
+  String get incidentModalStatusCapturingImage => 'Capturando Imagen...';
 
   @override
-  String get incidentModalStatusImagePreview =>
-      'Paso 2: Vista Previa de Imagen';
+  String get incidentModalStatusImagePreview => 'Vista Previa de Imagen';
 
   @override
   String get incidentModalStatusSendingImageToHarki =>
       'Harki Analizando Imagen...';
 
   @override
-  String get incidentModalStatusImageAnalyzed => 'Paso 2: Imagen Analizada';
+  String get incidentModalStatusImageAnalyzed => 'Imagen Analizada';
 
   @override
   String get incidentModalStatusSubmittingIncident => 'Enviando Incidente...';
@@ -840,7 +837,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String incidentModalReportTextTitle(String incidentName) {
-    return 'Paso 1: Reportar con Texto para $incidentName';
+    return 'Reportar con Texto para $incidentName';
   }
 
   @override

@@ -138,7 +138,7 @@
   "emergencyReportLocationUnknown": "No se puede reportar emergencia: Ubicación objetivo desconocida.",
   "enlargedMapDataUnavailable": "Datos del mapa no disponibles actualmente. Por favor, inténtalo de nuevo.",
 
-  "incidentModalStep1ReportAudioTitle": "Paso 1: Grabar Audio para {incidentName}",
+  "incidentModalStep1ReportAudioTitle": "Grabar Audio para {incidentName}",
   "@incidentModalStep1ReportAudioTitle": {
     "placeholders": {
       "incidentName": {
@@ -151,11 +151,11 @@
   "incidentModalStatusAudioRecorded": "¡Audio Grabado!",
   "incidentModalStatusSendingAudioToHarki": "Harki Analizando Descripción...",
   "incidentModalStatusConfirmAudioDescription": "Confirmar Descripción:",
-  "incidentModalStatusStep2AddImage": "Paso 2: Añadir Imagen (Opcional)",
-  "incidentModalStatusCapturingImage": "Paso 2: Capturando Imagen...",
-  "incidentModalStatusImagePreview": "Paso 2: Vista Previa de Imagen",
+  "incidentModalStatusStep2AddImage": "Añadir Imagen (Opcional)",
+  "incidentModalStatusCapturingImage": "Capturando Imagen...",
+  "incidentModalStatusImagePreview": "Vista Previa de Imagen",
   "incidentModalStatusSendingImageToHarki": "Harki Analizando Imagen...",
-  "incidentModalStatusImageAnalyzed": "Paso 2: Imagen Analizada",
+  "incidentModalStatusImageAnalyzed": "Imagen Analizada",
   "incidentModalStatusSubmittingIncident": "Enviando Incidente...",
   "incidentModalStatusError": "Error",
   "incidentModalStatusTypeMismatch": "Tipo no Coincide",
@@ -422,7 +422,7 @@
     "notifPlaceAlmostThereBody": "Te estás acercando a {placeName}. ¡Disfruta tu visita!",
     "notifPlaceWelcomeTitle": "¡Bienvenido!",
     "notifPlaceWelcomeBody": "Nos alegra que hayas venido a {placeName}. ¡Esperamos que disfrutes tu estancia aquí!",
-    "incidentModalReportTextTitle": "Paso 1: Reportar con Texto para {incidentName}",
+    "incidentModalReportTextTitle": "Reportar con Texto para {incidentName}",
     "@incidentModalReportTextTitle": {
         "description": "Título para el paso de reporte de incidente cuando se usa texto. Toma el nombre del incidente como parámetro.",
         "placeholders": {
