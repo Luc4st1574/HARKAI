@@ -5,12 +5,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/services/location_service.dart';
 import '../modals/enlarged_map.dart';
 import 'package:harkai/l10n/app_localizations.dart';
+import 'package:permission_handler/permission_handler.dart' as perm_handler; // Added import
+
+typedef AlwaysOnLocationPromptCallback = Future<bool> Function(BuildContext context, AppLocalizations localizations); // NEW
 
 class MapLocationManager {
   final LocationService _locationService;
   final VoidCallback _onStateChange;
   final GoogleMapController? Function() _getMapController;
   final Function(GoogleMapController) _setMapController;
+  final AlwaysOnLocationPromptCallback? onShowAlwaysOnLocationPrompt; // Made optional
 
   // --- FIX: Change the initial state to be a unique loading key ---
   // This ensures the very first time the UI builds, it shows a loading message.
@@ -54,6 +58,7 @@ class MapLocationManager {
     required VoidCallback onStateChange,
     required GoogleMapController? Function() getMapController,
     required Function(GoogleMapController) setMapController,
+    this.onShowAlwaysOnLocationPrompt, // Made optional
   })  : _locationService = locationService,
         _onStateChange = onStateChange,
         _getMapController = getMapController,
@@ -88,10 +93,45 @@ class MapLocationManager {
     return localizations.mapYouAreIn(_locationData.isNotEmpty ? _locationData : localizations.mapCouldNotFetchAddress);
   }
 
-  Future<void> initializeManager(AppLocalizations localizations) async {
+  Future<void> initializeManager(BuildContext context, AppLocalizations localizations) async {
     await _loadCustomTargetIcon();
-    await _locationService.requestLocationPermission(openSettingsOnError: true);
+    
+    // 1. Request foreground permission
+    bool foregroundPermissionGranted = await _locationService.requestForegroundLocationPermission(openSettingsOnError: true);
+    if (!foregroundPermissionGranted) {
+      _locationData = localizations.mapLocationPermissionDenied;
+      _isErrorOrStatus = true;
+      _onStateChange();
+      debugPrint("MapLocationManager: Foreground location permission denied. Cannot proceed with map.");
+      return; // Cannot proceed without foreground location
+    }
+
+    // 2. If foreground is granted, check background status and prompt if needed
+    var backgroundStatus = await perm_handler.Permission.locationAlways.status;
+    if (backgroundStatus != perm_handler.PermissionStatus.granted && 
+        backgroundStatus != perm_handler.PermissionStatus.permanentlyDenied) {
+      debugPrint("MapLocationManager: Background location not yet granted. Showing explanation modal.");
+      // ADDED NULL CHECK HERE
+      if (onShowAlwaysOnLocationPrompt != null) { 
+        bool userAcceptedExplanation = await onShowAlwaysOnLocationPrompt!(context, localizations); 
+      
+        if (userAcceptedExplanation) {
+          debugPrint("MapLocationManager: User accepted explanation. Requesting background location permission.");
+          await _locationService.requestBackgroundLocationPermission(openSettingsOnError: true);
+        } else {
+          debugPrint("MapLocationManager: User declined explanation modal. Proceeding without always-on permission.");
+        }
+      } else {
+        debugPrint("MapLocationManager: No always-on location prompt callback provided. Skipping explanation.");
+      }
+    } else {
+      debugPrint("MapLocationManager: Background location already granted or permanently denied. Skipping explanation modal.");
+    }
+
+    // 3. Fetch initial location and address (now that permissions are handled)
     await _fetchInitialLocationAndAddress(localizations); 
+    
+    // 4. Setup continuous location updates
     _setupLocationUpdatesListener(localizations);
   }
 
@@ -168,7 +208,7 @@ class MapLocationManager {
       _onStateChange();
       return;
     }
-    bool permGranted = await _locationService.requestLocationPermission();
+    bool permGranted = await _locationService.requestForegroundLocationPermission(); // Changed to Foreground
     if (!permGranted) {
       _locationData = localizations.mapLocationPermissionDenied;
       _isErrorOrStatus = true;

@@ -498,6 +498,9 @@
     "donationLabel": "Donation to Harkai",
     "nearbyVetsTitle": "Nearby Vets",
     "noNearbyVetsFound": "No nearby vets registered as places were found in the area.",
-    "exitScreenButton": "Exit"
+    "exitScreenButton": "Exit",
+    "onboardingAlwaysOnLocationPromptTitle": "Keep You Safe Always",
+  "onboardingAlwaysOnLocationPromptDescription": "To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission when prompted.",
+  "onboardingAlwaysOnLocationPromptButton": "Accept & Continue"
 
 }

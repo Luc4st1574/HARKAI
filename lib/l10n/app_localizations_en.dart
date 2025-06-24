@@ -885,4 +885,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exitScreenButton => 'Exit';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptTitle => 'Keep You Safe Always';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptDescription =>
+      'To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission when prompted.';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptButton => 'Accept & Continue';
 }

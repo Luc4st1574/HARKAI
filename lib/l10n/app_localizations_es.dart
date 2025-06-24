@@ -909,4 +909,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get exitScreenButton => 'Salir';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptTitle =>
+      'Para tu seguridad en todo momento';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptDescription =>
+      'Para mantenerte seguro y proporcionarte alertas en tiempo real sobre incidentes cercanos, incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso cuando se te solicite.';
+
+  @override
+  String get onboardingAlwaysOnLocationPromptButton => 'Aceptar y Continuar';
 }

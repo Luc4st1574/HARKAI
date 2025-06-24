@@ -466,5 +466,8 @@
     "donationLabel": "Donación para Harkai",
     "nearbyVetsTitle": "Veterinarias Cercanas",
     "noNearbyVetsFound": "No se encontraron veterinarias cercanas.",
-    "exitScreenButton": "Salir"
+    "exitScreenButton": "Salir",
+    "onboardingAlwaysOnLocationPromptTitle": "Para tu seguridad en todo momento",
+  "onboardingAlwaysOnLocationPromptDescription": "Para mantenerte seguro y proporcionarte alertas en tiempo real sobre incidentes cercanos, incluso cuando la aplicación está en segundo plano, Harkai necesita acceder a tu ubicación en todo momento. Por favor, concede este permiso cuando se te solicite.",
+  "onboardingAlwaysOnLocationPromptButton": "Aceptar y Continuar"
 }

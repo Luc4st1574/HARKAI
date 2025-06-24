@@ -1583,6 +1583,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exit'**
   String get exitScreenButton;
+
+  /// No description provided for @onboardingAlwaysOnLocationPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep You Safe Always'**
+  String get onboardingAlwaysOnLocationPromptTitle;
+
+  /// No description provided for @onboardingAlwaysOnLocationPromptDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep you safe and provide real-time alerts about nearby incidents even when the app is in the background, Harkai needs to access your location at all times. Please grant this permission when prompted.'**
+  String get onboardingAlwaysOnLocationPromptDescription;
+
+  /// No description provided for @onboardingAlwaysOnLocationPromptButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept & Continue'**
+  String get onboardingAlwaysOnLocationPromptButton;
 }
 
 class _AppLocalizationsDelegate

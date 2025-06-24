@@ -89,6 +89,7 @@ class _HomeState extends State<Home> {
             }
           }
         },
+        onShowAlwaysOnLocationPrompt: _showAlwaysOnLocationExplanationModal, // NEW
       );
 
       _dataEventManager = MarkerManager(
@@ -123,7 +124,7 @@ class _HomeState extends State<Home> {
   Future<void> _requestInitialPermissions() async {
     if (_localizations == null) return;
     // This will now fetch location and request permission
-    await _mapLocationManager.initializeManager(_localizations!);
+    await _mapLocationManager.initializeManager(context, _localizations!); // Pass context and localizations
     // Request speech permissions
     bool speechReady = await _speechPermissionService
         .ensurePermissionsAndInitializeService(openSettingsOnError: true);
@@ -154,6 +155,57 @@ class _HomeState extends State<Home> {
       // If it's not the first launch, request permissions right away
       await _requestInitialPermissions();
     }
+  }
+
+  // NEW method for the modal
+  Future<bool> _showAlwaysOnLocationExplanationModal(BuildContext context, AppLocalizations localizations) async {
+    final bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // User must make a choice
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF001F3F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: const BorderSide(color: Color(0xFF57D463), width: 2),
+          ),
+          title: Text(
+            localizations.onboardingAlwaysOnLocationPromptTitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF57D463),
+            ),
+          ),
+          content: Text(
+            localizations.onboardingAlwaysOnLocationPromptDescription,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.white70,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true); // User accepts
+              },
+              child: Text(
+                localizations.onboardingAlwaysOnLocationPromptButton,
+                style: const TextStyle(
+                  color: Color(0xFF57D463),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false; // Return true if accepted, false otherwise (including dismiss).
   }
 
   @override

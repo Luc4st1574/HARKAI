@@ -1,5 +1,5 @@
 // ignore_for_file: avoid_print
-
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,58 +32,68 @@ class LocationService {
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  /// Requests location permission from the user.
-  Future<bool> requestLocationPermission({bool openSettingsOnError = false}) async {
-    print("Requesting location permission...");
+  /// Requests foreground location permission (WhenInUse for iOS, Fine/Coarse for Android).
+  Future<bool> requestForegroundLocationPermission({bool openSettingsOnError = false}) async {
+    debugPrint("LocationService: Requesting foreground location permission...");
 
     while (true) {
-      var status = await perm_handler.Permission.location.status;
-      print("Current location permission status: $status");
+      var status = await perm_handler.Permission.locationWhenInUse.status;
+      debugPrint("LocationService: Current foreground location permission status: $status");
 
       if (status.isGranted) {
-        print("Location permission granted.");
-        // After getting basic location, now try for "Always" permission
-        return await requestBackgroundLocationPermission(openSettingsOnError: openSettingsOnError);
+        debugPrint("LocationService: Foreground location permission already granted.");
+        return true;
       }
 
       if (status.isPermanentlyDenied) {
-        print("Location permission permanently denied. Opening app settings...");
+        debugPrint("LocationService: Foreground location permission permanently denied. Opening app settings...");
         if (openSettingsOnError) {
           await perm_handler.openAppSettings();
         }
         // Give the user time to change settings and return.
         await Future.delayed(const Duration(seconds: 5));
-        continue; // Re-check the status after returning from settings.
+        // Continue loop to re-check status if user returns from settings.
+        continue;
       }
 
       // If denied (but not permanently), request it.
-      print("Requesting location permission...");
-      await perm_handler.Permission.location.request();
-      // Loop will re-check the status on the next iteration.
-      await Future.delayed(const Duration(seconds: 1)); // Small delay
+      debugPrint("LocationService: Requesting foreground location permission...");
+      status = await perm_handler.Permission.locationWhenInUse.request();
+      if (status.isGranted) {
+        debugPrint("LocationService: Foreground location permission granted after request.");
+        return true;
+      }
+      // If not granted after request, loop will re-check or exit if it becomes permanently denied.
+      await Future.delayed(const Duration(milliseconds: 500)); // Small delay
     }
   }
-  
+
   /// Requests "Always Allow" background location permission.
   Future<bool> requestBackgroundLocationPermission({bool openSettingsOnError = false}) async {
+    debugPrint("LocationService: Requesting 'Always' background location permission...");
     var status = await perm_handler.Permission.locationAlways.status;
+    debugPrint("LocationService: Current background location permission status: $status");
+
     if (status.isGranted) {
-      print("Background location permission already granted.");
+      debugPrint("LocationService: 'Always' background location permission already granted.");
       return true;
     }
     
-    print("Requesting 'Always' background location permission...");
+    // If not granted, request it.
     status = await perm_handler.Permission.locationAlways.request();
 
     if (status.isGranted) {
-      print("'Always' background location permission granted.");
+      debugPrint("LocationService: 'Always' background location permission granted.");
       return true;
     }
 
     if (status.isPermanentlyDenied && openSettingsOnError) {
+      debugPrint("LocationService: 'Always' background location permission permanently denied. Opening app settings...");
       await perm_handler.openAppSettings();
+      // No loop here, as this is typically a one-shot request after foreground is obtained.
     }
     
+    debugPrint("LocationService: 'Always' background location permission denied or restricted.");
     return false;
   }
 
@@ -99,7 +109,8 @@ class LocationService {
           success: false, errorMessage: 'Location services are disabled.');
     }
 
-    bool permissionGranted = await requestLocationPermission(openSettingsOnError: true);
+    // MODIFIED: Call foreground permission only
+    bool permissionGranted = await requestForegroundLocationPermission(openSettingsOnError: true);
     if (!permissionGranted) {
       perm_handler.PermissionStatus status =
           await perm_handler.Permission.locationWhenInUse.status;

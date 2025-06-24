@@ -99,7 +99,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Future<void> _initializeScreenData() async {
     if (_localizations == null) return;
     _userSessionManager.initialize();
-    await _mapLocationManager.initializeManager(_localizations!);
+    await _mapLocationManager.initializeManager(context, _localizations!); // Pass context
     await _markerManager.initialize(_localizations!);
   }
 
