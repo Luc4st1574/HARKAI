@@ -76,8 +76,8 @@ class _IncidentMapViewContentState extends State<IncidentMapViewContent> {
       }
     } else {
       // For other incident types (fire, crash, theft, emergency)
-      final oneHourAgo = now.subtract(const Duration(hours: 1));
-      if (widget.incident.timestamp.toDate().isBefore(oneHourAgo)) {
+      final threeHoursAgo = now.subtract(const Duration(hours: 3));
+      if (widget.incident.timestamp.toDate().isBefore(threeHoursAgo)) {
         shouldBeVisible = false;
       }
     }

@@ -278,9 +278,9 @@ class _IncidentScreenState extends State<IncidentScreen> {
       });
     } else if (widget.incidentType != MakerType.place) {
       final now = DateTime.now();
-      final oneHourAgo = now.subtract(const Duration(hours: 1));
+      final threeHoursAgo = now.subtract(const Duration(hours: 3));
       filteredIncidents.removeWhere((incident) {
-        return incident.timestamp.toDate().isBefore(oneHourAgo);
+        return incident.timestamp.toDate().isBefore(threeHoursAgo);
       });
     }
 
