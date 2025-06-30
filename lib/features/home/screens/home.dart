@@ -410,7 +410,7 @@ class _HomeState extends State<Home> {
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
                         child: IncidentButtonsGridWidget(
                           selectedIncident: _dataEventManager.selectedIncident,
                           onIncidentButtonPressed: (MakerType type) {

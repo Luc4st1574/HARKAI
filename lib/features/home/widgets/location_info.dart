@@ -19,7 +19,7 @@ class LocationInfoWidget extends StatelessWidget {
 
     return Padding(
       // Consistent padding as in the original _buildLocationInfo method
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 1.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,

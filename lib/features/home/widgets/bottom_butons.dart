@@ -36,7 +36,7 @@ class BottomActionButtonsWidget extends StatelessWidget {
     final MarkerInfo? emergencyMarkerDetails = getMarkerInfo(MakerType.emergency, localizations);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0), 
+      padding: const EdgeInsets.fromLTRB(16.0, 6.0, 16.0, 24.0), 
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,

@@ -78,7 +78,7 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final double screenHeight = MediaQuery.of(context).size.height;
-    const double mapHeightFactor = 0.40;
+    const double mapHeightFactor = 0.50;
 
     if (widget.initialLatitude == null || widget.initialLongitude == null) {
       return SizedBox(

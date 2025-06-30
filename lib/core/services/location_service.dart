@@ -124,10 +124,10 @@ class LocationService {
     }
 
     try {
-      print("Fetching current position with high accuracy...");
+      print("Fetching current position...");
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          accuracy: LocationAccuracy.low,
         ),
       );
       print(
@@ -142,7 +142,7 @@ class LocationService {
 
   /// Provides a stream of position updates.
   Stream<Position> getPositionStream({
-    LocationAccuracy accuracy = LocationAccuracy.high,
+    LocationAccuracy accuracy = LocationAccuracy.low,
     int distanceFilter = 10, // Update if the user moves 10 meters
   }) {
     print(
