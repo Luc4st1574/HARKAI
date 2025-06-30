@@ -78,7 +78,7 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final double screenHeight = MediaQuery.of(context).size.height;
-    const double mapHeightFactor = 0.50;
+    const double mapHeightFactor = 0.45;
 
     if (widget.initialLatitude == null || widget.initialLongitude == null) {
       return SizedBox(
@@ -166,7 +166,7 @@ class _MapDisplayWidgetState extends State<MapDisplayWidget> {
                     initialCameraPosition: cameraPosForMap,
                     markers: widget.markers,
                     circles: widget.circles, 
-                    mapType: MapType.terrain,
+                    mapType: MapType.normal,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: true,
                     zoomGesturesEnabled: true,
