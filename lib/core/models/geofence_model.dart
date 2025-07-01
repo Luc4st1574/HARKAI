@@ -8,6 +8,7 @@ class GeofenceModel {
   final double radius;
   final MakerType type;
   final String description;
+  final bool isVisible;
 
   GeofenceModel({
     required this.id,
@@ -16,6 +17,7 @@ class GeofenceModel {
     required this.radius,
     required this.type,
     required this.description,
+    this.isVisible = true,
   });
 
   factory GeofenceModel.fromFirestore(DocumentSnapshot doc) {
@@ -30,6 +32,7 @@ class GeofenceModel {
         orElse: () => MakerType.none,
       ),
       description: data['description'] as String? ?? '',
+      isVisible: data['isVisible'] as bool? ?? true,
     );
   }
 
@@ -41,6 +44,7 @@ class GeofenceModel {
       'radius': radius,
       'type': type.name,
       'description': description,
+      'isVisible': isVisible,
     };
   }
 
@@ -55,6 +59,7 @@ class GeofenceModel {
         orElse: () => MakerType.none,
       ),
       description: map['description'],
+      isVisible: map['isVisible'] as bool? ?? true,
     );
   }
 }

@@ -34,6 +34,11 @@ class GeofenceManager {
     _activeGeofences.clear();
 
     for (final geofence in _incidents) {
+      // ADDED: Check if the geofence (incident) is visible before processing
+      if (!geofence.isVisible) {
+        continue; // Skip this geofence if it's not visible (e.g., expired)
+      }
+
       final distance = Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -83,7 +88,7 @@ class GeofenceManager {
       type: geofence.type,
       description: geofence.description,
       timestamp: Timestamp.now(),
-      isVisible: true,
+      isVisible: geofence.isVisible, // Ensure visibility status is passed correctly
       userId: '',
     );
   }
